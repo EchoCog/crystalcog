@@ -8,8 +8,8 @@
 # -- configure various config files.
 # -- print pretty summary
 #
-# cogutils already requires 2.8.12.2, so may as well ask for that.
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12.2)
+# cogutils already requires 3.10, so may as well ask for that.
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
 PROJECT(agi-bio)
 
@@ -29,7 +29,7 @@ ADD_DEFINITIONS(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 # because it supplies the various FindXXX macros.
 
 # Cogutil
-FIND_PACKAGE(CogUtil 2.0.1 CONFIG REQUIRED)
+FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
 IF (COGUTIL_FOUND)
 	MESSAGE(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
 	ADD_DEFINITIONS(-DHAVE_COGUTIL)
