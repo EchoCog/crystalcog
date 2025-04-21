@@ -29,6 +29,8 @@ ADD_DEFINITIONS(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 # because it supplies the various FindXXX macros.
 
 # Cogutil
+set(CMAKE_PREFIX_PATH "/path/to/cogutil")
+set(CogUtil_DIR "/path/to/cogutil")
 FIND_PACKAGE(CogUtil 2.0.1 CONFIG REQUIRED)
 IF (COGUTIL_FOUND)
 	MESSAGE(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
