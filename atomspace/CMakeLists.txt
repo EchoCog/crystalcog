@@ -74,6 +74,8 @@ ENDIF (CMAKE_BUILD_TYPE STREQUAL "Profile")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/")
 
 # Cogutil
+set(CMAKE_PREFIX_PATH "/path/to/cogutil")
+set(CogUtil_DIR "/path/to/cogutil")
 FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
 IF (COGUTIL_FOUND)
 	MESSAGE(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
