@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
 project(atomspace_server CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -27,7 +27,7 @@ ELSE(Boost_FOUND)
 ENDIF(Boost_FOUND)
 
 #cogutil
-find_package(CogUtil 2.0.1 CONFIG REQUIRED)
+find_package(CogUtil 3.10 CONFIG REQUIRED)
 IF (COGUTIL_FOUND)
     message(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
     add_definitions(-DHAVE_COGUTIL)
