@@ -12,7 +12,7 @@
 # We need at least version 3.13 to get TARGET_LINK_DIRECTORIES
 # Argh. circleci does not have that version.
 # CogUtils assks for version 3.12 already, so ask for that.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 MESSAGE("Found CMake version ${CMAKE_VERSION}")
 
 PROJECT(attention)
@@ -54,7 +54,7 @@ ADD_DEFINITIONS(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/")
 
 # Cogutil
-FIND_PACKAGE(CogUtil 2.0.1 CONFIG REQUIRED)
+FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
 IF (COGUTIL_FOUND)
 	MESSAGE(STATUS "CogUtil found.")
 	ADD_DEFINITIONS(-DHAVE_COGUTIL)

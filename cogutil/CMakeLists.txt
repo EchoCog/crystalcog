@@ -16,7 +16,7 @@
 include(cmake/Summary.cmake)
 
 # add_compile_definitions shows up in CMake version 3.12
-CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
 PROJECT(cogutil)
 

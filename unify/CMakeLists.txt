@@ -9,7 +9,7 @@
 # -- print pretty summary
 #
 # cogutils already requires 3.12, so may as well ask for that.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
 PROJECT(unify)
 

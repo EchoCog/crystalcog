@@ -10,7 +10,7 @@
 #
 
 # Require "modern" CMake
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 # if (COMMAND CMAKE_POLICY)
 # 	cmake_policy(set CMP0003 NEW)
 # endif (COMMAND CMAKE_POLICY)
@@ -40,7 +40,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/")
 
 # Cogutil
-find_package(CogUtil 2.0.1 REQUIRED)
+find_package(CogUtil 3.10 REQUIRED)
 if (COGUTIL_FOUND)
     message(STATUS "CogUtil found.")
     # add_definitions(-DHAVE_COGUTIL)
