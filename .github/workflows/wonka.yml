@@ -22,7 +22,7 @@ jobs:
           # Install CogUtil
           git clone https://github.com/opencog/cogutil.git
           cd cogutil
-          mkdir build
+          mkdir -p build
           cd build
           cmake ..
           make
@@ -37,7 +37,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          mkdir build
+          mkdir -p build
           cd build
           cmake -DCMAKE_PREFIX_PATH=/usr/local ..
 
