@@ -34,9 +34,11 @@ jobs:
             ccache-cogserver-${{ runner.os }}-
             ccache-cogserver-
 
+      - name: Create Build Directory
+        run: mkdir -p build
+
       - name: Configure Build
         run: |
-          mkdir -p build
           cd build
           cmake ..
 
