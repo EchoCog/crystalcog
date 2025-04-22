@@ -37,7 +37,7 @@ jobs:
       - name: Checkout AtomSpace Repository
         uses: actions/checkout@v4
         with:
-          repository: your-org/atomspace
+          repository: your-org/orch-atomspace/atomspace
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Add build and test steps for AtomSpace here

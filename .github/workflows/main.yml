@@ -95,7 +95,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake ..
+          cmake ../../orch-atomspace/atomspace
 
       - name: Build and Install
         run: |

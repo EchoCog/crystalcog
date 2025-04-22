@@ -15,10 +15,10 @@ jobs:
     strategy:
       matrix:
         component: [
-          "agents", "agi-bio", "asmoses", "atomspace-agents", "atomspace-bridge",
-          "atomspace-cog", "atomspace-dht", "atomspace-explorer", "atomspace-ipfs",
-          "atomspace-js", "atomspace-metta", "atomspace-restful", "atomspace-rocks",
-          "atomspace-rpc", "atomspace-typescript", "atomspace-websockets", "atomspace",
+          "agents", "agi-bio", "asmoses", "orch-atomspace/atomspace-agents", "orch-atomspace/atomspace-bridge",
+          "orch-atomspace/atomspace-cog", "orch-atomspace/atomspace-dht", "orch-atomspace/atomspace-explorer", "orch-atomspace/atomspace-ipfs",
+          "orch-atomspace/atomspace-js", "orch-atomspace/atomspace-metta", "orch-atomspace/atomspace-restful", "orch-atomspace/atomspace-rocks",
+          "orch-atomspace/atomspace-rpc", "orch-atomspace/atomspace-typescript", "orch-atomspace/atomspace-websockets", "orch-atomspace/atomspace",
           "attention", "benchmark", "blender_api", "blender_api_msgs", "cheminformatics",
           "cogprotolab", "cogserver", "cogutil", "destin", "dimensional-embedding",
           "distributional-value", "docker", "external-tools", "generate", "ghost_bridge",
