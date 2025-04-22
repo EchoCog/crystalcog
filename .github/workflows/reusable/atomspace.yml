@@ -63,7 +63,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake ..
+          cmake ../../orch-atomspace/atomspace
 
       - name: Build
         run: |
