@@ -120,7 +120,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /ws/ccache
-          key: ccache-atomspace-${{ runner.os }}-${{ hashFiles('atomspace/**') }}
+          key: ccache-atomspace-${{ runner.os }}-${{ hashFiles('orch-atomspace/atomspace/**') }}
           restore-keys: |
             ccache-atomspace-
 
@@ -129,41 +129,41 @@ jobs:
 
       - name: Configure CMake for AtomSpace
         run: |
-          mkdir -p atomspace/build
-          cd atomspace/build
+          mkdir -p orch-atomspace/atomspace/build
+          cd orch-atomspace/atomspace/build
           cmake ..
 
       - name: Build AtomSpace
         run: |
-          cd atomspace/build
+          cd orch-atomspace/atomspace/build
           make
 
       - name: Install AtomSpace
         run: |
-          cd atomspace/build
+          cd orch-atomspace/atomspace/build
           sudo make install
           sudo ldconfig
 
       - name: Build AtomSpace Tests
         run: |
-          cd atomspace/build
+          cd orch-atomspace/atomspace/build
           make tests
 
       - name: Run AtomSpace Tests
         run: |
-          cd atomspace/build
+          cd orch-atomspace/atomspace/build
           make check ARGS="$MAKEFLAGS"
 
       - name: Print AtomSpace Test Log
         if: always()
         run: |
-          cat atomspace/build/tests/Testing/Temporary/LastTest.log || echo "Test log not found."
+          cat orch-atomspace/atomspace/build/tests/Testing/Temporary/LastTest.log || echo "Test log not found."
 
       - name: Upload AtomSpace Artifact
         uses: actions/upload-artifact@v4
         with:
           name: atomspace
-          path: atomspace/build/
+          path: orch-atomspace/atomspace/build/
 
   cogserver:
     name: CogServer Job
