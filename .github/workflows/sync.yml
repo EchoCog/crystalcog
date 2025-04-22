@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout central repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -45,7 +45,7 @@ jobs:
         git clean -fdx
 
     - name: Download repo_list.txt
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: repo_list
 
