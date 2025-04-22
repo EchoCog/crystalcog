@@ -68,16 +68,16 @@ jobs:
       - name: Build and Install AtomSpace
         run: |
           # Clean existing directory
-          rm -rf atomspace
+          rm -rf orch-atomspace/atomspace
           # Clone the repository
-          git clone https://github.com/opencog/atomspace.git
-          mkdir -p atomspace/build
-          cd atomspace/build
+          git clone https://github.com/opencog/atomspace.git orch-atomspace/atomspace
+          mkdir -p orch-atomspace/atomspace/build
+          cd orch-atomspace/atomspace/build
           cmake -DCMAKE_BUILD_TYPE=Release ..
           make -j2
           sudo make install
           sudo ldconfig
-          cd ../..
+          cd ../../..
 
       # 5. Build and Install CogServer
       - name: Build and Install CogServer
@@ -188,10 +188,10 @@ jobs:
       - name: Run Tests
         run: |
           # AtomSpace Tests
-          cd atomspace/build
+          cd orch-atomspace/atomspace/build
           make tests
           make check ARGS="$MAKEFLAGS"
-          cd ../..
+          cd ../../..
 
           # CogServer Tests
           cd cogserver/build
@@ -242,7 +242,7 @@ jobs:
         with:
           name: test-logs
           path: |
-            atomspace/build/Testing/Temporary/LastTest.log
+            orch-atomspace/atomspace/build/Testing/Temporary/LastTest.log
             cogserver/build/Testing/Temporary/LastTest.log
             opencog/build/Testing/Temporary/LastTest.log
             asmoses/build/Testing/Temporary/LastTest.log
@@ -256,9 +256,9 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           # AtomSpace Packaging
-          cd atomspace/build
+          cd orch-atomspace/atomspace/build
           make package || echo "AtomSpace package target not defined."
-          cd ../..
+          cd ../../..
 
           # Repeat packaging for other components as needed
 
@@ -270,7 +270,7 @@ jobs:
           name: build-artifacts
           path: |
             cogutil/build/
-            atomspace/build/
+            orch-atomspace/atomspace/build/
             cogserver/build/
             opencog/build/
             asmoses/build/

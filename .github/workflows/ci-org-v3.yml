@@ -74,8 +74,8 @@ jobs:
       # 6. Build and Install AtomSpace
       - name: Build and Install AtomSpace
         run: |
-          mkdir -p atomspace/build
-          cd atomspace/build
+          mkdir -p orch-atomspace/atomspace/build
+          cd orch-atomspace/atomspace/build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/local ..
           make
           sudo make install
@@ -84,7 +84,7 @@ jobs:
       # 7. Run AtomSpace Tests
       - name: Run AtomSpace Tests
         run: |
-          cd atomspace/build
+          cd orch-atomspace/atomspace/build
           make tests
           make check ARGS="$MAKEFLAGS"
 
@@ -92,13 +92,13 @@ jobs:
       - name: Print AtomSpace Test Log
         if: always()
         run: |
-          cat atomspace/build/tests/Testing/Temporary/LastTest.log || echo "Test log not found."
+          cat orch-atomspace/atomspace/build/tests/Testing/Temporary/LastTest.log || echo "Test log not found."
 
       # 9. (Optional) Package Artifacts
       - name: Package AtomSpace
         if: github.ref == 'refs/heads/main'
         run: |
-          cd atomspace/build
+          cd orch-atomspace/atomspace/build
           make package || echo "Package target not defined."
 
       # 10. (Optional) Upload Test Logs or Packages
@@ -108,11 +108,11 @@ jobs:
         with:
           name: test-logs
           path: |
-            atomspace/build/tests/Testing/Temporary/LastTest.log
+            orch-atomspace/atomspace/build/tests/Testing/Temporary/LastTest.log
 
       - name: Upload Packages
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: atomspace-packages
-          path: atomspace/build/packages/ || echo "No packages to upload."
+          path: orch-atomspace/atomspace/build/packages/ || echo "No packages to upload."

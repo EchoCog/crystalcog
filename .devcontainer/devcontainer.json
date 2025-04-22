@@ -12,7 +12,10 @@
             ]
         }
     },
-    "postCreateCommand": "pip3 install -r requirements.txt && cargo install hyperon"
+    "postCreateCommand": "pip3 install -r requirements.txt && cargo install hyperon",
+    "tasks": {
+      "build": "pip3 install -r requirements.txt && cargo install hyperon"
+    }
 }
 
 
