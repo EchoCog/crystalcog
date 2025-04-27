@@ -36,6 +36,8 @@ read -p "I am running... [ubuntu|debian|fedora|arch|opensuse]: " dist
   fi
 done
 
+#Download all the needed files
+./prereq/cogutil/download_source.sh
 #Here we evaluate what distro is running. We either hand-off or process any unique prerequisites that distro has.
 
 #ubuntu
@@ -93,13 +95,12 @@ read -p "I choose door number... " choice
   then
     vchoice=1
   else
-    echo "Try Again."
+      echo "Try Again."
   fi
 done
 
 #Just the dependencies.
-if [ "$choice" == "1" ]
-then
+if [ "$choice" == "1" ] then
   #Fetch the dependency script using the dist variable as part of the path.
   wget https://raw.githubusercontent.com/"$gauthor"/"$rtdr"/"$branch"/"$dist"/install-"$dist"-dependencies.sh && chmod 755 ./install-"$dist"-dependencies.sh && sudo ./install-"$dist"-dependencies.sh && rm install-"$dist"-dependencies.sh
   exit 0
@@ -119,18 +120,17 @@ then
   if [ "$cogutil" == "y" ] || [ "$cogutil" == "Y" ]
   then
     # Install Cogutil prerequisites
-    echo "Installing Cogutil prerequisites..."
-    chmod +x prereq/cogutil/install_prereqs.sh
-    sudo ./prereq/cogutil/install_prereqs.sh
-    
-    # Download and extract source files
-    echo "Downloading Cogutil and related source files..."
-    chmod +x prereq/cogutil/download_source.sh
-    ./prereq/cogutil/download_source.sh
-    
-    # Build and install Cogutil from downloaded source
+    if [ -d "prereq/sources/cogutil-master" ]; then
+    # Install Cogutil prerequisites
+      chmod +x ./prereq/cogutil/install_prereqs.sh
+      sudo ./prereq/cogutil/install_prereqs.sh
+
     echo "Building and installing Cogutil..."
-    cd /tmp/cogutil-master/
+    cd prereq/sources/cogutil-master
+    else
+        echo "No cogutil found."
+        continue
+    fi
     mkdir -p build && cd build
     cmake .. && make -j"$(nproc)"
     sudo make install && cd /tmp/
@@ -138,29 +138,28 @@ then
   fi
   if [ "$atomspace" == "y" ] || [ "$atomspace" == "Y" ]
   then
-    cd /tmp/
-   # cleaning up remnants from previous install failures, if any.
-   rm -rf master.tar.gz atomspace-master/
-  wget https://github.com/opencog/atomspace/archive/master.tar.gz
-  tar -xvf master.tar.gz
-  cd atomspace-master/
-  mkdir build
-  cd build/
-  cmake ..
-  make -j"$(nproc)"
-  sudo make install
-  cd ../..
-  rm -rf master.tar.gz atomspace-master/
+      if [ -d "prereq/sources/atomspace-master" ]; then
+    echo "Building and installing Atomspace..."
+    cd prereq/sources/atomspace-master
+      else
+        echo "No atomspace found."
+        continue
+      fi
+    mkdir build && cd build
+    cmake ..
+    sudo make install
+    cd ../../..
   fi
   if [ "$linkgram" == "y" ] || [ "$linkgram" == "Y" ]
   then
-    cd /tmp/
-    # cleaning up remnants from previous install failures, if any.
-    rm -rf link-grammar-5.*/
-    wget -r --no-parent -nH --cut-dirs=2 http://www.abisource.com/downloads/link-grammar/current/
-    tar -zxf current/link-grammar-5*.tar.gz
-    rm -r current
-    cd link-grammar-5.*/
+    echo "Building and installing LinkGrammar..."
+    #We use */ here to ensure the proper version is picked up.
+    if [ -d "$(ls prereq/sources/link-grammar-5*)" ]; then
+      cd prereq/sources/link-grammar-5*/
+    else
+      echo "No link-grammar found."
+      continue
+    fi
     mkdir build
     cd build
     ../configure
@@ -168,9 +167,7 @@ then
     sudo make install
     sudo ldconfig
     cd /tmp/
-    rm -rf link-grammar-5.*/
-    cd $CURRENT_DIR
-  fi
+ fi
   #if [ "$haskell" == "y" ] || [ "$haskell" == "Y" ]
   #then
 
