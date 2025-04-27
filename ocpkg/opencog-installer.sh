@@ -39,6 +39,7 @@ done
 #Here we evaluate what distro is running. We either hand-off or process any unique prerequisites that distro has.
 
 #ubuntu
+# This block handles distribution-specific prerequisites and actions.
 if [ "$dist" == "ubuntu" ]
 then
   wget https://raw.githubusercontent.com/opencog/ocpkg/master/ocpkg && chmod 755 ./ocpkg
@@ -117,19 +118,23 @@ then
   #COGUTIL
   if [ "$cogutil" == "y" ] || [ "$cogutil" == "Y" ]
   then
-    cd /tmp/
-    # cleaning up remnants from previous install failures, if any.
-    rm -rf master.tar.gz cogutil-master/
-    wget https://github.com/opencog/cogutil/archive/master.tar.gz
-    tar -xvf master.tar.gz
-    cd cogutil-master/
-    mkdir build
-    cd build/
-    cmake ..
-    make -j"$(nproc)"
-    sudo make install
-    cd ../..
-    rm -rf master.tar.gz cogutil-master/
+    # Install Cogutil prerequisites
+    echo "Installing Cogutil prerequisites..."
+    chmod +x prereq/cogutil/install_prereqs.sh
+    sudo ./prereq/cogutil/install_prereqs.sh
+    
+    # Download and extract source files
+    echo "Downloading Cogutil and related source files..."
+    chmod +x prereq/cogutil/download_source.sh
+    ./prereq/cogutil/download_source.sh
+    
+    # Build and install Cogutil from downloaded source
+    echo "Building and installing Cogutil..."
+    cd /tmp/cogutil-master/
+    mkdir -p build && cd build
+    cmake .. && make -j"$(nproc)"
+    sudo make install && cd /tmp/
+    
   fi
   if [ "$atomspace" == "y" ] || [ "$atomspace" == "Y" ]
   then
