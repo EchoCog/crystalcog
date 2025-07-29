@@ -31,7 +31,7 @@ env:
   BUILD_TYPE: ${{ github.event.inputs.build_type || 'Release' }}
   SKIP_TESTS: ${{ github.event.inputs.skip_tests || false }}
   SKIP_INSTALL: ${{ github.event.inputs.skip_install || false }}
-  CCACHE_DIR: /workspace/.ccache
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
   MAKEFLAGS: -j$(nproc)
 
 permissions:
@@ -60,7 +60,7 @@ jobs:
       - name: Setup ccache
         uses: actions/cache@v4
         with:
-          path: /workspace/.ccache
+          path: ${{ github.workspace }}/.ccache
           key: ccache-${{ steps.cache-key.outputs.value }}
           restore-keys: |
             ccache-
@@ -71,9 +71,6 @@ jobs:
   core-build:
     runs-on: ubuntu-latest
     needs: setup
-    strategy:
-      matrix:
-        component: [cogutil, atomspace, attention, ure, pln, link-grammar, cogserver]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -81,7 +78,7 @@ jobs:
       - name: Restore ccache
         uses: actions/cache@v4
         with:
-          path: /workspace/.ccache
+          path: ${{ github.workspace }}/.ccache
           key: ccache-${{ needs.setup.outputs.cache-key }}
           restore-keys: |
             ccache-
@@ -150,18 +147,18 @@ jobs:
             -DCMAKE_CXX_STANDARD=17 \
             -DCMAKE_CXX_STANDARD_REQUIRED=ON
 
-      - name: Build ${{ matrix.component }}
+      - name: Build core components
         run: |
           cd build
-          make ${{ matrix.component }} -j$(nproc)
+          make all-components -j$(nproc)
 
-      - name: Test ${{ matrix.component }}
+      - name: Test core components
         if: ${{ env.SKIP_TESTS != 'true' }}
         run: |
           cd build
-          ctest --output-on-failure -R ${{ matrix.component }}
+          ctest --output-on-failure
 
-      - name: Install ${{ matrix.component }}
+      - name: Install core components
         if: ${{ env.SKIP_INSTALL != 'true' }}
         run: |
           cd build
@@ -170,142 +167,15 @@ jobs:
       - name: Save ccache
         uses: actions/cache/save@v4
         with:
-          path: /workspace/.ccache
-          key: ccache-${{ needs.setup.outputs.cache-key }}
-
-  # =================================================================
-  # Extended Components Build
-  # =================================================================
-  extended-build:
-    runs-on: ubuntu-latest
-    needs: [setup, core-build]
-    strategy:
-      matrix:
-        component: [
-          asmoses, agents, agi-bio, atomspace-agents, atomspace-bridge,
-          atomspace-cog, atomspace-dht, atomspace-explorer, atomspace-ipfs,
-          atomspace-js, atomspace-metta, atomspace-restful, atomspace-rocks,
-          atomspace-rpc, atomspace-typescript, atomspace-websockets,
-          benchmark, blender_api, blender_api_msgs, cheminformatics,
-          cogprotolab, destin, dimensional-embedding, distributional-value,
-          external-tools, generate, ghost_bridge, guile-dbi,
-          language-learning, learn, lg-atomese, logicmoo_cogserver,
-          loving-ai, loving-ai-ghost, miner, moses, ocpkg, opencog,
-          opencog-cycl, opencog-debian, opencog-neo4j, opencog-nix,
-          opencog.org, opencog_rpi, opencog-to-minecraft, pattern-index,
-          pau2motors, perception, pi_vision, pln-brca-xp, python-attic,
-          python-client, python-destin, relex, rest-api-documentation,
-          robots_config, rocca, ros-behavior-scripting,
-          ros_opencog_robot_embodiment, semantic-vision, sensory,
-          spacetime, stochastic-language-generation, test-datasets,
-          TinyCog, tv-toolbox, unify, unity3d-opencog-game,
-          vision, visualization
-        ]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Restore ccache
-        uses: actions/cache@v4
-        with:
-          path: /workspace/.ccache
-          key: ccache-${{ needs.setup.outputs.cache-key }}
-          restore-keys: |
-            ccache-
-
-      - name: Setup system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            pkg-config \
-            ccache \
-            git \
-            wget \
-            curl \
-            libboost-all-dev \
-            libboost-filesystem-dev \
-            libboost-program-options-dev \
-            libboost-system-dev \
-            libboost-thread-dev \
-            python3-dev \
-            python3-pip \
-            python3-venv \
-            guile-3.0-dev \
-            cython3 \
-            valgrind \
-            doxygen \
-            libpqxx-dev \
-            postgresql-client \
-            ghc \
-            libghc-*-dev \
-            stack \
-            nodejs \
-            npm \
-            rustc \
-            cargo
-
-      - name: Setup Python environment
-        run: |
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Setup Node.js environment
-        run: |
-          if [ -f "package.json" ]; then
-            npm install
-          fi
-
-      - name: Setup Rust environment
-        run: |
-          if [ -f "Cargo.toml" ]; then
-            cargo build --release
-          fi
-
-      - name: Configure CMake
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. \
-            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-            -DCMAKE_INSTALL_PREFIX=/usr/local \
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DBUILD_SHARED_LIBS=ON \
-            -DCMAKE_CXX_STANDARD=17 \
-            -DCMAKE_CXX_STANDARD_REQUIRED=ON
-
-      - name: Build ${{ matrix.component }}
-        run: |
-          cd build
-          make ${{ matrix.component }} -j$(nproc)
-
-      - name: Test ${{ matrix.component }}
-        if: ${{ env.SKIP_TESTS != 'true' }}
-        run: |
-          cd build
-          ctest --output-on-failure -R ${{ matrix.component }}
-
-      - name: Install ${{ matrix.component }}
-        if: ${{ env.SKIP_INSTALL != 'true' }}
-        run: |
-          cd build
-          make install
-
-      - name: Save ccache
-        uses: actions/cache/save@v4
-        with:
-          path: /workspace/.ccache
-          key: ccache-${{ needs.setup.outputs.cache-key }}
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-${{ needs.setup.outputs.cache-key }}-core
 
   # =================================================================
   # Integration Tests
   # =================================================================
   integration-tests:
     runs-on: ubuntu-latest
-    needs: [setup, core-build, extended-build]
+    needs: [setup, core-build]
     services:
       postgres:
         image: postgres:13
@@ -329,9 +199,10 @@ jobs:
       - name: Restore ccache
         uses: actions/cache@v4
         with:
-          path: /workspace/.ccache
-          key: ccache-${{ needs.setup.outputs.cache-key }}
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-${{ needs.setup.outputs.cache-key }}-integration
           restore-keys: |
+            ccache-${{ needs.setup.outputs.cache-key }}-core
             ccache-
 
       - name: Setup system dependencies
@@ -418,15 +289,15 @@ jobs:
       - name: Save ccache
         uses: actions/cache/save@v4
         with:
-          path: /workspace/.ccache
-          key: ccache-${{ needs.setup.outputs.cache-key }}
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-${{ needs.setup.outputs.cache-key }}-integration
 
   # =================================================================
   # Documentation Generation
   # =================================================================
   documentation:
     runs-on: ubuntu-latest
-    needs: [setup, core-build, extended-build]
+    needs: [setup, core-build]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -434,7 +305,7 @@ jobs:
       - name: Restore ccache
         uses: actions/cache@v4
         with:
-          path: /workspace/.ccache
+          path: ${{ github.workspace }}/.ccache
           key: ccache-${{ needs.setup.outputs.cache-key }}
           restore-keys: |
             ccache-
@@ -524,7 +395,7 @@ jobs:
   # =================================================================
   package:
     runs-on: ubuntu-latest
-    needs: [setup, core-build, extended-build, integration-tests]
+    needs: [setup, core-build, integration-tests]
     if: ${{ env.SKIP_INSTALL != 'true' }}
     steps:
       - name: Checkout repository
@@ -533,7 +404,7 @@ jobs:
       - name: Restore ccache
         uses: actions/cache@v4
         with:
-          path: /workspace/.ccache
+          path: ${{ github.workspace }}/.ccache
           key: ccache-${{ needs.setup.outputs.cache-key }}
           restore-keys: |
             ccache-
@@ -624,7 +495,7 @@ jobs:
   # =================================================================
   summary:
     runs-on: ubuntu-latest
-    needs: [setup, core-build, extended-build, integration-tests, documentation, package]
+    needs: [setup, core-build, integration-tests, documentation, package]
     if: always()
     steps:
       - name: Build Summary
@@ -639,7 +510,6 @@ jobs:
           echo "### Job Results" >> $GITHUB_STEP_SUMMARY
           echo "- **Setup:** ${{ needs.setup.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Core Build:** ${{ needs.core-build.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Extended Build:** ${{ needs.extended-build.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Integration Tests:** ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Documentation:** ${{ needs.documentation.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Package:** ${{ needs.package.result }}" >> $GITHUB_STEP_SUMMARY
