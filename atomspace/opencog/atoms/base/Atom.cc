@@ -394,6 +394,7 @@ bool Atom::setPresent(void)
 
 void Atom::setAtomSpace(AtomSpace *tb)
 {
+    // Add null pointer check to prevent dereference
     if (tb == _atom_space) return;
 
     // Either the existing _atomSpace is null, and tb is not, i.e. this
@@ -403,6 +404,12 @@ void Atom::setAtomSpace(AtomSpace *tb)
     // pointers must be null.
     OC_ASSERT (nullptr == _atom_space or tb == nullptr,
                "Atom table is not null!");
+    
+    // Add additional safety check
+    if (tb != nullptr and _atom_space != nullptr) {
+        throw std::runtime_error("Cannot switch atom membership without proper cleanup");
+    }
+    
     _atom_space = tb;
 }
 
