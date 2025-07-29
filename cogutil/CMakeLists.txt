@@ -210,9 +210,7 @@ SET (MAN_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/man")
 # ===================================================================
 # Decide what to build, based on the packages found.
 
-set(CMAKE_PREFIX_PATH "/path/to/cogutil")
-set(CogUtil_DIR "/path/to/cogutil")
-FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
+# CogUtil is this project itself, so we don't need to find it as a package
 
 IF (Boost_FOUND)
 	SET(HAVE_UTIL 1)

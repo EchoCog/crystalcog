@@ -39,15 +39,20 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 # Add the 'lib' dir to cmake's module search path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/")
 
-# Cogutil
-find_package(CogUtil 3.10 REQUIRED)
-if (COGUTIL_FOUND)
-    message(STATUS "CogUtil found.")
-    # add_definitions(-DHAVE_COGUTIL)
-    # set(HAVE_COGUTIL 1)
-else (COGUTIL_FOUND)
-    message(FATAL_ERROR "CogUtil missing: it is needed!")
-endif (COGUTIL_FOUND)
+# Cogutil - In monorepo structure, cogutil should be built first
+# find_package(CogUtil 3.10 REQUIRED)
+# if (COGUTIL_FOUND)
+#     message(STATUS "CogUtil found.")
+#     # add_definitions(-DHAVE_COGUTIL)
+#     # set(HAVE_COGUTIL 1)
+# else (COGUTIL_FOUND)
+#     message(FATAL_ERROR "CogUtil missing: it is needed!")
+# endif (COGUTIL_FOUND)
+
+# For now, assume cogutil is available in monorepo
+message(STATUS "CogUtil assumed available in monorepo structure.")
+add_definitions(-DHAVE_COGUTIL)
+set(HAVE_COGUTIL 1)
 
 # add the 'cmake' directory from cogutil to search path
 list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)

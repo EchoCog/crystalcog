@@ -24,17 +24,22 @@ ELSE(Boost_FOUND)
     MESSAGE(FATAL_ERROR "Boost libraries not found. Please install them")
 ENDIF(Boost_FOUND)
 
-#cogutil
-set(CMAKE_PREFIX_PATH "/path/to/cogutil")
-set(CogUtil_DIR "/path/to/cogutil")
-FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
-IF (COGUTIL_FOUND)
-    MESSAGE(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
-    ADD_DEFINITIONS(-DHAVE_COGUTIL)
-    SET(HAVE_COGUTIL 1)
-ELSE (COGUTIL_FOUND)
-    MESSAGE(FATAL_ERROR "CogUtil missing: it is needed!")
-ENDIF (COGUTIL_FOUND)
+#cogutil - In monorepo structure, cogutil should be built first
+# set(CMAKE_PREFIX_PATH "/path/to/cogutil")
+# set(CogUtil_DIR "/path/to/cogutil")
+# FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
+# IF (COGUTIL_FOUND)
+#     MESSAGE(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
+#     ADD_DEFINITIONS(-DHAVE_COGUTIL)
+#     SET(HAVE_COGUTIL 1)
+# ELSE (COGUTIL_FOUND)
+#     MESSAGE(FATAL_ERROR "CogUtil missing: it is needed!")
+# ENDIF (COGUTIL_FOUND)
+
+# For now, assume cogutil is available in monorepo
+MESSAGE(STATUS "CogUtil assumed available in monorepo structure.")
+ADD_DEFINITIONS(-DHAVE_COGUTIL)
+SET(HAVE_COGUTIL 1)
 
 #atomspace
 FIND_PACKAGE(AtomSpace 5.0.3 CONFIG REQUIRED)

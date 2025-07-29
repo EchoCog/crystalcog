@@ -53,15 +53,20 @@ ADD_DEFINITIONS(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 # Listed in alphabetical order, more or less.
 # CogUtil must come first, because it supplies various FindXXX macros.
 
-# Cogutil
-FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
-IF (COGUTIL_FOUND)
-	MESSAGE(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
-	ADD_DEFINITIONS(-DHAVE_COGUTIL)
-	SET(HAVE_COGUTIL 1)
-ELSE (COGUTIL_FOUND)
-	MESSAGE(FATAL_ERROR "CogUtil missing: it is needed!")
-ENDIF (COGUTIL_FOUND)
+# Cogutil - In monorepo structure, cogutil should be built first
+# FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
+# IF (COGUTIL_FOUND)
+# 	MESSAGE(STATUS "CogUtil version ${COGUTIL_VERSION} found.")
+# 	ADD_DEFINITIONS(-DHAVE_COGUTIL)
+# 	SET(HAVE_COGUTIL 1)
+# ELSE (COGUTIL_FOUND)
+# 	MESSAGE(FATAL_ERROR "CogUtil missing: it is needed!")
+# ENDIF (COGUTIL_FOUND)
+
+# For now, assume cogutil is available in monorepo
+MESSAGE(STATUS "CogUtil assumed available in monorepo structure.")
+ADD_DEFINITIONS(-DHAVE_COGUTIL)
+SET(HAVE_COGUTIL 1)
 
 # add the 'cmake' directory from cogutil to search path
 LIST(APPEND CMAKE_MODULE_PATH ${COGUTIL_DATA_DIR}/cmake)
