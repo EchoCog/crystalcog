@@ -17,16 +17,22 @@ MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 # SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/")
 
-# Cogutil
-FIND_PACKAGE(CogUtil)
-IF (COGUTIL_FOUND)
-        MESSAGE(STATUS "CogUtil found.")
-        ADD_DEFINITIONS(-DHAVE_COGUTIL)
-        SET(HAVE_COGUTIL 1)
-        INCLUDE_DIRECTORIES(${COGUTIL_INCLUDE_DIR})
-ELSE (COGUTIL_FOUND)
-        MESSAGE(FATAL_ERROR "CogUtil missing: it is needed for everything!")
-ENDIF (COGUTIL_FOUND)
+# Cogutil - In monorepo structure, cogutil should be built first
+# FIND_PACKAGE(CogUtil)
+# IF (COGUTIL_FOUND)
+#         MESSAGE(STATUS "CogUtil found.")
+#         ADD_DEFINITIONS(-DHAVE_COGUTIL)
+#         SET(HAVE_COGUTIL 1)
+#         INCLUDE_DIRECTORIES(${COGUTIL_INCLUDE_DIR})
+# ELSE (COGUTIL_FOUND)
+#         MESSAGE(FATAL_ERROR "CogUtil missing: it is needed for everything!")
+# ENDIF (COGUTIL_FOUND)
+
+# For now, assume cogutil is available in monorepo
+MESSAGE(STATUS "CogUtil assumed available in monorepo structure.")
+ADD_DEFINITIONS(-DHAVE_COGUTIL)
+SET(HAVE_COGUTIL 1)
+INCLUDE_DIRECTORIES(${COGUTIL_INCLUDE_DIR})
 
 # add the 'cmake' directory from cogutil to search path
 list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)

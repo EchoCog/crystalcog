@@ -3,25 +3,42 @@ SET(CMAKE_INSTALL_MESSAGE LAZY)
 
 PROJECT(learn)
 
-# Cogutil
-FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
-IF(COGUTIL_FOUND)
-	SET(HAVE_COGUTIL 1)
+# Cogutil - In monorepo structure, cogutil should be built first
+# FIND_PACKAGE(CogUtil 3.10 CONFIG REQUIRED)
+# IF(COGUTIL_FOUND)
+# 	SET(HAVE_COGUTIL 1)
+# 
+# 	# Add the 'cmake' directory from cogutil to search path
+# 	list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
+# 
+# 	# Needed to set OC_CMAKE_DIR
+# 	if (NOT DEFINED ATOMSPACE_DATA_DIR)
+# 		set (ATOMSPACE_DATA_DIR "${COGUTIL_DATA_DIR}")
+# 	endif (NOT DEFINED ATOMSPACE_DATA_DIR)
+# 
+# 	include(OpenCogGccOptions)
+# 	include(OpenCogLibOptions)
+# 	include(OpenCogInstallOptions)
+# 	include(Summary)
+# 
+# ENDIF()
 
-	# Add the 'cmake' directory from cogutil to search path
-	list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
+# For now, assume cogutil is available in monorepo
+MESSAGE(STATUS "CogUtil assumed available in monorepo structure.")
+SET(HAVE_COGUTIL 1)
 
-	# Needed to set OC_CMAKE_DIR
-	if (NOT DEFINED ATOMSPACE_DATA_DIR)
-		set (ATOMSPACE_DATA_DIR "${COGUTIL_DATA_DIR}")
-	endif (NOT DEFINED ATOMSPACE_DATA_DIR)
+# Add the 'cmake' directory from cogutil to search path
+list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
 
-	include(OpenCogGccOptions)
-	include(OpenCogLibOptions)
-	include(OpenCogInstallOptions)
-	include(Summary)
+# Needed to set OC_CMAKE_DIR
+if (NOT DEFINED ATOMSPACE_DATA_DIR)
+	set (ATOMSPACE_DATA_DIR "${COGUTIL_DATA_DIR}")
+endif (NOT DEFINED ATOMSPACE_DATA_DIR)
 
-ENDIF()
+include(OpenCogGccOptions)
+include(OpenCogLibOptions)
+include(OpenCogInstallOptions)
+include(Summary)
 
 # AtomSpace
 FIND_PACKAGE(AtomSpace 5.0.4 CONFIG REQUIRED)

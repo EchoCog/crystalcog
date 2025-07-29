@@ -18,11 +18,8 @@ jobs:
       image: opencog/opencog-deps
       options: --user root
     steps:
-      - name: Checkout CogUtil Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          repository: your-org/cogutil
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Ccache
         uses: actions/cache@v4
@@ -35,13 +32,13 @@ jobs:
 
       - name: Configure Build
         run: |
-          mkdir -p build
-          cd build
+          mkdir -p cogutil/build
+          cd cogutil/build
           cmake ..
 
       - name: Build and Install
         run: |
-          cd build
+          cd cogutil/build
           make
           make install
 
@@ -73,11 +70,8 @@ jobs:
       CCACHE_DIR: /ws/ccache
       MAKEFLAGS: -j2
     steps:
-      - name: Checkout AtomSpace Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          repository: your-org/atomspace
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Wait for PostgreSQL to Start
         run: sleep 30
@@ -93,13 +87,13 @@ jobs:
 
       - name: Configure Build
         run: |
-          mkdir -p build
-          cd build
-          cmake ../../orch-atomspace/atomspace
+          mkdir -p atomspace/build
+          cd atomspace/build
+          cmake ..
 
       - name: Build and Install
         run: |
-          cd build
+          cd atomspace/build
           make
           make install
 
@@ -111,11 +105,8 @@ jobs:
       image: opencog/opencog-deps
       options: --user root
     steps:
-      - name: Checkout CogServer Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          repository: your-org/cogserver
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Ccache
         uses: actions/cache@v4
@@ -128,13 +119,13 @@ jobs:
 
       - name: Configure Build
         run: |
-          mkdir -p build
-          cd build
+          mkdir -p cogserver/build
+          cd cogserver/build
           cmake ..
 
       - name: Build and Install
         run: |
-          cd build
+          cd cogserver/build
           make
           make install
 
@@ -146,11 +137,8 @@ jobs:
       image: opencog/opencog-deps
       options: --user root
     steps:
-      - name: Checkout Attention Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          repository: your-org/attention
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Ccache
         uses: actions/cache@v4
@@ -163,13 +151,13 @@ jobs:
 
       - name: Configure Build
         run: |
-          mkdir -p build
-          cd build
+          mkdir -p attention/build
+          cd attention/build
           cmake ..
 
       - name: Build and Install
         run: |
-          cd build
+          cd attention/build
           make
           make install
 
@@ -181,11 +169,8 @@ jobs:
       image: opencog/opencog-deps
       options: --user root
     steps:
-      - name: Checkout URE Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          repository: your-org/ure
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Ccache
         uses: actions/cache@v4
@@ -198,13 +183,13 @@ jobs:
 
       - name: Configure Build
         run: |
-          mkdir -p build
-          cd build
+          mkdir -p ure/build
+          cd ure/build
           cmake ..
 
       - name: Build and Install
         run: |
-          cd build
+          cd ure/build
           make
           make install
 
