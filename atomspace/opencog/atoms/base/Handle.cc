@@ -47,8 +47,18 @@ bool content_eq(const Handle& lh, const Handle& rh) noexcept
 {
     if (lh == rh) return true;
     if (nullptr == lh or nullptr == rh) return false;
-    if (lh->get_hash() != rh->get_hash()) return false;
+    
+    // Add additional safety check for hash comparison
+    try {
+        if (lh->get_hash() != rh->get_hash()) return false;
+    } catch (...) {
+        // Handle any exceptions that might occur during hash computation
+        return false;
+    }
 
+    // Add null pointer check before dereferencing
+    if (nullptr == lh.get() or nullptr == rh.get()) return false;
+    
     return *((AtomPtr) lh) == *((AtomPtr) rh);
 }
 

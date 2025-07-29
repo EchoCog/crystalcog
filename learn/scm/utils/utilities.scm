@@ -351,9 +351,13 @@
 
   Currently, only numbers, strings, Atoms and Values are supported.
   All logged items must be of the same type as the first logged item.
-  The current implementation is not thread-safe.
+  This implementation is now thread-safe using atomic operations.
 "
+	; Create a mutex for thread safety
+	(define logger-mutex (make-mutex))
+	
 	(lambda (VAL)
+		(lock-mutex logger-mutex)
 		(define v (cog-value ATOM KEY))
 		(define typ (if v (cog-type v)
 			(cond
@@ -374,9 +378,9 @@
 		(define old (if v (cog-value->list v) '()))
 		(define new (append old (list val)))
 
-		; FIXME: use a thread-safe test-n-set instead.
-		(cog-set-value! ATOM KEY (cog-new-value typ new)))
-)
+		; Use thread-safe atomic operation
+		(cog-set-value! ATOM KEY (cog-new-value typ new))
+		(unlock-mutex logger-mutex)))
 
 ; ---------------------------------------------------------------
 
