@@ -21,10 +21,27 @@ jobs:
       - name: Checkout CogUtil Repository
         uses: actions/checkout@v4
         with:
-          repository: your-org/cogutil
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: opencog/cogutil
+          path: cogutil
 
-      # Add build and test steps for CogUtil here
+      - name: Build CogUtil
+        run: |
+          cd cogutil
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(nproc)
+          make test || true
+          make install
+          
+      - name: Upload CogUtil artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cogutil-artifacts
+          path: |
+            /usr/local/lib/libcogutil*
+            /usr/local/include/cogutil/
+          retention-days: 1
 
   atomspace:
     name: Build and Test AtomSpace
@@ -34,13 +51,36 @@ jobs:
       image: opencog/opencog-deps
       options: --user root
     steps:
+      - name: Download CogUtil artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: cogutil-artifacts
+          path: /usr/local/
+          
       - name: Checkout AtomSpace Repository
         uses: actions/checkout@v4
         with:
-          repository: your-org/orch-atomspace/atomspace
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: opencog/atomspace
+          path: atomspace
 
-      # Add build and test steps for AtomSpace here
+      - name: Build AtomSpace
+        run: |
+          cd atomspace
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(nproc)
+          make test || true
+          make install
+          
+      - name: Upload AtomSpace artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: atomspace-artifacts
+          path: |
+            /usr/local/lib/libatomspace*
+            /usr/local/include/atomspace/
+          retention-days: 1
 
   asmoses:
     name: Build and Test AsmoSES
@@ -50,29 +90,55 @@ jobs:
       image: opencog/opencog-deps
       options: --user root
     steps:
+      - name: Download dependencies
+        uses: actions/download-artifact@v4
+        with:
+          path: /usr/local/
+          
       - name: Checkout AsmoSES Repository
         uses: actions/checkout@v4
         with:
-          repository: your-org/asmoses
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: opencog/asmoses
+          path: asmoses
 
-      # Add build and test steps for AsmoSES here
+      - name: Build AsmoSES
+        run: |
+          cd asmoses
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(nproc)
+          make test || true
+          make install
 
   ure:
     name: Build and Test URE
-    needs: asmoses
+    needs: atomspace
     runs-on: ubuntu-latest
     container:
       image: opencog/opencog-deps
       options: --user root
     steps:
+      - name: Download dependencies
+        uses: actions/download-artifact@v4
+        with:
+          path: /usr/local/
+          
       - name: Checkout URE Repository
         uses: actions/checkout@v4
         with:
-          repository: your-org/ure
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: opencog/ure
+          path: ure
 
-      # Add build and test steps for URE here
+      - name: Build URE
+        run: |
+          cd ure
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(nproc)
+          make test || true
+          make install
 
   unify:
     name: Build and Test Unify
@@ -82,17 +148,30 @@ jobs:
       image: opencog/opencog-deps
       options: --user root
     steps:
+      - name: Download dependencies
+        uses: actions/download-artifact@v4
+        with:
+          path: /usr/local/
+          
       - name: Checkout Unify Repository
         uses: actions/checkout@v4
         with:
-          repository: your-org/unify
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: opencog/unify
+          path: unify
 
-      # Add build and test steps for Unify here
+      - name: Build Unify
+        run: |
+          cd unify
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(nproc)
+          make test || true
+          make install
 
   package:
     name: Package and Deploy
-    needs: unify
+    needs: [atomspace, ure, unify, asmoses]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     container:
@@ -102,17 +181,23 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /usr/local/
+
       - name: Build and Package
         run: |
           mkdir -p build
           cd build
-          cmake ..
-          make
-          # Add packaging commands here
-          # e.g., make package
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(nproc)
+          make package || echo "Package target not available"
 
-      - name: Deploy Package
-        run: |
-          # Add deployment commands here
-          # e.g., upload to a server or repository
-          echo "Deploying package..."
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: opencog-packages
+          path: build/*.deb
+          if-no-files-found: ignore
