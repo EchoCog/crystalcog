@@ -1,6 +1,7 @@
+---
 name: Build, Test, and Install
 
-on:
+'on':
   push:
     branches:
       - main
@@ -14,10 +15,13 @@ jobs:
     container:
       image: opencog/opencog-deps
       options: --user root
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
 
       - name: Install additional dependencies
         run: |
@@ -44,7 +48,7 @@ jobs:
         run: |
           cd build
           make test ARGS="-V" || true
-          
+
       - name: Print test log if exists
         if: always()
         run: |
@@ -56,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
-          path: build/
+          path: build
           retention-days: 1
 
   install-and-package:
@@ -65,16 +69,19 @@ jobs:
     container:
       image: opencog/opencog-deps
       options: --user root
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
-          path: build/
+          path: .
 
       - name: Install
         run: |
