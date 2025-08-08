@@ -48,6 +48,44 @@ add_subdirectory(ure)
 # 5. PLN (depends on atomspace and ure)
 add_subdirectory(pln)
 
+# Agent-Zero Genesis Integration (optional)
+option(ENABLE_AGENT_ZERO "Enable Agent-Zero Genesis cognitive orchestration" ON)
+if(ENABLE_AGENT_ZERO)
+    message(STATUS "Agent-Zero Genesis integration enabled")
+    
+    # Find Guile for Agent-Zero modules
+    find_program(GUILE_EXECUTABLE guile)
+    find_program(GUILD_EXECUTABLE guild)
+    
+    if(GUILE_EXECUTABLE AND GUILD_EXECUTABLE)
+        message(STATUS "Found Guile: ${GUILE_EXECUTABLE}")
+        message(STATUS "Found Guild: ${GUILD_EXECUTABLE}")
+        
+        # Add Agent-Zero C components
+        add_subdirectory(src/agent-zero EXCLUDE_FROM_ALL)
+        
+        # Add custom targets for Agent-Zero
+        add_custom_target(agent-zero-modules
+            COMMAND ${CMAKE_SOURCE_DIR}/scripts/agent-zero/build-agent-zero.sh --guile-only
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMENT "Building Agent-Zero Guile modules"
+        )
+        
+        add_custom_target(agent-zero-test
+            COMMAND ${CMAKE_SOURCE_DIR}/tests/agent-zero/integration-test.sh
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            DEPENDS agent-zero-modules
+            COMMENT "Running Agent-Zero integration tests"
+        )
+        
+        # Add to main build targets
+        add_dependencies(all-components agent-zero-modules)
+        
+    else()
+        message(WARNING "Guile not found - Agent-Zero modules will not be built")
+    endif()
+endif()
+
 # 6. Link Grammar (depends on atomspace)
 add_subdirectory(link-grammar)
 
