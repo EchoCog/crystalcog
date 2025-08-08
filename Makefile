@@ -43,6 +43,7 @@ help:
 	@echo "  agent-zero       - Build Agent-Zero Genesis system"
 	@echo "  agent-zero-setup - Setup Agent-Zero environment only"
 	@echo "  agent-zero-test  - Test Agent-Zero components"
+	@echo "  agent-zero-demo  - Run Agent-Zero demonstration"
 	@echo "  agent-zero-clean - Clean Agent-Zero build artifacts"
 	@echo ""
 	@echo "Guix environment targets:"
@@ -294,10 +295,10 @@ help-%:
 	@echo "Example: make build-$*"
 
 # Agent-Zero Genesis targets
-.PHONY: agent-zero agent-zero-setup agent-zero-test agent-zero-clean
+.PHONY: agent-zero agent-zero-setup agent-zero-test agent-zero-clean agent-zero-demo
 
-# Build Agent-Zero Genesis
-agent-zero: build
+# Build Agent-Zero Genesis (standalone)
+agent-zero:
 	@echo "$(BLUE)[INFO]$(NC) Building Agent-Zero Genesis..."
 	@./scripts/agent-zero/build-agent-zero.sh
 	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero Genesis build complete"
@@ -313,6 +314,12 @@ agent-zero-test: agent-zero
 	@echo "$(BLUE)[INFO]$(NC) Testing Agent-Zero Genesis..."
 	@./tests/agent-zero/integration-test.sh
 	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero tests complete"
+
+# Run Agent-Zero demonstration
+agent-zero-demo: agent-zero
+	@echo "$(BLUE)[INFO]$(NC) Running Agent-Zero Genesis demonstration..."
+	@./scripts/agent-zero/demo-agent-zero.sh
+	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero demonstration complete"
 
 # Clean Agent-Zero build artifacts
 agent-zero-clean:
