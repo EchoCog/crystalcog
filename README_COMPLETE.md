@@ -11,7 +11,8 @@ This repository contains comprehensive documentation for the OpenCog artificial 
 1. **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Complete overview of all APIs, functions, and components
 2. **[REST_API_REFERENCE.md](REST_API_REFERENCE.md)** - Detailed REST API reference with examples
 3. **[PYTHON_API_REFERENCE.md](PYTHON_API_REFERENCE.md)** - Comprehensive Python API documentation
-4. **[README_COMPLETE.md](README_COMPLETE.md)** - This file - overview and navigation guide
+4. **[AGENT-ZERO-GENESIS.md](AGENT-ZERO-GENESIS.md)** - Implementation guide for GNU Agent-Zero Genesis system using Guix, Guile, and cognitive architectures
+5. **[README_COMPLETE.md](README_COMPLETE.md)** - This file - overview and navigation guide
 
 ## Quick Start
 

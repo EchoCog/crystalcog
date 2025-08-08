@@ -36,6 +36,13 @@ This repository also includes the following files:
 - `src/lib.rs`: contains a sample Rust code for the Hyperon library
 - `src/test.rs`: contains a sample Rust code for testing the Hyperon library
 
+## Documentation
+
+For complete documentation including specialized implementation guides, see:
+
+- `README_COMPLETE.md`: Comprehensive API documentation and guides
+- `AGENT-ZERO-GENESIS.md`: GNU Agent-Zero Genesis implementation guide using Guix and Guile
+
 Feel free to modify these files as needed for your development process.
 
 ## License
