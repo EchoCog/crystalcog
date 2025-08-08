@@ -38,6 +38,17 @@ help:
 	@echo "  extended         - Build extended components"
 	@echo "  doc              - Generate documentation"
 	@echo "  package          - Create package"
+	@echo ""
+	@echo "Agent-Zero Genesis targets:"
+	@echo "  agent-zero       - Build Agent-Zero Genesis system"
+	@echo "  agent-zero-setup - Setup Agent-Zero environment only"
+	@echo "  agent-zero-test  - Test Agent-Zero components"
+	@echo "  agent-zero-clean - Clean Agent-Zero build artifacts"
+	@echo ""
+	@echo "Guix environment targets:"
+	@echo "  guix-env         - Enter Guix development environment"
+	@echo "  guix-shell       - Enter Guix containerized shell"
+	@echo ""
 	@echo "  help             - Show this help message"
 	@echo ""
 	@echo "Environment variables:"
@@ -55,6 +66,8 @@ help:
 	@echo "  make JOBS=4            # Build with 4 jobs"
 	@echo "  make SKIP_TESTS=true   # Build without tests"
 	@echo "  make clean build       # Clean build"
+	@echo "  make agent-zero        # Build Agent-Zero Genesis"
+	@echo "  make guix-env          # Enter Guix development environment"
 
 # Setup dependencies
 .PHONY: setup
@@ -280,5 +293,44 @@ help-%:
 	@echo ""
 	@echo "Example: make build-$*"
 
-# Default target
-.DEFAULT_GOAL := all
+# Agent-Zero Genesis targets
+.PHONY: agent-zero agent-zero-setup agent-zero-test agent-zero-clean
+
+# Build Agent-Zero Genesis
+agent-zero: build
+	@echo "$(BLUE)[INFO]$(NC) Building Agent-Zero Genesis..."
+	@./scripts/agent-zero/build-agent-zero.sh
+	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero Genesis build complete"
+
+# Setup Agent-Zero environment only
+agent-zero-setup:
+	@echo "$(BLUE)[INFO]$(NC) Setting up Agent-Zero environment..."
+	@./scripts/agent-zero/build-agent-zero.sh --setup-only
+	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero environment setup complete"
+
+# Test Agent-Zero components
+agent-zero-test: agent-zero
+	@echo "$(BLUE)[INFO]$(NC) Testing Agent-Zero Genesis..."
+	@./tests/agent-zero/integration-test.sh
+	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero tests complete"
+
+# Clean Agent-Zero build artifacts
+agent-zero-clean:
+	@echo "$(BLUE)[INFO]$(NC) Cleaning Agent-Zero build artifacts..."
+	@rm -rf build/agent-zero
+	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero artifacts cleaned"
+
+# Guix environment setup
+.PHONY: guix-env guix-shell
+
+# Enter Guix development environment
+guix-env:
+	@echo "$(BLUE)[INFO]$(NC) Entering Guix development environment..."
+	@echo "$(YELLOW)[NOTE]$(NC) This will start a new shell with Agent-Zero dependencies"
+	@guix environment -m guix.scm
+
+# Enter Guix shell (containerized)
+guix-shell:
+	@echo "$(BLUE)[INFO]$(NC) Entering Guix containerized shell..."
+	@echo "$(YELLOW)[NOTE]$(NC) This will start a containerized environment"
+	@guix shell -m guix.scm --container --pure
