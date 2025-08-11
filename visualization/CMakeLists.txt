@@ -140,6 +140,9 @@ INCLUDE("${ATOMSPACE_DATA_DIR}/cmake/OpenCogGuile.cmake")
 
 ADD_SUBDIRECTORY(opencog)
 
+# Add external dependencies
+ADD_SUBDIRECTORY(external)
+
 ADD_CUSTOM_TARGET(cscope
 	COMMAND find opencog examples tests -name '*.cc' -o -name '*.h' -o -name '*.cxxtest' -o -name '*.scm' > ${CMAKE_SOURCE_DIR}/cscope.files
 	COMMAND cscope -b
