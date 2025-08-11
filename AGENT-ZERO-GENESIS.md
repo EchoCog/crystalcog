@@ -446,8 +446,8 @@ echo "Integration tests completed successfully!"
 1. **Immediate (Week 1-2)**:
    - [x] Package OpenCog for Guix
    - [x] Package GGML for Guix  
-   - [ ] Create basic cognitive kernel module
-   - [ ] Implement tensor field encoding
+   - [x] Create basic cognitive kernel module
+   - [x] Implement tensor field encoding
 
 2. **Short-term (Month 1)**:
    - [ ] Implement PLN reasoning module

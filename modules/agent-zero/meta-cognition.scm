@@ -4,13 +4,15 @@
 (define-module (agent-zero meta-cognition)
   #:use-module (agent-zero kernel)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-9)
   #:use-module (ice-9 match)
   #:export (recursive-self-description
             adaptive-attention-allocation
             make-ecan-network
             ecan-add-node!
             ecan-allocate-attention!
-            pln-backward-chaining))
+            pln-backward-chaining
+            meta-cognitive-reflection))
 
 ;; Simulated ECAN network
 (define-record-type <ecan-network>
