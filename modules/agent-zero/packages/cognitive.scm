@@ -9,7 +9,8 @@
   #:use-module (gnu packages cpp)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages pkg-config)
-  #:use-module (gnu packages boost))
+  #:use-module (gnu packages boost)
+  #:use-module (gnu packages commencement))
 
 (define-public opencog
   (package
@@ -42,23 +43,33 @@
 (define-public ggml
   (package
     (name "ggml")
-    (version "0.1.0")
+    (version "0.0.0-7dee1d6")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/ggerganov/ggml.git")
-                    (commit "master")))
+                    (commit "7dee1d6a1e7611f238d09be96738388da97c88ed")))
               (file-name (git-file-name name version))
               (sha256
-               (base32 "abcdef1234567890abcdef1234567890abcdef12"))))
+               (base32 "pcoqpo2vdfnhz6tm2gla6qmljk6df2qn5peghztvo3gke4wqr7qa"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
        '("-DCMAKE_BUILD_TYPE=Release"
          "-DGGML_CUBLAS=OFF"
-         "-DGGML_METAL=OFF")))
+         "-DGGML_METAL=OFF"
+         "-DGGML_OPENMP=ON")
+       #:tests? #f)) ; No tests available in the repository
+    (native-inputs
+     `(("pkg-config" ,pkg-config)))
+    (inputs
+     `(("gcc-toolchain" ,gcc-toolchain)))
     (synopsis "Tensor library for machine learning")
-    (description "GGML is a tensor library for machine learning written in C.")
+    (description "GGML is a tensor library for machine learning written in C.
+It provides low-level cross-platform implementation with integer quantization
+support, broad hardware support, automatic differentiation, and optimizers
+like ADAM and L-BFGS.  It has no third-party dependencies and zero memory
+allocations during runtime.")
     (home-page "https://github.com/ggerganov/ggml")
     (license expat)))
 
