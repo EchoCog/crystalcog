@@ -2,6 +2,7 @@
 ;; /tests/agent-zero/cognitive-tests.scm
 
 (use-modules (srfi srfi-64)
+             (srfi srfi-1)
              (agent-zero kernel)
              (agent-zero meta-cognition))
 
