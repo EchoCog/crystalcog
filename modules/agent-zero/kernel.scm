@@ -11,6 +11,7 @@
             cognitive-tensor-field-encoding
             hypergraph-state
             make-cognitive-kernel
+            make-atomspace
             kernel-tensor-shape
             kernel-function
             kernel-attention

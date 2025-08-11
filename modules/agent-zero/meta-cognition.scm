@@ -9,6 +9,8 @@
   #:export (recursive-self-description
             adaptive-attention-allocation
             make-ecan-network
+            ecan-network?
+            ecan-nodes
             ecan-add-node!
             ecan-allocate-attention!
             pln-backward-chaining
