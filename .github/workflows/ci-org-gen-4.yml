@@ -70,9 +70,15 @@ jobs:
           --health-retries 5
 
     steps:
-      # 1. Checkout the Repository
+      # 1. Mark repo as safe for git
+      - name: Mark repo as safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      # 2. Checkout the Repository
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          submodules: false
 
       # 2. Setup Guix Environment
       - name: Setup Guix Environment
