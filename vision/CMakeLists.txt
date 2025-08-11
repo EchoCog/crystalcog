@@ -54,6 +54,9 @@ message(STATUS "CogUtil assumed available in monorepo structure.")
 add_definitions(-DHAVE_COGUTIL)
 set(HAVE_COGUTIL 1)
 
+# Set COGUTIL_DATA_DIR to point to cogutil directory in monorepo structure
+set(COGUTIL_DATA_DIR "${CMAKE_SOURCE_DIR}/../cogutil")
+
 # add the 'cmake' directory from cogutil to search path
 list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
 
