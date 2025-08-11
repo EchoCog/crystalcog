@@ -92,10 +92,18 @@ SET(HAVE_COGUTIL 1)
 
 # add the 'cmake' directory from cogutil to search path
 list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
-include(OpenCogGccOptions)
-include(OpenCogLibOptions)
-include(OpenCogInstallOptions)
-include(Summary)
+if(EXISTS "${COGUTIL_DATA_DIR}/cmake/OpenCogGccOptions.cmake")
+    include(OpenCogGccOptions)
+endif()
+if(EXISTS "${COGUTIL_DATA_DIR}/cmake/OpenCogLibOptions.cmake")
+    include(OpenCogLibOptions)
+endif()
+if(EXISTS "${COGUTIL_DATA_DIR}/cmake/OpenCogInstallOptions.cmake")
+    include(OpenCogInstallOptions)
+endif()
+if(EXISTS "${COGUTIL_DATA_DIR}/cmake/Summary.cmake")
+    include(Summary)
+endif()
 
 # SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
 

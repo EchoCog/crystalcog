@@ -65,10 +65,18 @@ SET(HAVE_COGUTIL 1)
 
 # Add the 'cmake' directory from cogutil to search path
 LIST(APPEND CMAKE_MODULE_PATH ${COGUTIL_DATA_DIR}/cmake)
-INCLUDE(OpenCogGccOptions)
-INCLUDE(OpenCogLibOptions)
-INCLUDE(OpenCogInstallOptions)
-INCLUDE(Summary)
+IF(EXISTS "${COGUTIL_DATA_DIR}/cmake/OpenCogGccOptions.cmake")
+    INCLUDE(OpenCogGccOptions)
+ENDIF()
+IF(EXISTS "${COGUTIL_DATA_DIR}/cmake/OpenCogLibOptions.cmake")
+    INCLUDE(OpenCogLibOptions)
+ENDIF()
+IF(EXISTS "${COGUTIL_DATA_DIR}/cmake/OpenCogInstallOptions.cmake")
+    INCLUDE(OpenCogInstallOptions)
+ENDIF()
+IF(EXISTS "${COGUTIL_DATA_DIR}/cmake/Summary.cmake")
+    INCLUDE(Summary)
+ENDIF()
 
 # ===================================================================
 # Check for existance of various required, optional packages.
