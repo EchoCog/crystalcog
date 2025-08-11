@@ -164,6 +164,13 @@ add_subdirectory(unity3d-opencog-game)
 add_subdirectory(vision)
 add_subdirectory(visualization)
 
+# DrawTerm System - Revolutionary "Infrastructure as Glyphs" Platform
+option(ENABLE_DRAWTERM "Enable DrawTerm system for AI workbench deployment" ON)
+if(ENABLE_DRAWTERM)
+    message(STATUS "DrawTerm system enabled")
+    add_subdirectory(drawterm)
+endif()
+
 # Install configuration
 include(GNUInstallDirs)
 
