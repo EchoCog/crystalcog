@@ -103,20 +103,38 @@
                     allocations))))))
 
 (test-group "cognitive-reasoning"
-  (test-assert "PLN backward chaining simulation"
+  (test-assert "PLN backward chaining with real reasoning"
     (let ((atomspace (make-atomspace)))
+      (hash-set! atomspace 'intelligence (cons 0.9 0.85))
       (let ((result (pln-backward-chaining atomspace '(ConceptNode "intelligence"))))
+        (and (list? result)
+             (eq? (car result) 'reasoning-result)
+             (assoc 'confidence result)
+             (assoc 'strength result)))))
+
+  (test-assert "PLN forward chaining integration"
+    (let ((atomspace (make-atomspace)))
+      (hash-set! atomspace 'premise1 (cons 0.8 0.9))
+      (let ((result (pln-forward-chaining atomspace '(premise1))))
         (and (list? result)
              (eq? (car result) 'reasoning-result)))))
 
-  (test-assert "meta-cognitive reflection"
+  (test-assert "cognitive PLN reasoning with state"
+    (let ((cognitive-state '((agent-active . #t)
+                            (reasoning-enabled . #t))))
+      (let ((result (cognitive-pln-reasoning cognitive-state 'intelligent-behavior)))
+        (and (list? result)
+             (eq? (car result) 'reasoning-result)))))
+
+  (test-assert "meta-cognitive reflection with enhanced PLN"
     (let ((kernel (spawn-cognitive-kernel '(64 32) 0.9)))
       (let ((reflection (meta-cognitive-reflection kernel)))
         (and (list? reflection)
              (assoc 'current-state reflection)
              (assoc 'self-assessment reflection)
              (assoc 'adaptation-suggestions reflection)
-             (assoc 'meta-learning reflection))))))
+             (assoc 'meta-learning reflection)
+             (assoc 'confidence-level reflection)))))
 
 (test-end "meta-cognition-tests")
 
