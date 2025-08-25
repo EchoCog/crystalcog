@@ -3,6 +3,7 @@
 
 (define-module (agent-zero meta-cognition)
   #:use-module (agent-zero kernel)
+  #:use-module (agent-zero pln-reasoning)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (ice-9 match)
@@ -14,7 +15,11 @@
             ecan-add-node!
             ecan-allocate-attention!
             pln-backward-chaining
+            pln-forward-chaining
             meta-cognitive-reflection
+            ;; PLN reasoning exports
+            cognitive-pln-reasoning
+            meta-pln-inference
             ;; Focused ECAN exports
             make-attention-value
             attention-value?
@@ -299,14 +304,69 @@
     ((adaptation) 0.75)
     (else 0.5)))
 
-;; Simulated PLN interface
+;; PLN reasoning integration
+(define *default-pln-reasoner* #f)
+
+(define (get-default-pln-reasoner)
+  "Get or create the default PLN reasoner instance."
+  (unless *default-pln-reasoner*
+    (set! *default-pln-reasoner* (make-pln-reasoner)))
+  *default-pln-reasoner*)
+
 (define (pln-backward-chaining atomspace query)
-  "Perform PLN backward chaining reasoning."
-  `(reasoning-result
-    (query . ,query)
-    (atomspace . ,atomspace)
-    (confidence . 0.85)
-    (strength . 0.92)))
+  "Perform PLN backward chaining reasoning using the integrated PLN system."
+  (let ((reasoner (get-default-pln-reasoner)))
+    ;; Add atomspace knowledge to reasoner if needed
+    (when (hash-table? atomspace)
+      (hash-for-each (lambda (key value)
+                       (pln-add-knowledge reasoner key value))
+                     atomspace))
+    
+    ;; Perform backward chaining
+    (pln-query reasoner 'backward-chain query)))
+
+(define (pln-forward-chaining atomspace premises)
+  "Perform PLN forward chaining reasoning using the integrated PLN system."
+  (let ((reasoner (get-default-pln-reasoner)))
+    ;; Add atomspace knowledge to reasoner if needed
+    (when (hash-table? atomspace)
+      (hash-for-each (lambda (key value)
+                       (pln-add-knowledge reasoner key value))
+                     atomspace))
+    
+    ;; Perform forward chaining
+    (pln-query reasoner 'forward-chain premises)))
+
+(define (cognitive-pln-reasoning cognitive-state query)
+  "Perform PLN reasoning on cognitive state for a specific query."
+  (let ((reasoner (make-pln-reasoner))
+        (knowledge-base (cognitive-state->knowledge-base cognitive-state)))
+    (apply-pln-reasoning reasoner knowledge-base query)))
+
+(define (meta-pln-inference kernel meta-goals)
+  "Perform meta-level PLN inference about kernel state and goals."
+  (let ((reasoner (get-default-pln-reasoner))
+        (meta-state (kernel->meta-state kernel)))
+    (meta-pln-reasoning reasoner meta-goals)))
+
+(define (cognitive-state->knowledge-base cognitive-state)
+  "Convert cognitive state to PLN knowledge base format."
+  (map (lambda (state-item)
+         (cons (car state-item) 
+               (cons 0.8 0.85))) ; Default truth values
+       cognitive-state))
+
+(define (kernel->meta-state kernel)
+  "Extract meta-state information from cognitive kernel."
+  `((kernel-active . ,(> (kernel-attention kernel) 0.5))
+    (tensor-shape . ,(kernel-tensor-shape kernel))
+    (cognitive-function . ,(kernel-function kernel))
+    (attention-level . ,(kernel-attention kernel))))
+
+;; Compatibility function for existing code
+(define (make-atomspace)
+  "Create atomspace representation compatible with PLN reasoning."
+  (make-hash-table))
 
 ;; Public API functions
 (define (recursive-self-description kernel)
@@ -340,6 +400,75 @@
     (let ((allocations (ecan-allocate-attention! ecan-network goals)))
       ;; Return results in expected format for backward compatibility
       allocations)))
+
+(define (meta-cognitive-reflection kernel)
+  "Perform meta-cognitive reflection using PLN reasoning."
+  (let* ((kernel-state (kernel->meta-state kernel))
+         (reasoner (get-default-pln-reasoner))
+         ;; Add kernel state as knowledge
+         (knowledge-base (map (lambda (state-item)
+                               (cons (car state-item) 
+                                     (cons 0.7 0.8)))
+                             kernel-state))
+         ;; Define reflection queries
+         (reflection-queries '((self-awareness)
+                              (performance-assessment)
+                              (adaptation-needed)
+                              (learning-progress))))
+    
+    ;; Perform PLN reasoning for each reflection query
+    (let ((reflection-results
+           (map (lambda (query)
+                  (let ((result (apply-pln-reasoning reasoner knowledge-base query)))
+                    (cons query result)))
+                reflection-queries)))
+      
+      ;; Generate comprehensive reflection report
+      `((current-state . ,kernel-state)
+        (self-assessment . ,(generate-self-assessment reflection-results))
+        (adaptation-suggestions . ,(generate-adaptation-suggestions reflection-results))
+        (meta-learning . ,(generate-meta-learning-insights reflection-results))
+        (confidence-level . ,(calculate-reflection-confidence reflection-results))))))
+
+(define (generate-self-assessment reflection-results)
+  "Generate self-assessment from reflection results."
+  (let ((awareness-result (assoc 'self-awareness reflection-results))
+        (performance-result (assoc 'performance-assessment reflection-results)))
+    `((self-awareness . ,(if awareness-result 
+                           (pln-get-confidence (cdr awareness-result))
+                           0.5))
+      (performance-level . ,(if performance-result
+                              (pln-get-strength (cdr performance-result))
+                              0.5))
+      (cognitive-clarity . 0.75))))
+
+(define (generate-adaptation-suggestions reflection-results)
+  "Generate adaptation suggestions from reflection results."
+  (let ((adaptation-result (assoc 'adaptation-needed reflection-results)))
+    (if (and adaptation-result 
+             (> (pln-get-confidence (cdr adaptation-result)) 0.6))
+        '((increase-attention-focus . high-priority)
+          (enhance-learning-rate . medium-priority)
+          (optimize-tensor-shape . low-priority))
+        '((maintain-current-state . low-priority)))))
+
+(define (generate-meta-learning-insights reflection-results)
+  "Generate meta-learning insights from reflection results."
+  (let ((learning-result (assoc 'learning-progress reflection-results)))
+    `((learning-effectiveness . ,(if learning-result
+                                   (pln-get-strength (cdr learning-result))
+                                   0.6))
+      (knowledge-integration . 0.7)
+      (reasoning-efficiency . 0.8))))
+
+(define (calculate-reflection-confidence reflection-results)
+  "Calculate overall confidence in reflection results."
+  (let ((confidences (map (lambda (result)
+                           (pln-get-confidence (cdr result)))
+                         reflection-results)))
+    (if (null? confidences)
+        0.5
+        (/ (apply + confidences) (length confidences)))))
 
 (define (calculate-priority score)
   "Calculate activation priority from attention score."
