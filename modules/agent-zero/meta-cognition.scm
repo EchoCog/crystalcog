@@ -36,7 +36,9 @@
             importance-spreading
             rent-collection
             calculate-focused-priority
-            ecan-tournament-selection))
+            ecan-tournament-selection
+            attention-score-for-goal
+            calculate-goal-boosts))
 
 ;; Focused ECAN Attention Value System
 (define-record-type <attention-value>
@@ -255,14 +257,16 @@
          (goal-boosts (calculate-goal-boosts goals)))
     
     ;; Apply goal-based attention boosts
-    (for-each (lambda (node goal)
-                (when (< (length goal-boosts) (length goals))
-                  (let* ((av (hash-ref av-table node))
-                         (boost (attention-score-for-goal goal))
-                         (current-sti (attention-value-sti av))
-                         (boosted-sti (+ current-sti (* boost 20)))) ; Boost STI based on goal relevance
-                    (set-attention-value-sti! av boosted-sti))))
-              nodes goals)
+    (when (and (> (length nodes) 0) (> (length goals) 0))
+      (for-each (lambda (node)
+                  (for-each (lambda (goal)
+                              (let* ((av (hash-ref av-table node))
+                                     (boost (attention-score-for-goal goal))
+                                     (current-sti (attention-value-sti av))
+                                     (boosted-sti (+ current-sti (* boost 50)))) ; Boost STI based on goal relevance (increased multiplier)
+                                (set-attention-value-sti! av boosted-sti)))
+                            goals))
+                nodes))
     
     ;; Return allocation results with focused priorities
     (map (lambda (node)
