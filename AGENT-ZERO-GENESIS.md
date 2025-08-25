@@ -451,7 +451,7 @@ echo "Integration tests completed successfully!"
 
 2. **Short-term (Month 1)**:
    - [x] Implement PLN reasoning module
-   - [ ] Add ECAN attention allocation
+   - [x] Add ECAN attention allocation
    - [ ] Create MOSES optimization framework
    - [ ] Build hypergraph state persistence
 

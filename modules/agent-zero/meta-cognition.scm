@@ -263,7 +263,7 @@
                               (let* ((av (hash-ref av-table node))
                                      (boost (attention-score-for-goal goal))
                                      (current-sti (attention-value-sti av))
-                                     (boosted-sti (+ current-sti (* boost 50)))) ; Boost STI based on goal relevance (increased multiplier)
+                                     (boosted-sti (+ current-sti (* boost 100)))) ; Boost STI based on goal relevance (high multiplier for robustness)
                                 (set-attention-value-sti! av boosted-sti)))
                             goals))
                 nodes))
