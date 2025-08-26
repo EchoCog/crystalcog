@@ -1,0 +1,197 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cerebral-triad
+  labels:
+    triad: cerebral
+    system: cognitive-cities
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      triad: cerebral
+  template:
+    metadata:
+      labels:
+        triad: cerebral
+        system: cognitive-cities
+    spec:
+      containers:
+      - name: thought-service
+        image: cognitive-cities/thought-service:latest
+        ports:
+        - containerPort: 8001
+        env:
+        - name: HEMISPHERE
+          value: "right"
+        - name: COMPONENT_NUMBER
+          value: "7"
+        - name: COMPONENT_LETTER
+          value: "T"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          
+      - name: processing-director
+        image: cognitive-cities/processing-director:latest
+        ports:
+        - containerPort: 8002
+        env:
+        - name: COMPONENT_NUMBER
+          value: "2"
+        - name: COMPONENT_LETTER
+          value: "PD"
+        - name: ECAN_ENABLED
+          value: "true"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          
+      - name: processing-service
+        image: cognitive-cities/processing-service:latest
+        ports:
+        - containerPort: 8003
+        env:
+        - name: COMPONENT_NUMBER
+          value: "5"
+        - name: COMPONENT_LETTER
+          value: "P"
+        - name: PLN_ENABLED
+          value: "true"
+        - name: MOSES_ENABLED
+          value: "true"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+            
+      - name: output-service
+        image: cognitive-cities/output-service:latest
+        ports:
+        - containerPort: 8004
+        env:
+        - name: HEMISPHERE
+          value: "left"
+        - name: COMPONENT_NUMBER
+          value: "4"
+        - name: COMPONENT_LETTER
+          value: "O"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cerebral-triad-service
+  labels:
+    triad: cerebral
+spec:
+  selector:
+    triad: cerebral
+  ports:
+  - name: thought-service
+    port: 8001
+    targetPort: 8001
+  - name: processing-director
+    port: 8002
+    targetPort: 8002
+  - name: processing-service
+    port: 8003
+    targetPort: 8003
+  - name: output-service
+    port: 8004
+    targetPort: 8004
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cerebral-triad-config
+data:
+  triad.yaml: |
+    triad:
+      name: cerebral
+      type: cognitive_membrane
+      hemisphere_mapping:
+        right: intuitive_idea_potential
+        left: applied_technique_commitment
+      services:
+        thought_service:
+          component: T(7)
+          hemisphere: right
+          function: idea_generation
+        processing_director:
+          component: PD(2)
+          hemisphere: central
+          function: coordination
+        processing_service:
+          component: P(5)
+          hemisphere: central
+          function: analytical_processing
+        output_service:
+          component: O(4)
+          hemisphere: left
+          function: output_delivery
+      communication_pathways:
+        to_somatic:
+          - action_commands
+          - behavioral_requests
+          - motor_instructions
+          - output_delivery
+        to_autonomic:
+          - emotional_states
+          - attention_allocation
+          - cognitive_load
+          - processing_status

@@ -1,0 +1,219 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: somatic-triad
+  labels:
+    triad: somatic
+    system: cognitive-cities
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      triad: somatic
+  template:
+    metadata:
+      labels:
+        triad: somatic
+        system: cognitive-cities
+    spec:
+      containers:
+      - name: motor-control-service
+        image: cognitive-cities/motor-control-service:latest
+        ports:
+        - containerPort: 8005
+        env:
+        - name: COMPONENT_NUMBER
+          value: "1"
+        - name: COMPONENT_LETTER
+          value: "M"
+        - name: EVA_INTEGRATION
+          value: "true"
+        - name: EVA_HOST
+          value: "eva-service"
+        - name: EVA_PORT
+          value: "9090"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          
+      - name: sensory-service
+        image: cognitive-cities/sensory-service:latest
+        ports:
+        - containerPort: 8006
+        env:
+        - name: COMPONENT_NUMBER
+          value: "8"
+        - name: COMPONENT_LETTER
+          value: "S"
+        - name: VISION_ENABLED
+          value: "true"
+        - name: AUDIO_ENABLED
+          value: "true"
+        - name: RELEX_HOST
+          value: "relex-service"
+        - name: RELEX_PORT
+          value: "4444"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: sensory-data
+          mountPath: /data/sensory
+          
+      - name: processing-service
+        image: cognitive-cities/somatic-processing-service:latest
+        ports:
+        - containerPort: 8007
+        env:
+        - name: COMPONENT_NUMBER
+          value: "5"
+        - name: COMPONENT_LETTER
+          value: "P"
+        - name: BEHAVIOR_ENGINE
+          value: "openpsi"
+        - name: GHOST_ENABLED
+          value: "true"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+            
+      - name: output-service
+        image: cognitive-cities/somatic-output-service:latest
+        ports:
+        - containerPort: 8008
+        env:
+        - name: COMPONENT_NUMBER
+          value: "4"
+        - name: COMPONENT_LETTER
+          value: "O"
+        - name: TTS_ENABLED
+          value: "true"
+        - name: ANIMATION_ENABLED
+          value: "true"
+        - name: EVA_HOST
+          value: "eva-service"
+        - name: EVA_PORT
+          value: "9090"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+            
+      volumes:
+      - name: sensory-data
+        persistentVolumeClaim:
+          claimName: sensory-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: somatic-triad-service
+  labels:
+    triad: somatic
+spec:
+  selector:
+    triad: somatic
+  ports:
+  - name: motor-control-service
+    port: 8005
+    targetPort: 8005
+  - name: sensory-service
+    port: 8006
+    targetPort: 8006
+  - name: processing-service
+    port: 8007
+    targetPort: 8007
+  - name: output-service
+    port: 8008
+    targetPort: 8008
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sensory-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: somatic-triad-config
+data:
+  triad.yaml: |
+    triad:
+      name: somatic
+      type: extension_membrane
+      function: somatic_balance_performance
+      services:
+        motor_control_service:
+          component: M(1)
+          function: behavior_coordination
+          eva_integration: true
+        sensory_service:
+          component: S(8)
+          function: input_processing
+          eva_pipeline: true
+        processing_service:
+          component: P(5)
+          function: behavioral_technique
+          behavior_engine: openpsi
+        output_service:
+          component: O(4)
+          function: response_delivery
+          tts_integration: true
+      communication_pathways:
+        to_cerebral:
+          - sensory_data
+          - environmental_input
+          - feedback_signals
+          - status_updates
+        to_autonomic:
+          - stress_indicators
+          - sensory_overload
+          - motor_feedback
+          - behavioral_status
