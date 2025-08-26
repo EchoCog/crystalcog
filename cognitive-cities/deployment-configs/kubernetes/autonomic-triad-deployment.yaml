@@ -1,0 +1,246 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autonomic-triad
+  labels:
+    triad: autonomic
+    system: cognitive-cities
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      triad: autonomic
+  template:
+    metadata:
+      labels:
+        triad: autonomic
+        system: cognitive-cities
+    spec:
+      containers:
+      - name: monitoring-service
+        image: cognitive-cities/monitoring-service:latest
+        ports:
+        - containerPort: 8009
+        env:
+        - name: COMPONENT_NUMBER
+          value: "1"
+        - name: COMPONENT_LETTER
+          value: "M"
+        - name: POLARITY
+          value: "sympathetic"
+        - name: MONITORING_INTERVAL
+          value: "30"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8009
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          
+      - name: state-management
+        image: cognitive-cities/state-management:latest
+        ports:
+        - containerPort: 8010
+        env:
+        - name: COMPONENT_NUMBER
+          value: "8"
+        - name: COMPONENT_LETTER
+          value: "S"
+        - name: PERSISTENCE_ENABLED
+          value: "true"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: state-data
+          mountPath: /data/state
+          
+      - name: process-director
+        image: cognitive-cities/autonomic-process-director:latest
+        ports:
+        - containerPort: 8011
+        env:
+        - name: COMPONENT_NUMBER
+          value: "2"
+        - name: COMPONENT_LETTER
+          value: "PD"
+        - name: SCHEDULER_ENABLED
+          value: "true"
+        - name: KUBERNETES_INTEGRATION
+          value: "true"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+            
+      - name: processing-service
+        image: cognitive-cities/autonomic-processing-service:latest
+        ports:
+        - containerPort: 8012
+        env:
+        - name: COMPONENT_NUMBER
+          value: "5"
+        - name: COMPONENT_LETTER
+          value: "P"
+        - name: EMOTIONAL_PROCESSING
+          value: "true"
+        - name: INTUITIVE_PROCESSING
+          value: "true"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+            
+      - name: trigger-service
+        image: cognitive-cities/trigger-service:latest
+        ports:
+        - containerPort: 8013
+        env:
+        - name: COMPONENT_NUMBER
+          value: "7"
+        - name: COMPONENT_LETTER
+          value: "T"
+        - name: POLARITY
+          value: "parasympathetic"
+        - name: TRIGGER_SENSITIVITY
+          value: "0.7"
+        - name: ATOMSPACE_HOST
+          value: "atomspace-service"
+        - name: ATOMSPACE_PORT
+          value: "17001"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+            
+      volumes:
+      - name: state-data
+        persistentVolumeClaim:
+          claimName: state-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autonomic-triad-service
+  labels:
+    triad: autonomic
+spec:
+  selector:
+    triad: autonomic
+  ports:
+  - name: monitoring-service
+    port: 8009
+    targetPort: 8009
+  - name: state-management
+    port: 8010
+    targetPort: 8010
+  - name: process-director
+    port: 8011
+    targetPort: 8011
+  - name: processing-service
+    port: 8012
+    targetPort: 8012
+  - name: trigger-service
+    port: 8013
+    targetPort: 8013
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: state-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autonomic-triad-config
+data:
+  triad.yaml: |
+    triad:
+      name: autonomic
+      type: security_membrane
+      function: emotive_balance_performance
+      polarity_mapping:
+        sympathetic: emotive_technique
+        parasympathetic: intuitive_feeling_potential
+      services:
+        monitoring_service:
+          component: M(1)
+          polarity: sympathetic
+          function: system_monitoring
+        state_management:
+          component: S(8)
+          function: state_persistence
+          persistence: true
+        process_director:
+          component: PD(2)
+          function: background_processes
+          scheduler: kubernetes
+        processing_service:
+          component: P(5)
+          function: emotive_processing
+          emotional_engine: true
+        trigger_service:
+          component: T(7)
+          polarity: parasympathetic
+          function: automatic_responses
+      communication_pathways:
+        to_cerebral:
+          - system_alerts
+          - resource_status
+          - emotional_regulation
+          - attention_requests
+        to_somatic:
+          - regulatory_signals
+          - stress_responses
+          - energy_management
+          - system_constraints
