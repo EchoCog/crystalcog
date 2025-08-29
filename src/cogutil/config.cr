@@ -44,7 +44,7 @@ module CogUtil
       search_paths = [
         ".",
         "./config",
-        ENV["HOME"]? + "/.opencog" if ENV["HOME"]?,
+        ENV["HOME"]? ? ENV["HOME"] + "/.opencog" : nil,
         "/etc/opencog",
         "/usr/local/etc/opencog"
       ].compact
@@ -147,31 +147,30 @@ module CogUtil
       @table.fetch(key, default)
     end
     
-    # Get configuration value as specific type
-    def get(key : String, default : T) : T forall T
+    # Get configuration value as specific types
+    def get_bool(key : String, default : Bool = false) : Bool
       value = @table[key]?
       return default unless value
       
-      case default
-      when Bool
-        case value.downcase
-        when "true", "yes", "1", "on" then true
-        when "false", "no", "0", "off" then false
-        else default
-        end
-      when Int32
-        value.to_i32? || default
-      when Int64
-        value.to_i64? || default
-      when Float32
-        value.to_f32? || default
-      when Float64
-        value.to_f64? || default
-      else
-        value.as(T)
+      case value.downcase
+      when "true", "yes", "1", "on" then true
+      when "false", "no", "0", "off" then false
+      else default
       end
     rescue
       default
+    end
+    
+    def get_int(key : String, default : Int32 = 0) : Int32
+      value = @table[key]?
+      return default unless value
+      value.to_i32? || default
+    end
+    
+    def get_float(key : String, default : Float64 = 0.0) : Float64
+      value = @table[key]?
+      return default unless value
+      value.to_f64? || default
     end
     
     # Set configuration value
@@ -263,7 +262,7 @@ module CogUtil
       end
       
       def self.cogserver_port
-        Config.instance.get("COGSERVER_PORT", 17001)
+        Config.instance.get_int("COGSERVER_PORT", 17001)
       end
       
       def self.cogserver_host
@@ -275,11 +274,11 @@ module CogUtil
       end
       
       def self.enable_persistence?
-        Config.instance.get("ENABLE_PERSISTENCE", false)
+        Config.instance.get_bool("ENABLE_PERSISTENCE", false)
       end
       
       def self.enable_attention?
-        Config.instance.get("ENABLE_ATTENTION", true)
+        Config.instance.get_bool("ENABLE_ATTENTION", true)
       end
     end
   end
@@ -289,7 +288,7 @@ module CogUtil
     Config.instance
   end
   
-  def self.config_get(key : String, default = "")
+  def self.config_get(key : String, default : String = "")
     Config.instance.get(key, default)
   end
   

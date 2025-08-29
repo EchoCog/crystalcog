@@ -1,13 +1,14 @@
 require "spec"
 require "../../src/cogutil/config"
 
+# Helper function for creating test config files
+def create_test_config(content : String, extension : String = ".conf") : String
+  temp_file = File.tempname("test_config", extension)
+  File.write(temp_file, content)
+  temp_file
+end
+
 describe CogUtil::Config do
-  # Create a temporary config file for testing
-  def create_test_config(content : String, extension : String = ".conf") : String
-    temp_file = File.tempname("test_config", extension)
-    File.write(temp_file, content)
-    temp_file
-  end
   
   describe "simple config format" do
     it "loads key=value configuration" do
@@ -52,10 +53,10 @@ describe CogUtil::Config do
       config = CogUtil::Config.new
       config.load_config_file(config_file)
       
-      config.get("BOOL_TRUE", false).should eq(true)
-      config.get("BOOL_FALSE", true).should eq(false)
-      config.get("INT_VALUE", 0).should eq(42)
-      config.get("FLOAT_VALUE", 0.0).should eq(3.14)
+      config.get_bool("BOOL_TRUE", false).should eq(true)
+      config.get_bool("BOOL_FALSE", true).should eq(false)
+      config.get_int("INT_VALUE", 0).should eq(42)
+      config.get_float("FLOAT_VALUE", 0.0).should eq(3.14)
       
       File.delete(config_file)
     end

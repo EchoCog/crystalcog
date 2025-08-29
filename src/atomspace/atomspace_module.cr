@@ -15,7 +15,7 @@ module AtomSpace
     CogUtil::Logger.info("AtomSpace #{VERSION} initializing")
     
     # Create default AtomSpace if configured
-    if CogUtil.config_get("ATOMSPACE_AUTO_CREATE", true)
+    if CogUtil::Config::Shortcuts.enable_attention?
       AtomSpaceManager.default_atomspace
       CogUtil::Logger.info("Default AtomSpace created")
     end
