@@ -1,13 +1,14 @@
 require "spec"
 require "../../src/cogutil/config"
 
+# Helper function for creating test config files
+def create_test_config(content : String, extension : String = ".conf") : String
+  temp_file = File.tempname("test_config", extension)
+  File.write(temp_file, content)
+  temp_file
+end
+
 describe CogUtil::Config do
-  # Create a temporary config file for testing
-  def create_test_config(content : String, extension : String = ".conf") : String
-    temp_file = File.tempname("test_config", extension)
-    File.write(temp_file, content)
-    temp_file
-  end
   
   describe "simple config format" do
     it "loads key=value configuration" do

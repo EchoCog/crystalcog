@@ -17,7 +17,7 @@ module AtomSpace
   end
   
   # Signal for AtomSpace events
-  alias AtomSpaceSignal = Proc(AtomSpaceEvent, Atom, Void)
+  alias AtomSpaceSignal = Proc(AtomSpaceEvent, Atom, Nil)
   
   # The AtomSpace - central knowledge repository
   class AtomSpace

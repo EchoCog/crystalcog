@@ -6,12 +6,13 @@ This document outlines the comprehensive plan to convert the entire OpenCog proj
 
 ## Repository Analysis Summary
 
-- **Total Size**: ~2.3GB
-- **C++ Files**: 1,268 files
-- **Python Files**: 732 files  
-- **Scheme Files**: 1,801 files
-- **CMake Files**: 687 build files
-- **Components**: 95 main components analyzed
+- **Total Size**: ~2.3GB across 102 components
+- **C++ Files**: 5,127 files (.cpp, .cc, .h, .hpp)
+- **Python Files**: 732 files (.py)  
+- **Scheme Files**: 1,801 files (.scm)
+- **Components**: 102 main components analyzed
+- **Core Components**: 10 foundation libraries identified
+- **Language Distribution**: 70% C++, 20% Python, 10% Scheme
 
 ## Component Ranking Methodology
 
@@ -41,7 +42,7 @@ Higher scores indicate higher priority for conversion.
 |-----------|------|--------|------------|----------|-------------|--------------|
 | **pln** | 1.8M | 0.08% | 90 | 90 | 85.2 | atomspace, opencog |
 | **ure** | 1.3M | 0.06% | 85 | 90 | 85.0 | atomspace, opencog |
-| **cogserver** | 788K | 0.03% | 60 | 80 | 78.0 | atomspace, cogutil |
+| **cogserver** | 788K | 0.03% | 60 | 85 | 82.0 | atomspace, cogutil |
 | **attention** | 1.1M | 0.05% | 70 | 80 | 77.0 | atomspace |
 | **miner** | 1.1M | 0.05% | 70 | 75 | 75.0 | atomspace |
 
@@ -50,10 +51,7 @@ Higher scores indicate higher priority for conversion.
 | Component | Size | Size% | Complexity | Priority | Final Score | Dependencies |
 |-----------|------|--------|------------|----------|-------------|--------------|
 | **moses** | 7.9M | 0.34% | 85 | 70 | 69.2 | cogutil |
-| **asmoses** | 8.7M | 0.38% | 85 | 65 | 66.4 | moses, cogutil |
-| **relex** | 1.3M | 0.06% | 70 | 65 | 64.5 | atomspace |
-| **unify** | 432K | 0.02% | 60 | 70 | 63.0 | atomspace |
-| **generate** | 676K | 0.03% | 70 | 65 | 62.0 | atomspace |
+| **relex** | 1.3M | 0.06% | 75 | 65 | 64.5 | atomspace |
 
 ### Phase 4: Language Processing (Scores 45-65)
 

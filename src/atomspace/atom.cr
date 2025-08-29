@@ -4,7 +4,7 @@
 # Atoms are the fundamental units of knowledge representation in OpenCog.
 
 require "./truthvalue"
-require "../../cogutil/cogutil"
+require "../cogutil/cogutil"
 
 module AtomSpace
   # Type system for atoms
@@ -72,7 +72,7 @@ module AtomSpace
     end
     
     # Generate next unique handle
-    private def self.next_handle : Handle
+    protected def self.next_handle : Handle
       @@handle_mutex.synchronize do
         handle = @@next_handle
         @@next_handle += 1
@@ -115,16 +115,6 @@ module AtomSpace
     abstract def content_equals?(other : Atom) : Bool
     
     # Hash function for use in collections
-    def hash(hasher)
-      hasher = type.hash(hasher)
-      hasher = truth_value.hash(hasher)
-      hasher = content_hash(hasher)
-      hasher
-    end
-    
-    # Content hash (implemented by subclasses)
-    abstract def content_hash(hasher) : UInt64
-    
     # Check if atom satisfies a pattern
     def satisfies?(pattern : Atom) : Bool
       # Basic type checking - more sophisticated pattern matching
@@ -195,10 +185,6 @@ module AtomSpace
     def content_equals?(other : Atom) : Bool
       other.is_a?(Node) && other.name == name
     end
-    
-    def content_hash(hasher) : UInt64
-      name.hash(hasher)
-    end
   end
   
   # Link class - atoms that connect other atoms
@@ -242,13 +228,6 @@ module AtomSpace
         return false unless a == b
       end
       true
-    end
-    
-    def content_hash(hasher) : UInt64
-      outgoing.each do |atom|
-        hasher = atom.hash(hasher)
-      end
-      hasher
     end
     
     # Get atom at specific position

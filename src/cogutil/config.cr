@@ -44,7 +44,7 @@ module CogUtil
       search_paths = [
         ".",
         "./config",
-        ENV["HOME"]? + "/.opencog" if ENV["HOME"]?,
+        ENV["HOME"]? ? ENV["HOME"] + "/.opencog" : nil,
         "/etc/opencog",
         "/usr/local/etc/opencog"
       ].compact
