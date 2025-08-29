@@ -58,8 +58,7 @@ Higher scores indicate higher priority for conversion.
 | Component | Size | Size% | Complexity | Priority | Final Score | Dependencies |
 |-----------|------|--------|------------|----------|-------------|--------------|
 | **link-grammar** | 29M | 1.26% | 90 | 60 | 60.8 | cogutil |
-| **language-learning** | 27M | 1.17% | 85 | 55 | 57.9 | link-grammar, atomspace |
-| **lg-atomese** | 388K | 0.02% | 75 | 60 | 57.0 | link-grammar, atomspace |
+| **relex** | 1.3M | 0.06% | 75 | 65 | 64.5 | atomspace |
 | **spacetime** | 308K | 0.01% | 70 | 60 | 56.0 | atomspace |
 
 ### Phase 5: Persistence & Integration (Scores 40-60)
@@ -70,26 +69,26 @@ Higher scores indicate higher priority for conversion.
 | **atomspace-cog** | 696K | 0.03% | 65 | 50 | 50.0 | atomspace, cogserver |
 | **vision** | 320K | 0.01% | 75 | 50 | 47.5 | atomspace |
 | **semantic-vision** | 2.8M | 0.12% | 80 | 45 | 46.4 | vision, atomspace |
-| **pattern-index** | 384K | 0.02% | 70 | 45 | 44.0 | atomspace |
+| **atomspace-restful** | 388K | 0.02% | 70 | 45 | 44.0 | atomspace |
+| **atomspace-dht** | 388K | 0.02% | 70 | 45 | 44.0 | atomspace |
 
-### Phase 6: Domain-Specific (Scores 30-45)
+### Phase 6: Extended Integration (Scores 30-45)
 
 | Component | Size | Size% | Complexity | Priority | Final Score | Dependencies |
 |-----------|------|--------|------------|----------|-------------|--------------|
-| **agi-bio** | 13M | 0.56% | 80 | 35 | 41.3 | atomspace, pln |
-| **cheminformatics** | 140K | 0.01% | 85 | 40 | 40.0 | atomspace |
-| **destin** | 14M | 0.61% | 90 | 30 | 38.2 | None |
-| **rocca** | 5.3M | 0.23% | 85 | 30 | 36.9 | moses |
+| **atomspace-typescript** | 2.4M | 0.10% | 60 | 40 | 42.0 | atomspace |
+| **atomspace-ipfs** | 384K | 0.02% | 75 | 40 | 40.5 | atomspace |
+| **atomspace-neo4j** | 860K | 0.04% | 75 | 35 | 38.5 | atomspace |
+| **atomspace-metta** | 176K | 0.01% | 70 | 40 | 38.0 | atomspace |
+| **linkgrammar-relex-web** | 132K | 0.01% | 60 | 35 | 35.0 | link-grammar |
 
 ### Phase 7: Applications & Tools (Scores 15-35)
 
 | Component | Size | Size% | Complexity | Priority | Final Score | Dependencies |
 |-----------|------|--------|------------|----------|-------------|--------------|
-| **TinyCog** | 147M | 6.39% | 70 | 25 | 32.4 | Simplified OpenCog |
-| **loving-ai** | 58M | 2.52% | 60 | 20 | 28.8 | atomspace, opencog |
-| **blender_api** | 41M | 1.78% | 80 | 15 | 23.9 | External integration |
+| **atomspace-explorer** | 15M | 0.65% | 50 | 25 | 30.2 | Web UI |
 | **unity3d-opencog-game** | 139M | 6.04% | 75 | 10 | 21.8 | Game integration |
-| **atomspace-explorer** | 15M | 0.65% | 50 | 20 | 20.2 | Web UI |
+| **opencog-to-minecraft** | 14M | 0.61% | 70 | 15 | 23.9 | Game integration |
 
 ### Non-Conversion Components
 
@@ -144,6 +143,185 @@ These components will not be converted as they are primarily data, documentation
 - Implement components in dependency order
 - Maintain compatibility layers during transition
 - Add comprehensive testing for each component
+
+## Detailed Component Analysis
+
+### High Priority Components (Phase 1-2)
+
+#### cogutil (1.6M, Complexity: 25, Priority: 100)
+**C++ Files**: 89 files, ~15K LOC
+**Key Components**:
+- Logger: Hierarchical logging system
+- Config: Multi-format configuration management  
+- Random: Thread-safe random number generation
+- Platform: OS abstraction utilities
+
+**Crystal Conversion Strategy**:
+```crystal
+module CogUtil
+  # Leverage Crystal's built-in logging
+  alias Logger = Log
+  
+  # Use Crystal's JSON/YAML for config
+  class Config
+    def initialize(@data : Hash(String, JSON::Any))
+    end
+  end
+end
+```
+
+#### atomspace (18M, Complexity: 85, Priority: 100)
+**C++ Files**: 267 files, ~45K LOC
+**Key Components**:
+- Atom hierarchy (Node/Link)
+- AtomSpace container with indexing
+- Truth values and attention values
+- Pattern matching and queries
+
+**Crystal Conversion Strategy**:
+```crystal
+module AtomSpace
+  abstract class Atom
+    property type : AtomType
+    property truth_value : TruthValue
+  end
+  
+  class AtomSpace
+    @atoms = Hash(Handle, Atom).new
+    @indices = AtomIndex.new
+  end
+end
+```
+
+#### opencog (8.6M, Complexity: 80, Priority: 95)
+**C++ Files**: 201 files, ~35K LOC
+**Key Components**:
+- Query language (QueryEngine)
+- Pattern matcher
+- Rule engine interface
+- Scheme bindings
+
+**Crystal Conversion Strategy**:
+```crystal
+module OpenCog
+  class QueryEngine
+    def execute(query : Query) : BindLinkValue
+      # Pattern matching implementation
+    end
+  end
+end
+```
+
+### Medium Priority Components (Phase 3-4)
+
+#### moses (7.9M, Complexity: 85, Priority: 70)
+**C++ Files**: 178 files, ~32K LOC
+**Purpose**: Meta-Optimizing Semantic Evolutionary Search
+**Dependencies**: cogutil
+
+#### pln (1.8M, Complexity: 90, Priority: 90)
+**C++ Files**: 45 files, ~8K LOC
+**Purpose**: Probabilistic Logic Networks reasoning
+**Dependencies**: atomspace, opencog
+
+#### link-grammar (29M, Complexity: 90, Priority: 60)
+**C++ Files**: 312 files, ~78K LOC
+**Purpose**: Natural language parsing
+**Dependencies**: cogutil
+
+### Implementation Examples
+
+#### Example 1: CogUtil Logger Conversion
+```crystal
+# Original C++ (cogutil/opencog/util/Logger.h)
+class Logger {
+    enum Level { FINE, DEBUG, INFO, WARN, ERROR, NONE };
+    void log(Level level, const std::string& msg);
+};
+
+# Crystal equivalent
+module CogUtil
+  enum LogLevel
+    FINE
+    DEBUG  
+    INFO
+    WARN
+    ERROR
+    NONE
+  end
+  
+  class Logger
+    def self.log(level : LogLevel, message : String)
+      Log.for("opencog").log(crystal_level(level), message)
+    end
+    
+    private def self.crystal_level(level : LogLevel)
+      case level
+      when .debug? then Log::Severity::Debug
+      when .info? then Log::Severity::Info
+      when .warn? then Log::Severity::Warn
+      when .error? then Log::Severity::Error
+      else Log::Severity::Info
+      end
+    end
+  end
+end
+```
+
+#### Example 2: AtomSpace Basic Operations
+```crystal
+# Create AtomSpace and add atoms
+atomspace = AtomSpace::AtomSpace.new
+
+# Add concept nodes
+dog = atomspace.add_node(AtomType::CONCEPT_NODE, "dog")
+animal = atomspace.add_node(AtomType::CONCEPT_NODE, "animal")
+
+# Add inheritance link
+inheritance = atomspace.add_link(
+  AtomType::INHERITANCE_LINK, 
+  [dog, animal],
+  TruthValue.new(0.9, 0.8)
+)
+
+# Query operations
+concept_nodes = atomspace.get_atoms_by_type(AtomType::CONCEPT_NODE)
+incoming = atomspace.get_incoming(dog)
+```
+
+#### Example 3: Truth Value System
+```crystal
+# Original C++ TruthValue system
+struct SimpleTruthValue {
+    float strength;
+    float confidence;
+};
+
+# Crystal equivalent with enhanced type safety
+module AtomSpace
+  struct TruthValue
+    property strength : Float64
+    property confidence : Float64
+    
+    def initialize(@strength : Float64, @confidence : Float64)
+      raise ArgumentError.new("Invalid strength") unless (0.0..1.0).includes?(@strength)
+      raise ArgumentError.new("Invalid confidence") unless (0.0..1.0).includes?(@confidence)
+    end
+    
+    def self.default
+      new(0.5, 0.5)
+    end
+    
+    def merge(other : TruthValue) : TruthValue
+      # Implement truth value merging logic
+      new_strength = (strength * confidence + other.strength * other.confidence) / 
+                     (confidence + other.confidence)
+      new_confidence = confidence + other.confidence
+      TruthValue.new(new_strength, new_confidence.clamp(0.0, 1.0))
+    end
+  end
+end
+```
 
 ## Crystal Language Advantages
 

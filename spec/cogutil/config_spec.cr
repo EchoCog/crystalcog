@@ -53,10 +53,10 @@ describe CogUtil::Config do
       config = CogUtil::Config.new
       config.load_config_file(config_file)
       
-      config.get("BOOL_TRUE", false).should eq(true)
-      config.get("BOOL_FALSE", true).should eq(false)
-      config.get("INT_VALUE", 0).should eq(42)
-      config.get("FLOAT_VALUE", 0.0).should eq(3.14)
+      config.get_bool("BOOL_TRUE", false).should eq(true)
+      config.get_bool("BOOL_FALSE", true).should eq(false)
+      config.get_int("INT_VALUE", 0).should eq(42)
+      config.get_float("FLOAT_VALUE", 0.0).should eq(3.14)
       
       File.delete(config_file)
     end
