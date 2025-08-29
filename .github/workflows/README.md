@@ -151,3 +151,96 @@ You can pass additional CMake arguments through the reusable workflow:
 3. **Cache wisely** - Cache dependencies but not build outputs
 4. **Test in parallel** - Run independent tests concurrently
 5. **Document changes** - Update this README when modifying workflows
+
+## Crystal-Specific Workflows
+
+### Crystal Build and Test (`crystal-build.yml`)
+
+**Purpose**: Automates the Crystal build process with comprehensive error capture and diagnostic reporting.
+
+**Triggers**:
+- Push to main branch (when Crystal source files change)
+- Pull requests to main branch (when Crystal source files change)
+- Manual workflow dispatch
+
+**Features**:
+- **Environment Setup**: Installs Crystal 1.10.1 and required dependencies
+- **Dependency Management**: Runs `shards install` with error capture
+- **Multi-target Build**: Compiles crystalcog, cogutil, atomspace, and opencog components
+- **Test Execution**: Runs Crystal specs and basic functionality tests
+- **Error Diagnostics**: Automatically creates GitHub issues for build failures with:
+  - Detailed error analysis and common causes
+  - Diagnostic explanations for typical Crystal errors
+  - Suggested remediation steps
+  - Build context and environment information
+
+**Error Issue Labels**: `bug`, `crystal-build`, `dependencies`/`compilation-error`/`test-failure`, `automated`
+
+### Development Roadmap Issues (`roadmap-issues.yml`)
+
+**Purpose**: Automatically generates GitHub issues from actionable tasks in the DEVELOPMENT-ROADMAP.md file.
+
+**Triggers**:
+- Weekly schedule (Mondays at 10 AM UTC)
+- Manual workflow dispatch
+- Push to main when DEVELOPMENT-ROADMAP.md changes
+
+**Features**:
+- **Roadmap Verification**: Checks roadmap structure and freshness
+- **Task Parsing**: Extracts incomplete tasks from "Next Steps" sections
+- **Issue Generation**: Creates GitHub issues for uncompleted roadmap tasks
+- **Smart Labeling**: Applies component-specific labels (cogutil, atomspace, PLN, etc.)
+- **Priority Management**: Labels issues based on roadmap section priority
+- **Duplicate Prevention**: Avoids creating duplicate issues
+- **Progress Tracking**: Maintains a summary issue with generation statistics
+
+**Issue Labels**: 
+- `roadmap` - All roadmap-generated issues
+- `crystal-conversion` - Part of Crystal conversion project
+- `priority-{high,medium,low}` - Based on roadmap section
+- Component labels: `cogutil`, `atomspace`, `opencog`, `pln`, `ure`, `testing`, `ci-cd`, `documentation`
+- Section labels: `immediate-actions`, `phase-2-implementation`, etc.
+
+**Manual Options**:
+- `force_recreate`: Close existing roadmap issues and recreate all
+- `roadmap_section`: Process only specific roadmap section
+
+## Crystal Development Workflow
+
+### When Build Fails
+
+1. **Automatic Issue Creation**: The workflow automatically creates an issue with diagnostic information
+2. **Review the Issue**: Check the generated issue for error analysis and suggested fixes
+3. **Fix the Problem**: Address the underlying issue in the code
+4. **Verify Fix**: Push changes to trigger another build
+5. **Close Issue**: Close the automated issue once the build succeeds
+
+### When Working on Roadmap Tasks
+
+1. **Find Tasks**: Check issues labeled with `roadmap` for available tasks
+2. **Assign Yourself**: Assign roadmap issues you plan to work on
+3. **Complete Task**: Implement the roadmap task
+4. **Update Roadmap**: Mark the task as complete in DEVELOPMENT-ROADMAP.md using `- [x]`
+5. **Close Issue**: The issue can be closed when the roadmap is updated
+
+## Configuration
+
+### Crystal Build Workflow
+
+The Crystal version is configured in the workflow file:
+```yaml
+env:
+  CRYSTAL_VERSION: 1.10.1
+```
+
+### Roadmap Issues Workflow
+
+The roadmap file path and schedule are configured:
+```yaml
+env:
+  ROADMAP_FILE: 'DEVELOPMENT-ROADMAP.md'
+  
+# Weekly schedule (Mondays at 10 AM UTC)
+schedule:
+  - cron: '0 10 * * 1'
+```
