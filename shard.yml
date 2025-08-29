@@ -1,0 +1,73 @@
+name: crystalcog
+version: 0.1.0
+
+authors:
+  - OpenCog Community <opencog@googlegroups.com>
+
+crystal: 1.10.1
+
+license: AGPL-3.0
+
+description: |
+  Crystal language implementation of the OpenCog framework.
+  A complete rewrite of the OpenCog artificial intelligence system
+  in Crystal, providing better performance, memory safety, and maintainability.
+
+dependencies:
+  # Core dependencies for AtomSpace functionality
+  json:
+    github: crystal-lang/json
+  yaml:
+    github: crystal-lang/yaml
+  log:
+    github: crystal-lang/log
+  
+  # Database and persistence
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
+  
+  # Networking for CogServer
+  http:
+    github: crystal-lang/http
+  
+  # Scientific computing
+  linalg:
+    github: konovod/linalg
+    version: ~> 1.0.0
+
+development_dependencies:
+  # Testing framework
+  spec:
+    github: crystal-lang/spec
+  
+  # Documentation generation  
+  crystal-docs:
+    github: crystal-lang/crystal-docs
+
+targets:
+  crystalcog:
+    main: src/crystalcog.cr
+
+  # Core library components
+  cogutil:
+    main: src/cogutil/cogutil.cr
+    
+  atomspace:
+    main: src/atomspace/atomspace.cr
+    
+  opencog:
+    main: src/opencog/opencog.cr
+    
+  # Server applications
+  cogserver:
+    main: src/cogserver/cogserver.cr
+    
+  # Command line tools
+  cogshell:
+    main: src/tools/cogshell.cr
+
+scripts:
+  build: crystal build src/crystalcog.cr
+  test: crystal spec
+  docs: crystal docs
+  benchmark: crystal run --release benchmarks/benchmark.cr
