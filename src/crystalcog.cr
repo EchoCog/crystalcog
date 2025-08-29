@@ -4,7 +4,7 @@
 # It provides a unified interface to all OpenCog components.
 
 require "./cogutil/cogutil"
-require "./atomspace/atomspace"  
+require "./atomspace/atomspace_main"
 require "./opencog/opencog"
 
 module CrystalCog
