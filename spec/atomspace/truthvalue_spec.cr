@@ -22,7 +22,7 @@ describe AtomSpace::TruthValue do
     
     it "converts confidence to count" do
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.8)
-      tv.count.should eq(4.0) # 0.8 / (1 - 0.8) = 4
+      tv.count.should be_close(4.0, 0.001) # 0.8 / (1 - 0.8) = 4
     end
     
     it "checks for special values" do
@@ -148,7 +148,7 @@ describe AtomSpace::TruthValue do
       
       # OR: strength = 0.6 + 0.4 - 0.6*0.4 = 0.76
       result.strength.should eq(0.76)
-      result.confidence.should eq(0.56) # 0.8 * 0.7
+      result.confidence.should be_close(0.56, 0.001) # 0.8 * 0.7
     end
     
     it "performs logical NOT correctly" do
@@ -157,7 +157,7 @@ describe AtomSpace::TruthValue do
       result = AtomSpace::TruthValueUtil.not_tv(tv)
       
       # NOT: strength = 1 - 0.8 = 0.2, confidence unchanged
-      result.strength.should eq(0.2)
+      result.strength.should be_close(0.2, 0.001)
       result.confidence.should eq(0.9)
     end
     
@@ -170,7 +170,7 @@ describe AtomSpace::TruthValue do
       # Implication is ¬A ∨ B
       # ¬A = (0.2, 0.9), B = (0.6, 0.7)
       # ¬A ∨ B = 0.2 + 0.6 - 0.2*0.6 = 0.68
-      result.strength.should eq(0.68)
+      result.strength.should be_close(0.68, 0.001)
     end
   end
   

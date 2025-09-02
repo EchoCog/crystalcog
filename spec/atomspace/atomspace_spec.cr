@@ -214,9 +214,10 @@ describe AtomSpace::AtomSpace do
       incoming.should contain(inheritance1)
       incoming.should contain(inheritance2)
       
-      # Animal should have no incoming links
+      # Animal should have one incoming link (as parent in inheritance)
       animal_incoming = atomspace.get_incoming(animal)
-      animal_incoming.should be_empty
+      animal_incoming.size.should eq(1)
+      animal_incoming.should contain(inheritance1)
     end
   end
   
