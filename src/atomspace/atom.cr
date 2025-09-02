@@ -281,7 +281,7 @@ module AtomSpace
   # Specific link types
   class InheritanceLink < Link
     def initialize(child : Atom, parent : Atom, truth_value : TruthValue = TruthValue::DEFAULT_TV)
-      super(AtomType::INHERITANCE_LINK, [child, parent], truth_value)
+      super(AtomType::INHERITANCE_LINK, [child, parent].map(&.as(Atom)), truth_value)
     end
     
     def child : Atom
@@ -295,7 +295,7 @@ module AtomSpace
   
   class EvaluationLink < Link
     def initialize(predicate : Atom, arguments : Atom, truth_value : TruthValue = TruthValue::DEFAULT_TV)
-      super(AtomType::EVALUATION_LINK, [predicate, arguments], truth_value)
+      super(AtomType::EVALUATION_LINK, [predicate, arguments].map(&.as(Atom)), truth_value)
     end
     
     def predicate : Atom
@@ -327,7 +327,7 @@ module AtomSpace
   
   class NotLink < Link
     def initialize(atom : Atom, truth_value : TruthValue = TruthValue::DEFAULT_TV)
-      super(AtomType::NOT_LINK, [atom], truth_value)
+      super(AtomType::NOT_LINK, [atom].map(&.as(Atom)), truth_value)
     end
     
     def operand : Atom

@@ -60,7 +60,7 @@ targets:
     
   # Server applications
   cogserver:
-    main: src/cogserver/cogserver.cr
+    main: src/cogserver/cogserver_main.cr
     
   # Command line tools
   cogshell:

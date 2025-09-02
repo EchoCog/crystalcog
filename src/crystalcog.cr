@@ -6,6 +6,8 @@
 require "./cogutil/cogutil"
 require "./atomspace/atomspace_main"
 require "./opencog/opencog"
+require "./cogserver/cogserver_main"
+require "./pattern_matching/pattern_matching_main"
 
 # Conditionally require server components
 {% if flag?(:with_cogserver) %}
@@ -24,6 +26,8 @@ module CrystalCog
     CogUtil.initialize
     AtomSpace.initialize
     OpenCog.initialize
+    CogServer.initialize
+    PatternMatching.initialize
   end
   
   # Main entry point for command-line usage
@@ -33,7 +37,8 @@ module CrystalCog
     
     case args.first?
     when "server"
-      puts "CogServer functionality not yet implemented"
+      puts "Starting CogServer..."
+      CogServer.main(args[1..])
     when "shell"
       puts "CogShell functionality not yet implemented"
     when "test"

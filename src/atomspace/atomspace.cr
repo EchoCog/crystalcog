@@ -279,15 +279,18 @@ module AtomSpace
     end
     
     def add_inheritance_link(child : Atom, parent : Atom, tv : TruthValue = TruthValue::DEFAULT_TV) : Atom
-      add_link(AtomType::INHERITANCE_LINK, [child, parent], tv)
+      link = InheritanceLink.new(child, parent, tv)
+      add_atom(link)
     end
     
     def add_evaluation_link(predicate : Atom, arguments : Atom, tv : TruthValue = TruthValue::DEFAULT_TV) : Atom
-      add_link(AtomType::EVALUATION_LINK, [predicate, arguments], tv)
+      link = EvaluationLink.new(predicate, arguments, tv)
+      add_atom(link)
     end
     
     def add_list_link(atoms : Array(Atom), tv : TruthValue = TruthValue::DEFAULT_TV) : Atom
-      add_link(AtomType::LIST_LINK, atoms, tv)
+      link = ListLink.new(atoms, tv)
+      add_atom(link)
     end
     
     # Event system

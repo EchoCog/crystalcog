@@ -151,7 +151,7 @@ describe CogUtil::RandGen do
       bytes.size.should eq(10)
       
       # Check that bytes are actually random by ensuring not all are the same
-      bytes.uniq.size.should be > 1
+      bytes.to_a.uniq.size.should be > 1
     end
   end
 end
