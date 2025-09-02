@@ -18,6 +18,12 @@ on:
       - 'shard.yml'
       - '.github/workflows/crystal-build.yml'
   workflow_dispatch:
+    inputs:
+      run_comprehensive_tests:
+        description: 'Run comprehensive test suite'
+        required: false
+        default: 'false'
+        type: boolean
 
 env:
   CRYSTAL_VERSION: 1.10.1
@@ -373,3 +379,41 @@ jobs:
       run: |
         echo "✅ Crystal build and tests completed successfully!"
         echo "Build artifacts are available for download."
+        
+    - name: Trigger comprehensive testing
+      if: github.event.inputs.run_comprehensive_tests == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          await github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'crystal-comprehensive-ci.yml',
+            ref: context.ref,
+            inputs: {
+              run_benchmarks: 'true',
+              test_coverage: 'true'
+            }
+          });
+          
+    - name: Check for test patterns and improvements
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Analyze test results and provide recommendations
+          const buildSuccess = '${{ steps.build.outcome }}' === 'success';
+          const testSuccess = '${{ steps.test.outcome }}' === 'success';
+          
+          if (buildSuccess && testSuccess) {
+            console.log('✅ All tests passed! Consider running comprehensive testing for more coverage.');
+          } else if (!buildSuccess) {
+            console.log('🔧 Build failed. Check compilation errors and dependencies.');
+          } else if (!testSuccess) {
+            console.log('🧪 Tests failed. Review test failures and consider improving test stability.');
+          }
+          
+          // Check if comprehensive testing should be recommended
+          if (buildSuccess && testSuccess && context.eventName === 'pull_request') {
+            console.log('💡 Tip: For pull requests affecting core components, consider running comprehensive tests.');
+          }
