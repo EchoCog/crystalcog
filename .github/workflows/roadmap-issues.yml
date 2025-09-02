@@ -95,6 +95,10 @@ jobs:
 
     - name: Parse roadmap and create issues
       uses: actions/github-script@v7
+      env:
+        ROADMAP_LAST_UPDATED: ${{ needs.verify-roadmap.outputs.last_updated }}
+        ROADMAP_AGE: ${{ needs.verify-roadmap.outputs.roadmap_age }}
+        ROADMAP_FILE: ${{ env.ROADMAP_FILE }}
       with:
         script: |
           const fs = require('fs');
@@ -309,7 +313,7 @@ jobs:
                     '',
                     '---',
                     '*This issue was automatically generated from the development roadmap. ' +
-                    `Last roadmap update: ${needs['verify-roadmap'].outputs.last_updated}*`
+                    `Last roadmap update: ${process.env.ROADMAP_LAST_UPDATED}*`
                   ].filter(line => line !== '').join('\n');
 
                   try {
@@ -347,7 +351,7 @@ jobs:
           console.log(`- Found ${filteredItems.length} roadmap items to process`);
           console.log(`- Created ${createdCount} new issues`);
           console.log(`- Skipped ${skippedCount} existing issues`);
-          console.log(`- Roadmap age: ${needs['verify-roadmap'].outputs.roadmap_age} days`);
+          console.log(`- Roadmap age: ${process.env.ROADMAP_AGE} days`);
           
           // Create summary comment if running manually
           if (context.eventName === 'workflow_dispatch') {
@@ -356,8 +360,8 @@ jobs:
               '',
               '### Processing Results',
               `- **Roadmap processed**: \`${process.env.ROADMAP_FILE}\``,
-              `- **Last updated**: ${needs['verify-roadmap'].outputs.last_updated}`,
-              `- **Age**: ${needs['verify-roadmap'].outputs.roadmap_age} days old`,
+              `- **Last updated**: ${process.env.ROADMAP_LAST_UPDATED}`,
+              `- **Age**: ${process.env.ROADMAP_AGE} days old`,
               `- **Section filter**: ${targetSection || 'All sections'}`,
               `- **Force recreate**: ${forceRecreate ? 'Yes' : 'No'}`,
               '',
