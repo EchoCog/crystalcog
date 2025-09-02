@@ -68,7 +68,9 @@ describe AtomSpace::Atom do
       dog = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "dog")
       animal = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "animal")
       
-      link = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [dog, animal])
+      # Cast to Array(Atom) to satisfy the type system
+      outgoing = [dog, animal].map(&.as(AtomSpace::Atom)).map(&.as(AtomSpace::Atom))
+      link = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, outgoing)
       
       link.type.should eq(AtomSpace::AtomType::INHERITANCE_LINK)
       link.outgoing.size.should eq(2)
@@ -83,7 +85,7 @@ describe AtomSpace::Atom do
       dog = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "dog")
       
       expect_raises(ArgumentError) do
-        AtomSpace::Link.new(AtomSpace::AtomType::CONCEPT_NODE, [dog])
+        AtomSpace::Link.new(AtomSpace::AtomType::CONCEPT_NODE, [dog].map(&.as(AtomSpace::Atom)))
       end
     end
     
@@ -91,7 +93,8 @@ describe AtomSpace::Atom do
       dog = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "dog")
       animal = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "animal")
       
-      link = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [dog, animal])
+      outgoing = [dog, animal].map(&.as(AtomSpace::Atom)).map(&.as(AtomSpace::Atom))
+      link = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, outgoing)
       
       link[0].should eq(dog)
       link[1].should eq(animal)
@@ -104,9 +107,9 @@ describe AtomSpace::Atom do
       animal = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "animal")
       cat = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "cat")
       
-      link1 = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [dog, animal])
-      link2 = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [dog, animal])
-      link3 = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [cat, animal])
+      link1 = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [dog, animal].map(&.as(AtomSpace::Atom)))
+      link2 = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [dog, animal].map(&.as(AtomSpace::Atom)))
+      link3 = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [cat, animal].map(&.as(AtomSpace::Atom)))
       
       link1.content_equals?(link2).should be_true
       link1.content_equals?(link3).should be_false
@@ -116,7 +119,7 @@ describe AtomSpace::Atom do
       dog = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "dog")
       animal = AtomSpace::Node.new(AtomSpace::AtomType::CONCEPT_NODE, "animal")
       
-      link = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [dog, animal])
+      link = AtomSpace::Link.new(AtomSpace::AtomType::INHERITANCE_LINK, [dog, animal].map(&.as(AtomSpace::Atom)))
       
       expected = "(INHERITANCELINK (CONCEPTNODE \"dog\") (CONCEPTNODE \"animal\"))"
       link.to_s.should eq(expected)
@@ -169,7 +172,7 @@ describe AtomSpace::Atom do
       predicate = AtomSpace::PredicateNode.new("likes")
       john = AtomSpace::ConceptNode.new("John")
       mary = AtomSpace::ConceptNode.new("Mary")
-      args = AtomSpace::ListLink.new([john, mary])
+      args = AtomSpace::ListLink.new([john, mary].map(&.as(AtomSpace::Atom)))
       
       link = AtomSpace::EvaluationLink.new(predicate, args)
       
@@ -182,7 +185,7 @@ describe AtomSpace::Atom do
       atoms = [
         AtomSpace::ConceptNode.new("John"),
         AtomSpace::ConceptNode.new("Mary")
-      ]
+      ].map(&.as(AtomSpace::Atom))
       
       link = AtomSpace::ListLink.new(atoms)
       
@@ -194,10 +197,10 @@ describe AtomSpace::Atom do
       atom1 = AtomSpace::ConceptNode.new("A")
       atom2 = AtomSpace::ConceptNode.new("B")
       
-      and_link = AtomSpace::AndLink.new([atom1, atom2])
+      and_link = AtomSpace::AndLink.new([atom1, atom2].map(&.as(AtomSpace::Atom)))
       and_link.type.should eq(AtomSpace::AtomType::AND_LINK)
       
-      or_link = AtomSpace::OrLink.new([atom1, atom2])
+      or_link = AtomSpace::OrLink.new([atom1, atom2].map(&.as(AtomSpace::Atom)))
       or_link.type.should eq(AtomSpace::AtomType::OR_LINK)
       
       not_link = AtomSpace::NotLink.new(atom1)
@@ -263,8 +266,8 @@ describe AtomSpace::Atom do
       predicate = AtomSpace::PredicateNode.new("likes")
       variable = AtomSpace::VariableNode.new("$X")
       inheritance = AtomSpace::InheritanceLink.new(concept, concept)
-      evaluation = AtomSpace::EvaluationLink.new(predicate, AtomSpace::ListLink.new([concept]))
-      list = AtomSpace::ListLink.new([concept])
+      evaluation = AtomSpace::EvaluationLink.new(predicate, AtomSpace::ListLink.new([concept].map(&.as(AtomSpace::Atom))))
+      list = AtomSpace::ListLink.new([concept].map(&.as(AtomSpace::Atom)))
       
       concept.concept_node?.should be_true
       concept.predicate_node?.should be_false
