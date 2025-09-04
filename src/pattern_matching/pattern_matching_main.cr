@@ -21,6 +21,21 @@ module PatternMatching
       PresentConstraint.new(atoms)
     end
     
+    # Create an absent constraint for atoms
+    def self.absent_constraint(atoms : Array(AtomSpace::Atom)) : AbsentConstraint
+      AbsentConstraint.new(atoms)
+    end
+    
+    # Create an equality constraint between two atoms
+    def self.equality_constraint(left : AtomSpace::Atom, right : AtomSpace::Atom) : EqualityConstraint
+      EqualityConstraint.new(left, right)
+    end
+    
+    # Create a greater than constraint for numeric comparisons
+    def self.greater_than_constraint(left : AtomSpace::Atom, right : AtomSpace::Atom) : GreaterThanConstraint
+      GreaterThanConstraint.new(left, right)
+    end
+    
     # Quick match for simple inheritance patterns
     def self.match_inheritance(atomspace : AtomSpace::AtomSpace, child : String?, parent : String?) : Array(MatchResult)
       matcher = PatternMatcher.new(atomspace)
@@ -103,6 +118,28 @@ module PatternMatching
     # Require atoms to be present
     def require_present(atoms : Array(AtomSpace::Atom))
       @constraints << PresentConstraint.new(atoms)
+      self
+    end
+    
+    # Require atoms to be absent
+    def require_absent(atoms : Array(AtomSpace::Atom))
+      @constraints << AbsentConstraint.new(atoms)
+      self
+    end
+    
+    # Add equality constraint between variables or atoms
+    def constrain_equal(left : String | AtomSpace::Atom, right : String | AtomSpace::Atom)
+      left_atom = left.is_a?(String) ? variable(left) : left
+      right_atom = right.is_a?(String) ? variable(right) : right
+      @constraints << EqualityConstraint.new(left_atom, right_atom)
+      self
+    end
+    
+    # Add greater than constraint for numeric comparisons
+    def constrain_greater_than(left : String | AtomSpace::Atom, right : String | AtomSpace::Atom)
+      left_atom = left.is_a?(String) ? variable(left) : left
+      right_atom = right.is_a?(String) ? variable(right) : right
+      @constraints << GreaterThanConstraint.new(left_atom, right_atom)
       self
     end
     

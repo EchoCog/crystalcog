@@ -140,23 +140,299 @@ module PatternMatching
       io << "PresentConstraint(#{@atoms.size} atoms)"
     end
   end
-  
-  # Main pattern matching engine
-  class PatternMatcher
-    getter atomspace : AtomSpace::AtomSpace
+
+  # Absent constraint - ensures atoms do NOT exist in the atomspace
+  class AbsentConstraint < Constraint
+    getter atoms : Array(AtomSpace::Atom)
     
-    def initialize(@atomspace : AtomSpace::AtomSpace)
+    def initialize(@atoms : Array(AtomSpace::Atom))
     end
     
-    # Find all matches for a given pattern
+    def initialize(atom : AtomSpace::Atom)
+      @atoms = [atom]
+    end
+    
+    def satisfied?(bindings : VariableBinding, atomspace : AtomSpace::AtomSpace) : Bool
+      @atoms.all? do |atom|
+        # Substitute variables with bindings
+        substituted = substitute_variables(atom, bindings)
+        !atomspace.contains?(substituted)
+      end
+    end
+    
+    private def substitute_variables(atom : AtomSpace::Atom, bindings : VariableBinding) : AtomSpace::Atom
+      if Pattern.variable?(atom)
+        bindings[atom]? || atom
+      elsif atom.responds_to?(:outgoing)
+        # For links, substitute variables in outgoing atoms
+        new_outgoing = atom.outgoing.map { |child| substitute_variables(child, bindings) }
+        atom # Return original for now
+      else
+        atom
+      end
+    end
+    
+    def to_s(io)
+      io << "AbsentConstraint(#{@atoms.size} atoms)"
+    end
+  end
+
+  # Equality constraint - ensures two expressions bind to equal atoms
+  class EqualityConstraint < Constraint
+    getter left : AtomSpace::Atom
+    getter right : AtomSpace::Atom
+    
+    def initialize(@left : AtomSpace::Atom, @right : AtomSpace::Atom)
+    end
+    
+    def satisfied?(bindings : VariableBinding, atomspace : AtomSpace::AtomSpace) : Bool
+      left_substituted = substitute_variables(@left, bindings)
+      right_substituted = substitute_variables(@right, bindings)
+      left_substituted == right_substituted
+    end
+    
+    private def substitute_variables(atom : AtomSpace::Atom, bindings : VariableBinding) : AtomSpace::Atom
+      if Pattern.variable?(atom)
+        bindings[atom]? || atom
+      elsif atom.responds_to?(:outgoing)
+        new_outgoing = atom.outgoing.map { |child| substitute_variables(child, bindings) }
+        atom # Return original for now
+      else
+        atom
+      end
+    end
+    
+    def to_s(io)
+      io << "EqualityConstraint(#{@left} == #{@right})"
+    end
+  end
+
+  # Greater than constraint - for numeric comparisons
+  class GreaterThanConstraint < Constraint
+    getter left : AtomSpace::Atom
+    getter right : AtomSpace::Atom
+    
+    def initialize(@left : AtomSpace::Atom, @right : AtomSpace::Atom)
+    end
+    
+    def satisfied?(bindings : VariableBinding, atomspace : AtomSpace::AtomSpace) : Bool
+      left_substituted = substitute_variables(@left, bindings)
+      right_substituted = substitute_variables(@right, bindings)
+      
+      # Check if both are numeric
+      if left_substituted.responds_to?(:value) && right_substituted.responds_to?(:value)
+        left_val = left_substituted.value
+        right_val = right_substituted.value
+        
+        if left_val.is_a?(Number) && right_val.is_a?(Number)
+          return left_val > right_val
+        end
+      end
+      
+      false
+    end
+    
+    private def substitute_variables(atom : AtomSpace::Atom, bindings : VariableBinding) : AtomSpace::Atom
+      if Pattern.variable?(atom)
+        bindings[atom]? || atom
+      else
+        atom
+      end
+    end
+    
+    def to_s(io)
+      io << "GreaterThanConstraint(#{@left} > #{@right})"
+    end
+  end
+  
+  # State for backtracking during pattern matching
+  private struct MatchState
+    getter bindings : VariableBinding
+    getter matched_atoms : Array(AtomSpace::Atom)
+    getter clause_index : Int32
+    
+    def initialize(@bindings : VariableBinding, @matched_atoms : Array(AtomSpace::Atom), @clause_index : Int32 = 0)
+    end
+    
+    def dup
+      MatchState.new(@bindings.dup, @matched_atoms.dup, @clause_index)
+    end
+  end
+
+  # Main pattern matching engine with enhanced backtracking
+  class PatternMatcher
+    getter atomspace : AtomSpace::AtomSpace
+    @state_stack : Array(MatchState)
+    @max_results : Int32
+    @timeout_seconds : Int32?
+    
+    def initialize(@atomspace : AtomSpace::AtomSpace, @max_results : Int32 = 1000, @timeout_seconds : Int32? = nil)
+      @state_stack = Array(MatchState).new
+    end
+    
+    # Enhanced find all matches for a given pattern with backtracking
     def match(pattern : Pattern) : Array(MatchResult)
       results = Array(MatchResult).new
+      start_time = Time.monotonic
       
-      # Start with empty bindings and try to match
-      initial_bindings = VariableBinding.new
-      find_matches(pattern, pattern.template, initial_bindings, results)
+      # Initialize state stack
+      @state_stack.clear
+      initial_state = MatchState.new(VariableBinding.new, Array(AtomSpace::Atom).new)
+      @state_stack.push(initial_state)
       
-      results
+      # Start recursive exploration with backtracking
+      explore_pattern(pattern, pattern.template, results, start_time)
+      
+      results.first(@max_results)
+    end
+    
+    # Enhanced recursive pattern exploration with proper backtracking
+    private def explore_pattern(pattern : Pattern, template : AtomSpace::Atom, 
+                              results : Array(MatchResult), start_time : Time::Span)
+      return if check_timeout(start_time)
+      return if results.size >= @max_results
+      
+      current_state = @state_stack.last
+      
+      if Pattern.variable?(template)
+        explore_variable_bindings(pattern, template, results, start_time)
+      elsif template.responds_to?(:outgoing)
+        explore_link_structures(pattern, template, results, start_time)
+      else
+        # Concrete atom - check if it exists and satisfies constraints
+        if @atomspace.contains?(template)
+          if constraints_satisfied?(pattern, current_state.bindings)
+            new_matched = current_state.matched_atoms + [template]
+            results << MatchResult.new(current_state.bindings.dup, new_matched)
+          end
+        end
+      end
+    end
+    
+    # Enhanced variable binding exploration with backtracking
+    private def explore_variable_bindings(pattern : Pattern, variable : AtomSpace::Atom,
+                                        results : Array(MatchResult), start_time : Time::Span)
+      return if check_timeout(start_time)
+      
+      current_state = @state_stack.last
+      
+      # If already bound, check consistency
+      if existing_binding = current_state.bindings[variable]?
+        if constraints_satisfied?(pattern, current_state.bindings)
+          new_matched = current_state.matched_atoms + [existing_binding]
+          results << MatchResult.new(current_state.bindings.dup, new_matched)
+        end
+        return
+      end
+      
+      # Find candidates for this variable
+      candidates = find_variable_candidates(variable, pattern)
+      
+      # Try each candidate with backtracking
+      candidates.each do |candidate|
+        break if results.size >= @max_results
+        break if check_timeout(start_time)
+        
+        # Push new state onto stack (branch point)
+        new_bindings = current_state.bindings.dup
+        new_bindings[variable] = candidate
+        new_state = MatchState.new(new_bindings, current_state.matched_atoms)
+        @state_stack.push(new_state)
+        
+        # Check if constraints are satisfied with this binding
+        if constraints_satisfied?(pattern, new_bindings)
+          new_matched = current_state.matched_atoms + [candidate]
+          results << MatchResult.new(new_bindings, new_matched)
+        end
+        
+        # Backtrack - pop the state
+        @state_stack.pop
+      end
+    end
+    
+    # Enhanced link structure exploration with tree comparison
+    private def explore_link_structures(pattern : Pattern, template : AtomSpace::Atom,
+                                      results : Array(MatchResult), start_time : Time::Span)
+      return if check_timeout(start_time)
+      
+      current_state = @state_stack.last
+      
+      # Find atoms in atomspace with the same type as template
+      candidates = @atomspace.get_atoms_by_type(template.type)
+      
+      candidates.each do |candidate|
+        break if results.size >= @max_results
+        break if check_timeout(start_time)
+        
+        next unless candidate.responds_to?(:outgoing)
+        next unless candidate.outgoing.size == template.outgoing.size
+        
+        # Push state for this candidate exploration
+        candidate_state = current_state.dup
+        @state_stack.push(candidate_state)
+        
+        # Try to match the tree structure recursively
+        if tree_compare(pattern, template, candidate, start_time)
+          final_state = @state_stack.last
+          if constraints_satisfied?(pattern, final_state.bindings)
+            new_matched = final_state.matched_atoms + [candidate]
+            results << MatchResult.new(final_state.bindings.dup, new_matched)
+          end
+        end
+        
+        # Backtrack
+        @state_stack.pop
+      end
+    end
+    
+    # Enhanced tree comparison algorithm from OpenCog specification
+    private def tree_compare(pattern : Pattern, template : AtomSpace::Atom, 
+                           candidate : AtomSpace::Atom, start_time : Time::Span) : Bool
+      return false if check_timeout(start_time)
+      
+      # Base case: both are atoms
+      if !template.responds_to?(:outgoing) && !candidate.responds_to?(:outgoing)
+        return template == candidate || Pattern.variable?(template)
+      end
+      
+      # One is link, one is atom - no match unless template is variable
+      if template.responds_to?(:outgoing) != candidate.responds_to?(:outgoing)
+        return Pattern.variable?(template)
+      end
+      
+      # Both are links - compare recursively
+      return false unless template.responds_to?(:outgoing) && candidate.responds_to?(:outgoing)
+      return false unless template.type == candidate.type
+      return false unless template.outgoing.size == candidate.outgoing.size
+      
+      # Compare each outgoing atom recursively
+      template.outgoing.zip(candidate.outgoing) do |t_atom, c_atom|
+        if Pattern.variable?(t_atom)
+          # Try to bind this variable
+          current_state = @state_stack.last
+          if existing_binding = current_state.bindings[t_atom]?
+            return false unless existing_binding == c_atom
+          else
+            current_state.bindings[t_atom] = c_atom
+          end
+        else
+          # Recursive tree comparison
+          return false unless tree_compare(pattern, t_atom, c_atom, start_time)
+        end
+      end
+      
+      true
+    end
+    
+    # Check for timeout conditions
+    private def check_timeout(start_time : Time::Span) : Bool
+      if timeout = @timeout_seconds
+        elapsed = (Time.monotonic - start_time).total_seconds
+        if elapsed > timeout
+          raise MatchingTimeoutException.new("Pattern matching timed out after #{elapsed} seconds")
+        end
+      end
+      false
     end
     
     # Match a single pattern template and return the first result
@@ -174,25 +450,20 @@ module PatternMatching
                                            .select(&.variable.==(variable))
       
       if type_constraints.empty?
-        # No type constraints, get all concrete atoms
-        # We need to get atoms of specific concrete types
+        # No type constraints, get all concrete atoms (but limit for performance)
         candidates = Array(AtomSpace::Atom).new
         
         # Add all concept nodes
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::CONCEPT_NODE))
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::PREDICATE_NODE))
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::VARIABLE_NODE))
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::NUMBER_NODE))
+        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::CONCEPT_NODE).first(100))
+        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::PREDICATE_NODE).first(100))
+        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::NUMBER_NODE).first(100))
         
-        # Add all concrete link types
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK))
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::EVALUATION_LINK))
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::LIST_LINK))
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::AND_LINK))
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::OR_LINK))
-        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::NOT_LINK))
+        # Add some link types (limited for performance)
+        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK).first(50))
+        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::EVALUATION_LINK).first(50))
+        candidates.concat(@atomspace.get_atoms_by_type(AtomSpace::AtomType::LIST_LINK).first(50))
         
-        candidates.uniq
+        candidates.uniq.first(200) # Limit total candidates for performance
       else
         # Get atoms matching the type constraints
         candidates = Array(AtomSpace::Atom).new
@@ -201,96 +472,11 @@ module PatternMatching
             candidates.concat(@atomspace.get_atoms_by_type(atom_type))
           end
         end
-        candidates.uniq
+        candidates.uniq.first(500) # Allow more when type-constrained
       end
     end
     
-    private def find_matches(pattern : Pattern, template : AtomSpace::Atom, 
-                           bindings : VariableBinding, results : Array(MatchResult))
-      if Pattern.variable?(template)
-        # This is a variable, try to bind it
-        bind_variable(pattern, template, bindings, results)
-      elsif template.responds_to?(:outgoing)
-        # This is a link, match the structure
-        match_link_structure(pattern, template, bindings, results)
-      else
-        # This is a concrete atom, check if it exists
-        if @atomspace.contains?(template)
-          # Check all constraints
-          if constraints_satisfied?(pattern, bindings)
-            results << MatchResult.new(bindings.dup, [template])
-          end
-        end
-      end
-    end
-    
-    private def bind_variable(pattern : Pattern, variable : AtomSpace::Atom,
-                            bindings : VariableBinding, results : Array(MatchResult))
-      # If already bound, check consistency
-      if existing_binding = bindings[variable]?
-        if constraints_satisfied?(pattern, bindings)
-          results << MatchResult.new(bindings.dup, [existing_binding])
-        end
-        return
-      end
-      
-      # Find candidates for this variable
-      candidates = find_variable_candidates(variable, pattern)
-      
-      candidates.each do |candidate|
-        # Try binding this variable to the candidate
-        new_bindings = bindings.dup
-        new_bindings[variable] = candidate
-        
-        # Check if constraints are satisfied
-        if constraints_satisfied?(pattern, new_bindings)
-          results << MatchResult.new(new_bindings, [candidate])
-        end
-      end
-    end
-    
-    private def match_link_structure(pattern : Pattern, template : AtomSpace::Atom,
-                                   bindings : VariableBinding, results : Array(MatchResult))
-      # Find atoms in atomspace with the same type as template
-      candidates = @atomspace.get_atoms_by_type(template.type)
-      
-      candidates.each do |candidate|
-        next unless candidate.responds_to?(:outgoing)
-        next unless candidate.outgoing.size == template.outgoing.size
-        
-        # Try to match each outgoing atom
-        if match_outgoing_atoms(pattern, template.outgoing, candidate.outgoing, bindings, results)
-          # Successfully matched this candidate
-          if constraints_satisfied?(pattern, bindings)
-            results << MatchResult.new(bindings.dup, [candidate])
-          end
-        end
-      end
-    end
-    
-    private def match_outgoing_atoms(pattern : Pattern, template_outgoing : Array(AtomSpace::Atom),
-                                   candidate_outgoing : Array(AtomSpace::Atom), 
-                                   bindings : VariableBinding, results : Array(MatchResult)) : Bool
-      # Simple implementation: match each position independently
-      # More sophisticated implementations would handle permutations and complex matching
-      
-      template_outgoing.zip(candidate_outgoing) do |template_atom, candidate_atom|
-        if Pattern.variable?(template_atom)
-          # Check if this variable can bind to the candidate
-          if existing_binding = bindings[template_atom]?
-            return false unless existing_binding == candidate_atom
-          else
-            bindings[template_atom] = candidate_atom
-          end
-        else
-          # Must match exactly
-          return false unless template_atom == candidate_atom
-        end
-      end
-      
-      true
-    end
-    
+    # Check if all constraints are satisfied with current bindings
     private def constraints_satisfied?(pattern : Pattern, bindings : VariableBinding) : Bool
       pattern.constraints.all? { |constraint| constraint.satisfied?(bindings, @atomspace) }
     end
