@@ -523,6 +523,7 @@ describe "OpenCog Full Integration" do
       
       # Test concept should still exist
       @atomspace.contains?(test_concept).should be_true
+
     end
   end
 end

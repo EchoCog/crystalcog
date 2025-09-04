@@ -3,12 +3,14 @@
 # Basic test of the CrystalCog system
 require "./src/cogutil/cogutil"
 require "./src/atomspace/atomspace_main"
+require "./src/opencog/opencog"
 
 puts "Testing CrystalCog basic functionality..."
 
 # Initialize the systems
 CogUtil.initialize
 AtomSpace.initialize
+OpenCog.initialize
 
 # Create an AtomSpace
 atomspace = AtomSpace::AtomSpace.new
@@ -34,4 +36,40 @@ puts "Contains animal? #{atomspace.contains?(animal)}"
 concept_nodes = atomspace.get_atoms_by_type(AtomSpace::AtomType::CONCEPT_NODE)
 puts "Concept nodes: #{concept_nodes.size}"
 
-puts "\nCrystalCog basic test completed successfully!"
+# Test OpenCog functionality
+puts "\nTesting OpenCog functionality..."
+reasoner = OpenCog.create_reasoner(atomspace)
+
+# Add more knowledge for reasoning
+cat = atomspace.add_concept_node("Cat")
+mammal = atomspace.add_concept_node("Mammal")
+atomspace.add_inheritance_link(dog, mammal)
+atomspace.add_inheritance_link(cat, mammal)
+atomspace.add_inheritance_link(mammal, animal)
+
+puts "Added mammal hierarchy"
+puts "AtomSpace size before reasoning: #{atomspace.size}"
+
+# Perform reasoning
+reasoning_results = reasoner.reason(3)
+puts "Generated #{reasoning_results.size} new inferences"
+puts "AtomSpace size after reasoning: #{atomspace.size}"
+
+# Test AtomUtils
+puts "\nTesting AtomUtils..."
+hierarchy = {
+  "Fish" => ["Animal", "Pet"],
+  "Bird" => ["Animal", "Flying"]
+}
+
+created = OpenCog::AtomUtils.create_hierarchy(atomspace, hierarchy)
+puts "Created #{created.size} atoms from hierarchy"
+
+# Test similarity
+if dog && cat
+  similarity = OpenCog::Reasoning.similarity(atomspace, dog, cat)
+  puts "Dog-Cat similarity: #{similarity}"
+end
+
+puts "\nCrystalCog OpenCog test completed successfully!"
+puts "Final AtomSpace size: #{atomspace.size}"
