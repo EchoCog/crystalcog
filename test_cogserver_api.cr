@@ -56,6 +56,50 @@ begin
     puts "✗ Atoms endpoint failed with code: #{response.status_code}"
   end
   
+  # Test the new endpoints
+  puts "\nTesting sessions endpoint..."
+  response = HTTP::Client.get("http://localhost:18083/sessions")
+  
+  if response.status_code == 200
+    sessions = JSON.parse(response.body)
+    puts "✓ Sessions endpoint working"
+    puts "  Active sessions: #{sessions["active_sessions"]}"
+  else
+    puts "✗ Sessions endpoint failed with code: #{response.status_code}"
+  end
+  
+  puts "\nTesting ping endpoint..."
+  response = HTTP::Client.get("http://localhost:18083/ping")
+  
+  if response.status_code == 200
+    ping = JSON.parse(response.body)
+    puts "✓ Ping endpoint working: #{ping["status"]}"
+  else
+    puts "✗ Ping endpoint failed with code: #{response.status_code}"
+  end
+  
+  puts "\nTesting version endpoint..."
+  response = HTTP::Client.get("http://localhost:18083/version")
+  
+  if response.status_code == 200
+    version = JSON.parse(response.body)
+    puts "✓ Version endpoint working"
+    puts "  Version: #{version["version"]}"
+    puts "  API Version: #{version["api_version"]}"
+  else
+    puts "✗ Version endpoint failed with code: #{response.status_code}"
+  end
+  
+  # Test telnet with command
+  puts "\nTesting telnet with command..."
+  response = HTTP::Client.get("http://localhost:17003?cmd=help")
+  
+  if response.status_code == 200 && response.body.includes?("Available commands")
+    puts "✓ Telnet command processing working"
+  else
+    puts "✗ Telnet command failed with code: #{response.status_code}"
+  end
+  
   puts "\n✓ CogServer HTTP API integration test completed successfully!"
   
 rescue ex
