@@ -353,4 +353,157 @@ describe PLN do
       new_atoms.size.should be >= 0
     end
   end
+  
+  describe PLN::ModusPonensRule do
+    it "has correct name" do
+      rule = PLN::ModusPonensRule.new
+      rule.name.should eq("ModusPonensRule")
+    end
+    
+    it "applies to inheritance links" do
+      atomspace = AtomSpace::AtomSpace.new
+      rule = PLN::ModusPonensRule.new
+      
+      a = atomspace.add_concept_node("A")
+      b = atomspace.add_concept_node("B")
+      inheritance = atomspace.add_inheritance_link(a, b)
+      
+      rule.applies_to?(inheritance).should be_true
+    end
+    
+    it "performs modus ponens correctly" do
+      atomspace = AtomSpace::AtomSpace.new
+      rule = PLN::ModusPonensRule.new
+      
+      # Create A->B and A, expect B
+      tv_ab = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
+      tv_a = AtomSpace::SimpleTruthValue.new(0.9, 0.95)
+      
+      a = atomspace.add_concept_node("A", tv_a)  # A is a fact
+      b = atomspace.add_concept_node("B")
+      inheritance = atomspace.add_inheritance_link(a, b, tv_ab)  # A->B
+      
+      # Apply modus ponens
+      result = rule.apply(inheritance, atomspace)
+      
+      result.should_not be_nil
+      result.not_nil!.name.should eq("B")
+      
+      # Truth value should be calculated correctly
+      tv = result.not_nil!.truth_value
+      tv.strength.should be > 0.5  # Should be reasonably high
+      tv.confidence.should be > 0.5
+    end
+    
+    it "returns nil when antecedent is not present" do
+      atomspace = AtomSpace::AtomSpace.new
+      rule = PLN::ModusPonensRule.new
+      
+      a = atomspace.add_concept_node("A")
+      b = atomspace.add_concept_node("B")
+      inheritance = atomspace.add_inheritance_link(a, b)  # A->B but no A fact
+      
+      result = rule.apply(inheritance, atomspace)
+      result.should be_nil
+    end
+  end
+  
+  describe PLN::AbductionRule do
+    it "has correct name" do
+      rule = PLN::AbductionRule.new
+      rule.name.should eq("AbductionRule")
+    end
+    
+    it "applies to inheritance links" do
+      atomspace = AtomSpace::AtomSpace.new
+      rule = PLN::AbductionRule.new
+      
+      a = atomspace.add_concept_node("A")
+      b = atomspace.add_concept_node("B")
+      inheritance = atomspace.add_inheritance_link(a, b)
+      
+      rule.applies_to?(inheritance).should be_true
+    end
+    
+    it "performs abduction correctly" do
+      atomspace = AtomSpace::AtomSpace.new
+      rule = PLN::AbductionRule.new
+      
+      # Create A->B and C->B, expect A->C
+      tv1 = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
+      tv2 = AtomSpace::SimpleTruthValue.new(0.7, 0.8)
+      
+      a = atomspace.add_concept_node("A")
+      b = atomspace.add_concept_node("B")
+      c = atomspace.add_concept_node("C")
+      
+      inheritance_ab = atomspace.add_inheritance_link(a, b, tv1)  # A->B
+      inheritance_cb = atomspace.add_inheritance_link(c, b, tv2)  # C->B
+      
+      # Apply abduction to A->B
+      result = rule.apply(inheritance_ab, atomspace)
+      
+      result.should_not be_nil
+      result.not_nil!.type.should eq(AtomSpace::AtomType::INHERITANCE_LINK)
+      
+      # Should create A->C
+      link = result.not_nil!.as(AtomSpace::Link)
+      link.outgoing[0].should eq(a)
+      link.outgoing[1].should eq(c)
+      
+      # Truth value should be reasonable
+      tv = link.truth_value
+      tv.strength.should be > 0.0
+      tv.confidence.should be > 0.0
+    end
+    
+    it "returns nil when no matching consequent found" do
+      atomspace = AtomSpace::AtomSpace.new
+      rule = PLN::AbductionRule.new
+      
+      a = atomspace.add_concept_node("A")
+      b = atomspace.add_concept_node("B")
+      inheritance = atomspace.add_inheritance_link(a, b)  # Only A->B, no other ->B
+      
+      result = rule.apply(inheritance, atomspace)
+      result.should be_nil
+    end
+  end
+  
+  describe "PLN integration with advanced rules" do
+    it "uses all rules in reasoning" do
+      atomspace = AtomSpace::AtomSpace.new
+      engine = PLN::PLNEngine.new(atomspace)
+      
+      # Create a scenario that can use multiple rules
+      tv_high = AtomSpace::SimpleTruthValue.new(0.9, 0.95)
+      tv_med = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
+      
+      # Facts
+      cat = atomspace.add_concept_node("cat", tv_high)
+      dog = atomspace.add_concept_node("dog", tv_high)
+      
+      # Rules
+      mammal = atomspace.add_concept_node("mammal")
+      animal = atomspace.add_concept_node("animal")
+      
+      # Inheritance rules: cat->mammal, dog->mammal, mammal->animal
+      atomspace.add_inheritance_link(cat, mammal, tv_med)
+      atomspace.add_inheritance_link(dog, mammal, tv_med)
+      atomspace.add_inheritance_link(mammal, animal, tv_med)
+      
+      initial_size = atomspace.size
+      
+      # Run reasoning
+      new_atoms = engine.reason(3)
+      
+      # Should generate multiple new atoms through different rules
+      new_atoms.should_not be_empty
+      atomspace.size.should be > initial_size
+      
+      # Should be able to derive that cat and dog are both animals
+      # and potentially that cat->dog (via abduction)
+      new_atoms.size.should be > 3
+    end
+  end
 end
