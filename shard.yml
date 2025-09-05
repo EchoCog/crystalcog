@@ -33,6 +33,13 @@ targets:
     
   opencog:
     main: src/opencog/opencog.cr
+  
+  # Pattern processing components  
+  pattern_matching:
+    main: src/pattern_matching/pattern_matching_main.cr
+    
+  pattern_mining:
+    main: src/pattern_mining/pattern_mining_main.cr
     
   nlp:
     main: src/nlp/nlp_main.cr

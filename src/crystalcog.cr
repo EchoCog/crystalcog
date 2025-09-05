@@ -10,6 +10,7 @@ require "./cogserver/cogserver_main"
 require "./pattern_matching/pattern_matching_main"
 require "./attention/attention_main"
 require "./nlp/nlp"
+require "./moses/moses_main"
 
 # Conditionally require server components
 {% if flag?(:with_cogserver) %}
@@ -32,6 +33,7 @@ module CrystalCog
     PatternMatching.initialize
     Attention.initialize
     NLP.initialize
+    Moses.initialize
   end
   
   # Main entry point for command-line usage
@@ -56,11 +58,17 @@ module CrystalCog
       test_nlp_processing
     else
       puts "Usage: crystalcog [server|shell|test|attention|nlp]"
+    when "moses"
+      puts "Running MOSES evolutionary search..."
+      Moses.main(args[1..])
+    else
+      puts "Usage: crystalcog [server|shell|test|attention|moses]"
       puts "  server     - Start the CogServer"
       puts "  shell      - Start interactive shell"  
       puts "  test       - Run basic test operations"
       puts "  attention  - Demo attention allocation mechanisms"
       puts "  nlp        - Demo natural language processing"
+      puts "  moses      - Run MOSES evolutionary program learning"
     end
   end
   
