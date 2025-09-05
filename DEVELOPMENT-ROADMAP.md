@@ -478,7 +478,7 @@ crystalcog/
 - ✅ PLN reasoning successfully generating new knowledge
 - ✅ URE framework performing forward/backward chaining
 - [ ] 90%+ test coverage
-- [ ] Performance within 20% of C++ implementation
+- [x] Performance within 20% of C++ implementation
 - [ ] Memory usage comparable to C++
 
 **Milestone Achievements:**
