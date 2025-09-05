@@ -416,8 +416,8 @@ crystalcog/
    - ✅ Complete opencog core libraries
    - ✅ Implement cogserver with network API
    - [ ] Add attention allocation mechanisms
-   - [ ] Create pattern matching engine
-   - [x] Implement basic query language
+   - ✅ Create pattern matching engine
+   - ✅ Implement basic query language
 
 3. **Phase 3 Implementation** (Week 5-8)
    - [ ] Implement moses (Meta-Optimizing Semantic Evolutionary Search)
