@@ -9,6 +9,7 @@ require "./opencog/opencog"
 require "./cogserver/cogserver_main"
 require "./pattern_matching/pattern_matching_main"
 require "./attention/attention_main"
+require "./nlp/nlp"
 
 # Conditionally require server components
 {% if flag?(:with_cogserver) %}
@@ -30,6 +31,7 @@ module CrystalCog
     CogServer.initialize
     PatternMatching.initialize
     Attention.initialize
+    NLP.initialize
   end
   
   # Main entry point for command-line usage
@@ -49,12 +51,16 @@ module CrystalCog
     when "attention"
       puts "Running attention allocation demo..."
       test_attention_allocation
+    when "nlp"
+      puts "Running NLP demo..."
+      test_nlp_processing
     else
-      puts "Usage: crystalcog [server|shell|test|attention]"
+      puts "Usage: crystalcog [server|shell|test|attention|nlp]"
       puts "  server     - Start the CogServer"
       puts "  shell      - Start interactive shell"  
       puts "  test       - Run basic test operations"
       puts "  attention  - Demo attention allocation mechanisms"
+      puts "  nlp        - Demo natural language processing"
     end
   end
   
@@ -145,6 +151,83 @@ module CrystalCog
     end
     
     puts "\n=== Attention Allocation Demo Complete ==="
+  end
+  
+  # Test NLP processing capabilities
+  private def self.test_nlp_processing
+    puts "=== Natural Language Processing Demo ==="
+    
+    # Create atomspace
+    atomspace = AtomSpace::AtomSpace.new
+    
+    # Create basic linguistic knowledge base
+    NLP.create_linguistic_kb(atomspace)
+    puts "Created linguistic knowledge base with #{atomspace.size} atoms"
+    
+    # Process some sample text
+    sample_texts = [
+      "The cat sits on the mat.",
+      "Dogs are loyal animals.",
+      "Natural language processing is fascinating."
+    ]
+    
+    sample_texts.each_with_index do |text, i|
+      puts "\nProcessing text #{i + 1}: '#{text}'"
+      
+      # Process the text
+      atoms = NLP.process_text(text, atomspace)
+      puts "  Created #{atoms.size} atoms from text processing"
+      
+      # Get tokenization
+      tokens = NLP::Tokenizer.tokenize(text)
+      puts "  Tokens: #{tokens}"
+      
+      # Get token statistics
+      token_stats = NLP::Tokenizer.get_token_stats(tokens)
+      puts "  Token stats: #{token_stats}"
+      
+      # Get text statistics
+      text_stats = NLP::TextProcessor.get_text_stats(text)
+      puts "  Text stats: words=#{text_stats["word_count"]}, sentences=#{text_stats["sentence_count"]}"
+      
+      # Extract keywords
+      keywords = NLP::TextProcessor.extract_keywords(text, 3)
+      puts "  Keywords: #{keywords}"
+    end
+    
+    # Create some semantic relationships
+    puts "\nCreating semantic relationships..."
+    NLP::LinguisticAtoms.create_semantic_relation(atomspace, "cat", "animal", "isa", 0.9)
+    NLP::LinguisticAtoms.create_semantic_relation(atomspace, "dog", "animal", "isa", 0.9)
+    NLP::LinguisticAtoms.create_semantic_relation(atomspace, "happy", "sad", "antonym", 0.8)
+    
+    # Add predefined lexical relations
+    lexical_atoms = NLP::LinguisticAtoms.create_lexical_relations(atomspace)
+    puts "Added #{lexical_atoms.size} lexical relations"
+    
+    # Show final statistics
+    puts "\nFinal AtomSpace statistics:"
+    puts "  Total atoms: #{atomspace.size}"
+    
+    linguistic_stats = NLP.get_linguistic_stats(atomspace)
+    puts "  Linguistic atoms: #{linguistic_stats}"
+    
+    complexity = NLP::LinguisticAtoms.get_linguistic_complexity(atomspace)
+    puts "  Complexity metrics: #{complexity}"
+    
+    # Demonstrate word and sentence retrieval
+    word_atoms = NLP::LinguisticAtoms.get_word_atoms(atomspace)
+    sentence_atoms = NLP::LinguisticAtoms.get_sentence_atoms(atomspace)
+    puts "  Word atoms: #{word_atoms.size}"
+    puts "  Sentence atoms: #{sentence_atoms.size}"
+    
+    # Show some example atoms
+    puts "\nSample word atoms:"
+    word_atoms.first(5).each do |atom|
+      puts "  - #{atom.name}"
+    end
+    
+    puts "\n=== Natural Language Processing Demo Complete ==="
   end
 end
 

@@ -34,6 +34,9 @@ targets:
   opencog:
     main: src/opencog/opencog.cr
     
+  nlp:
+    main: src/nlp/nlp_main.cr
+    
   # Server applications
   cogserver:
     main: src/cogserver/cogserver_main.cr
