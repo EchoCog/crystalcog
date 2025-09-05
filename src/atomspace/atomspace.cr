@@ -5,6 +5,7 @@
 
 require "./truthvalue"
 require "./atom"
+require "./storage"
 require "../cogutil/cogutil"
 
 module AtomSpace
@@ -347,6 +348,69 @@ module AtomSpace
         puts "  Unique names: #{@atoms_by_name.size}"
         puts "  Link patterns: #{@atoms_by_outgoing.size}"
       end
+    end
+    
+    # Persistence methods - attach storage backends
+    def attach_storage(storage : StorageNode)
+      @attached_storages ||= [] of StorageNode
+      @attached_storages.not_nil! << storage
+      CogUtil::Logger.info("Attached storage: #{storage.name}")
+    end
+    
+    def detach_storage(storage : StorageNode)
+      @attached_storages.try(&.delete(storage))
+      CogUtil::Logger.info("Detached storage: #{storage.name}")
+    end
+    
+    def get_attached_storages : Array(StorageNode)
+      @attached_storages || [] of StorageNode
+    end
+    
+    # Store AtomSpace to all attached storages
+    def store_all : Bool
+      success = true
+      get_attached_storages.each do |storage|
+        success = false unless storage.store_atomspace(self)
+      end
+      success
+    end
+    
+    # Load from all attached storages
+    def load_all : Bool
+      success = true
+      get_attached_storages.each do |storage|
+        success = false unless storage.load_atomspace(self)
+      end
+      success
+    end
+    
+    # Store to specific storage
+    def store_to(storage : StorageNode) : Bool
+      storage.store_atomspace(self)
+    end
+    
+    # Load from specific storage
+    def load_from(storage : StorageNode) : Bool
+      storage.load_atomspace(self)
+    end
+    
+    # Convenience methods for creating storage nodes
+    def create_file_storage(name : String, file_path : String) : FileStorageNode
+      storage = FileStorageNode.new(name, file_path)
+      attach_storage(storage)
+      storage
+    end
+    
+    def create_sqlite_storage(name : String, db_path : String) : SQLiteStorageNode
+      storage = SQLiteStorageNode.new(name, db_path)
+      attach_storage(storage)
+      storage
+    end
+    
+    def create_cog_storage(name : String, host : String, port : Int32) : CogStorageNode
+      storage = CogStorageNode.new(name, host, port)
+      attach_storage(storage)
+      storage
     end
     
     # Export to string representation
