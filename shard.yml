@@ -41,6 +41,9 @@ targets:
   pattern_mining:
     main: src/pattern_mining/pattern_mining_main.cr
     
+  nlp:
+    main: src/nlp/nlp_main.cr
+    
   # Server applications
   cogserver:
     main: src/cogserver/cogserver_main.cr

@@ -6,6 +6,7 @@ require "../src/atomspace/atomspace_main"
 require "../src/pln/pln"
 require "../src/ure/ure" 
 require "../src/opencog/opencog"
+require "../src/nlp/nlp"
 
 # Require all cogutil specs
 require "./cogutil/logger_spec"
@@ -26,6 +27,12 @@ require "./pln/pln_spec"
 require "./ure/ure_spec"
 require "./opencog/opencog_spec"
 
+# Require NLP specs
+require "./nlp/nlp_spec"
+require "./nlp/tokenizer_spec"
+require "./nlp/text_processor_spec"
+require "./nlp/linguistic_atoms_spec"
+
 # Require performance tests
 require "./performance/performance_spec"
 
@@ -44,6 +51,7 @@ describe "CrystalCog Integration Tests" do
     PLN.initialize
     URE.initialize
     OpenCog.initialize
+    NLP.initialize
   end
   
   it "initializes all systems correctly" do
@@ -131,6 +139,35 @@ describe "CrystalCog Integration Tests" do
     # Should work together without conflicts
     (pln_atoms + ure_atoms).size.should be >= 0
     atomspace.size.should be >= initial_size
+  end
+  
+  it "integrates NLP with reasoning systems" do
+    # Test that NLP works with PLN and URE
+    atomspace = AtomSpace::AtomSpace.new
+    
+    # Create linguistic knowledge base
+    NLP.create_linguistic_kb(atomspace)
+    
+    # Process some text
+    text = "Dogs are animals"
+    nlp_atoms = NLP.process_text(text, atomspace)
+    
+    # Create reasoning engines
+    pln_engine = PLN.create_engine(atomspace)
+    ure_engine = URE.create_engine(atomspace)
+    
+    # Should be able to reason about linguistic knowledge
+    pln_result = pln_engine.reason(2)
+    ure_result = ure_engine.forward_chain(2)
+    
+    # Should handle linguistic and reasoning atoms together
+    pln_result.should be_a(Array(AtomSpace::Atom))
+    ure_result.should be_a(Array(AtomSpace::Atom))
+    nlp_atoms.size.should be > 0
+    
+    # Should have linguistic statistics
+    stats = NLP.get_linguistic_stats(atomspace)
+    stats["word_atoms"].should be > 0
   end
   
   it "provides proper error handling" do

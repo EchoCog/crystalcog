@@ -425,7 +425,7 @@ crystalcog/
    - ✅ Create mining algorithms for pattern discovery
    - ✅ Implement moses (Meta-Optimizing Semantic Evolutionary Search)
    - ✅ Add advanced PLN rules (modus ponens, abduction, etc.)
-   - [ ] Implement natural language processing basics
+   - ✅ Implement natural language processing basics
 
 ### Current Status Summary
 
@@ -434,6 +434,7 @@ crystalcog/
 - **atomspace (18M)**: Atom hierarchy, Truth values, AtomSpace container, Basic operations
 - **PLN (1.8M)**: Deduction rules, Inversion rules, Modus Ponens, Abduction, Reasoning engine, Forward chaining
 - **URE (1.3M)**: Rule interface, Forward/backward chaining, Mixed inference
+- **NLP Basics**: Tokenization, Text processing, Linguistic atoms, AtomSpace integration
 - **moses (7.9M)**: Evolutionary optimization algorithms, Program learning, Metapopulation search
 
 **🔧 In Progress:**
