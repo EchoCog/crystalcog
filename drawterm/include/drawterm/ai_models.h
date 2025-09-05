@@ -300,6 +300,17 @@ struct AIWorkbenchConfig {
 
 AIWorkbenchConfig create_ai_workbench_config(const std::string& config_file);
 
+/**
+ * @brief Validate AI workbench configuration
+ */
+bool validate_workbench_config(const AIWorkbenchConfig& config);
+
+/**
+ * @brief Initialize AI workbench with given configuration
+ */
+bool initialize_ai_workbench(DrawKernAIManager& ai_manager, 
+                            const AIWorkbenchConfig& config);
+
 } // namespace Integration
 
 } // namespace AI
