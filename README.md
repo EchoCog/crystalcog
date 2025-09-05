@@ -1,50 +1,138 @@
 
 
 
-# Redox OS Machine Learning Integration Environment
+# CrystalCog - OpenCog in Crystal Language
 
-This repository contains the necessary files to set up a development environment for the integration of machine learning into Redox OS using Python, Rust, Prolog, and C. This environment is specifically designed for the development of OpenCog Hyperon.
+CrystalCog is a comprehensive rewrite of the OpenCog artificial intelligence framework in the Crystal programming language. This project provides better performance, memory safety, and maintainability while preserving all the functionality of the original OpenCog system.
 
-## Set up
+## Quick Start
 
-To set up the environment, run the following command in the terminal:
+### Prerequisites
+
+CrystalCog automatically handles Crystal language installation. No manual setup required!
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/EchoCog/crystalcog.git
+cd crystalcog
+```
+
+2. Run tests (Crystal will be installed automatically):
+```bash
+./scripts/test-runner.sh --all
+```
+
+3. Install Crystal manually (optional):
+```bash
+./scripts/install-crystal.sh --help
+./scripts/install-crystal.sh  # Auto-install
+```
+
+## Crystal Language Installation
+
+CrystalCog includes robust Crystal installation methods for environments where standard installation may not work:
+
+- **Automatic Installation**: Scripts automatically install Crystal when needed
+- **Multiple Methods**: Snap, APT, binary, and source installation options
+- **Offline Support**: Works without internet access using bundled resources
+- **Development Mode**: Fallback wrappers for development environments
+
+For detailed installation instructions, see: [docs/CRYSTAL_INSTALLATION.md](docs/CRYSTAL_INSTALLATION.md)
+
+## Project Structure
 
 ```
+crystalcog/
+├── src/                    # Crystal source code
+│   ├── cogutil/           # Core utilities
+│   ├── atomspace/         # AtomSpace implementation
+│   ├── pln/               # Probabilistic Logic Networks
+│   ├── ure/               # Unified Rule Engine
+│   └── opencog/           # Main OpenCog interface
+├── spec/                  # Test specifications
+├── scripts/               # Build and development scripts
+├── crystal-lang/          # Crystal installation resources
+└── docs/                  # Documentation
+```
+
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests
+./scripts/test-runner.sh --all
+
+# Run specific component tests
+./scripts/test-runner.sh --component atomspace
+
+# Run with linting and formatting
+./scripts/test-runner.sh --lint
+
+# Run benchmarks
+./scripts/test-runner.sh --benchmarks
+```
+
+### Building
+
+```bash
+# Build main executable
+crystal build src/crystalcog.cr
+
+# Build specific components
+crystal build src/cogutil/cogutil.cr
+crystal build src/atomspace/atomspace.cr
+```
+
+### Installing Dependencies
+
+```bash
+shards install
+```
+
+## Components
+
+CrystalCog implements the complete OpenCog stack:
+
+- **CogUtil**: Core utilities and logging
+- **AtomSpace**: Hypergraph knowledge representation
+- **PLN**: Probabilistic Logic Networks for reasoning
+- **URE**: Unified Rule Engine for inference
+- **CogServer**: Network server for distributed processing
+- **Pattern Matching**: Advanced pattern matching and query engine
+
+## Set up (Legacy Python/Rust Environment)
+
+This repository also maintains compatibility with the original Python/Rust/Prolog environment:
+
+```bash
 pip3 install -r requirements.txt && cargo install hyperon
-```
-
-This will install all the necessary dependencies and packages for the environment.
-
-## Get started
-
-To start the development environment, run the following command in the terminal:
-
-```
 python3 app.py
 ```
 
-This will run the sample code provided in `app.py` and allow you to start developing and testing your own code.
-
-## Additional files
-
-This repository also includes the following files:
-
-- `requirements.txt`: contains a list of required Python packages for the environment
-- `.vscode/launch.json`: contains configuration settings for debugging in Visual Studio Code
-- `Cargo.toml`: contains configuration settings for the Rust package manager
-- `src/main.rs`: contains a sample Rust code for the Hyperon library
-- `src/lib.rs`: contains a sample Rust code for the Hyperon library
-- `src/test.rs`: contains a sample Rust code for testing the Hyperon library
-
 ## Documentation
 
-For complete documentation including specialized implementation guides, see:
+For complete documentation:
 
-- `README_COMPLETE.md`: Comprehensive API documentation and guides
-- `AGENT-ZERO-GENESIS.md`: GNU Agent-Zero Genesis implementation guide using Guix and Guile
+- [Crystal Installation Guide](docs/CRYSTAL_INSTALLATION.md)
+- [Development Roadmap](DEVELOPMENT-ROADMAP.md)
+- [Complete API Documentation](README_COMPLETE.md)
+- [Agent-Zero Implementation](AGENT-ZERO-GENESIS.md)
+- [CI/CD Pipeline](docs/CI-CD-PIPELINE.md)
 
-Feel free to modify these files as needed for your development process.
+## Contributing
+
+1. Install Crystal using the provided scripts
+2. Run the test suite to verify your environment
+3. Make changes and test thoroughly
+4. Submit pull requests with comprehensive tests
 
 ## License
 
-This repository is licensed under the MIT License. See the `LICENSE` file for more information.
+This repository is licensed under the AGPL-3.0 License. See the `LICENSE` file for more information.
+
+---
+
+**Note**: CrystalCog represents a next-generation implementation of OpenCog, providing improved performance and safety while maintaining full compatibility with OpenCog concepts and APIs.

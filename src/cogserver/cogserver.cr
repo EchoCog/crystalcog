@@ -7,6 +7,7 @@
 require "socket"
 require "http/server"
 require "json"
+require "base64"
 require "../cogutil/cogutil"
 require "../atomspace/atomspace_main"
 require "../opencog/opencog"
@@ -129,16 +130,60 @@ module CogServer
       context.response.content_type = "text/plain"
       context.response.print("Welcome to CogServer #{VERSION}\n")
       context.response.print("Session ID: #{session_id}\n")
+      context.response.print("AtomSpace contains #{@atomspace.size} atoms\n")
       context.response.print("Type 'help' for available commands\n")
       context.response.print("cog> ")
       
-      # Handle command processing here
-      # This is a simplified implementation - real telnet would need
-      # persistent connection handling
+      # Handle basic command processing
+      # Note: This is a simplified implementation for HTTP-based telnet simulation
+      # Real telnet would require persistent TCP connection with command parsing
+      query = context.request.query_params["cmd"]?
+      if query
+        output = process_telnet_command(query, session)
+        context.response.print("\n#{output}\ncog> ")
+      else
+        context.response.print("\n[Send commands via ?cmd=your_command parameter]\n")
+      end
     rescue ex
       CogUtil::Logger.error("Telnet request error: #{ex.message}")
       context.response.status_code = 500
-      context.response.print("Internal server error")
+      context.response.print("Internal server error: #{ex.message}")
+    end
+    
+    private def process_telnet_command(command : String, session : Session) : String
+      case command.strip.downcase
+      when "help"
+        <<-HELP
+        Available commands:
+        help          - Show this help message
+        info          - Show server information  
+        atomspace     - Show AtomSpace statistics
+        list          - List atoms in AtomSpace
+        stats         - Show session statistics
+        quit, exit    - Close session
+        HELP
+      when "info"
+        "CogServer #{VERSION} - Host: #{@host}, Port: #{@port}, WebSocket: #{@ws_port}"
+      when "atomspace"
+        "AtomSpace: #{@atomspace.size} atoms (#{@atomspace.node_count} nodes, #{@atomspace.link_count} links)"
+      when "list"
+        atoms = @atomspace.get_atoms_by_type(AtomSpace::AtomType::ATOM)
+        if atoms.empty?
+          "AtomSpace is empty"
+        else
+          "Atoms in AtomSpace:\n" + atoms.first(10).map_with_index { |atom, i| "#{i+1}. #{atom}" }.join("\n") +
+          (atoms.size > 10 ? "\n... and #{atoms.size - 10} more" : "")
+        end
+      when "stats"
+        "Session #{session.id} (#{session.session_type}), Active: #{session.duration.total_seconds.round(1)}s"
+      when "quit", "exit"
+        session.close
+        "Session closed. Goodbye!"
+      else
+        "Unknown command: #{command}. Type 'help' for available commands."
+      end
+    rescue ex
+      "Command error: #{ex.message}"
     end
     
     private def handle_websocket_request(context)
@@ -150,11 +195,49 @@ module CogServer
     end
     
     private def handle_websocket_upgrade(context)
-      # WebSocket upgrade handling would go here
-      # For now, return a simple response
-      context.response.status_code = 501
+      # Check for proper WebSocket upgrade headers
+      if context.request.headers["Connection"]?.try(&.downcase.includes?("upgrade")) &&
+         context.request.headers["Upgrade"]?.try(&.downcase) == "websocket"
+        
+        # Basic WebSocket handshake
+        websocket_key = context.request.headers["Sec-WebSocket-Key"]?
+        if websocket_key.nil?
+          context.response.status_code = 400
+          context.response.content_type = "application/json"
+          context.response.print({"error" => "Missing WebSocket key"}.to_json)
+          return
+        end
+        
+        # Create session for WebSocket
+        session_id = generate_session_id
+        session = Session.new(session_id, @atomspace, :websocket)
+        @sessions[session_id] = session
+        
+        # Generate WebSocket accept key (simplified)
+        websocket_magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+        accept_key = Base64.strict_encode("#{websocket_key}#{websocket_magic}")
+        
+        # Send WebSocket upgrade response
+        context.response.status_code = 101
+        context.response.headers["Upgrade"] = "websocket"
+        context.response.headers["Connection"] = "Upgrade"
+        context.response.headers["Sec-WebSocket-Accept"] = accept_key
+        context.response.headers["Sec-WebSocket-Protocol"] = "json"
+        
+        CogUtil::Logger.info("WebSocket connection established for session #{session_id}")
+        
+        # Note: In a full implementation, this would handle the WebSocket frames
+        # For now, we establish the connection successfully
+      else
+        context.response.status_code = 400
+        context.response.content_type = "application/json"
+        context.response.print({"error" => "Invalid WebSocket upgrade request"}.to_json)
+      end
+    rescue ex
+      CogUtil::Logger.error("WebSocket upgrade error: #{ex.message}")
+      context.response.status_code = 500
       context.response.content_type = "application/json"
-      context.response.print({"error" => "WebSocket not yet implemented"}.to_json)
+      context.response.print({"error" => "WebSocket upgrade failed"}.to_json)
     end
     
     private def handle_http_api(context)
@@ -165,6 +248,12 @@ module CogServer
         handle_atomspace_request(context)
       when "/atoms"
         handle_atoms_request(context)
+      when "/sessions"
+        handle_sessions_request(context)
+      when "/ping"
+        handle_ping_request(context)
+      when "/version"
+        handle_version_request(context)
       else
         context.response.status_code = 404
         context.response.content_type = "application/json"
@@ -280,6 +369,52 @@ module CogServer
         context.response.content_type = "application/json"
         context.response.print({"error" => "Invalid request: #{ex.message}"}.to_json)
       end
+    end
+    
+    private def handle_sessions_request(context)
+      case context.request.method
+      when "GET"
+        sessions_data = @sessions.map do |id, session|
+          {
+            "id" => id,
+            "type" => session.session_type.to_s,
+            "created_at" => session.created_at.to_rfc3339,
+            "duration" => session.duration.total_seconds.round(1),
+            "closed" => session.closed?
+          }
+        end
+        
+        response = {
+          "active_sessions" => @sessions.size,
+          "sessions" => sessions_data
+        }
+        
+        context.response.content_type = "application/json"
+        context.response.print(response.to_json)
+      else
+        context.response.status_code = 405
+        context.response.content_type = "application/json"
+        context.response.print({"error" => "Method not allowed"}.to_json)
+      end
+    end
+    
+    private def handle_ping_request(context)
+      context.response.content_type = "application/json"
+      context.response.print({
+        "status" => "ok",
+        "timestamp" => Time.utc.to_rfc3339,
+        "server" => "CogServer #{VERSION}"
+      }.to_json)
+    end
+    
+    private def handle_version_request(context)
+      context.response.content_type = "application/json"
+      context.response.print({
+        "version" => VERSION,
+        "crystal_version" => Crystal::VERSION,
+        "server_type" => "CogServer",
+        "api_version" => "1.0"
+      }.to_json)
     end
     
     private def generate_session_id

@@ -90,8 +90,37 @@ Basic query processing capabilities for the AtomSpace.
 - `QueryResult` - Stores query results with variable bindings and confidence
 - `Variable` - Represents query variables
 
+#### String-Based Query Language
+
+The OpenCog Query Language (OQL) provides SQL-like syntax for querying the AtomSpace:
+
+```crystal
+# Basic SELECT WHERE syntax
+results = OpenCog::Query.execute_query(atomspace, 
+  "SELECT $animal WHERE { $animal ISA Mammal }")
+
+# Multiple variables with type constraints
+results = OpenCog::Query.execute_query(atomspace,
+  "SELECT $x:CONCEPT, $y WHERE { $x likes $y }")
+
+# Complex patterns with multiple clauses
+results = OpenCog::Query.execute_query(atomspace,
+  "SELECT $pet WHERE { $pet ISA Dog . $pet likes Food }")
+```
+
+#### Query Language Features
+
+- **Variables**: Use `$name` syntax, optional type constraints with `$name:TYPE`
+- **Triple patterns**: `subject predicate object` for evaluation links
+- **Inheritance patterns**: `child ISA parent` or `child -> parent`
+- **Multiple clauses**: Separate with periods or newlines
+- **Type constraints**: CONCEPT, PREDICATE, NODE, LINK types supported
+
 #### Methods
 
+- `execute_query(atomspace, query_string)` - Execute string-based query
+- `parse_query(query_string)` - Parse query string into structured form
+- `create_query_interface(atomspace)` - Create query interface for atomspace
 - `query_pattern(atomspace, pattern, variables)` - Execute pattern query
 - `find_instances(atomspace, concept)` - Find all instances of a concept
 - `find_predicates(atomspace, subject)` - Find predicates applied to a subject
@@ -101,7 +130,25 @@ Basic query processing capabilities for the AtomSpace.
 #### Example Usage
 
 ```crystal
-# Simple pattern query
+# Create atomspace and add knowledge
+atomspace = AtomSpace::AtomSpace.new
+dog = atomspace.add_concept_node("Dog")
+animal = atomspace.add_concept_node("Animal")
+atomspace.add_inheritance_link(dog, animal)
+
+# String-based queries
+results = OpenCog::Query.execute_query(atomspace, 
+  "SELECT $x WHERE { $x ISA Animal }")
+
+# Query interface for multiple queries
+query_interface = OpenCog::Query.create_query_interface(atomspace)
+results = query_interface.query("SELECT $pet WHERE { $pet ISA Dog }")
+
+# Convenience methods
+animal_instances = query_interface.find_all("Animal")
+john_relations = query_interface.find_relations("John", "likes")
+
+# Traditional pattern queries still work
 cat = atomspace.add_concept_node("Cat")
 results = OpenCog::Query.query_pattern(atomspace, cat)
 
