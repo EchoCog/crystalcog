@@ -5,6 +5,7 @@ require "../cogutil/cogutil"
 require "../atomspace/atomspace_main"
 require "../pln/pln"
 require "../ure/ure"
+require "./query_language"
 
 module OpenCog
   VERSION = "0.1.0"
@@ -18,6 +19,7 @@ module OpenCog
     AtomSpace.initialize unless @@atomspace_initialized
     PLN.initialize unless @@pln_initialized
     URE.initialize unless @@ure_initialized
+    QueryLanguage.initialize unless @@query_language_initialized
     
     CogUtil::Logger.info("OpenCog #{VERSION} initialized")
   end
@@ -27,6 +29,7 @@ module OpenCog
   @@atomspace_initialized = false
   @@pln_initialized = false
   @@ure_initialized = false
+  @@query_language_initialized = false
   
   # Exception classes for OpenCog
   class OpenCogException < CogUtil::OpenCogException
@@ -259,6 +262,22 @@ module OpenCog
         io << "$#{@name}"
         io << ":#{@type}" if @type
       end
+    end
+    
+    # String-based query interface using Query Language
+    def self.execute_query(atomspace : AtomSpace::AtomSpace, query_string : String) : Array(QueryResult)
+      query_interface = QueryLanguage.create_interface(atomspace)
+      query_interface.query(query_string)
+    end
+    
+    # Parse a query string to understand its structure
+    def self.parse_query(query_string : String) : QueryLanguage::ParsedQuery
+      QueryLanguage.parse_query(query_string)
+    end
+    
+    # Create a query language interface for an atomspace
+    def self.create_query_interface(atomspace : AtomSpace::AtomSpace) : QueryLanguage::QueryLanguageInterface
+      QueryLanguage.create_interface(atomspace)
     end
     
     # Execute a simple pattern query
