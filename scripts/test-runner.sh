@@ -134,8 +134,33 @@ parse_args() {
 check_crystal() {
     if ! command -v crystal &> /dev/null; then
         print_error "Crystal is not installed or not in PATH"
-        print_status "Please install Crystal from: https://crystal-lang.org/install/"
-        exit 1
+        print_status "Attempting to install Crystal automatically..."
+        
+        # Try to run the Crystal installation script
+        local install_script="$(dirname "$0")/install-crystal.sh"
+        if [[ -f "$install_script" ]]; then
+            print_status "Running Crystal installation script..."
+            if "$install_script" --method auto; then
+                print_success "Crystal installed successfully!"
+                
+                # Verify installation again
+                if ! command -v crystal &> /dev/null; then
+                    print_error "Crystal installation completed but command not found in PATH"
+                    print_status "Try running: export PATH=\"/usr/local/bin:\$PATH\""
+                    exit 1
+                fi
+            else
+                print_error "Automatic Crystal installation failed"
+                print_status "Please install Crystal manually:"
+                print_status "  ./scripts/install-crystal.sh --help"
+                print_status "  Or visit: https://crystal-lang.org/install/"
+                exit 1
+            fi
+        else
+            print_error "Crystal installation script not found"
+            print_status "Please install Crystal from: https://crystal-lang.org/install/"
+            exit 1
+        fi
     fi
     
     local version=$(crystal version | head -n1)
