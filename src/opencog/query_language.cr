@@ -14,7 +14,7 @@ module OpenCog
     VERSION = "0.1.0"
     
     # Query Language exceptions
-    class QueryLanguageException < OpenCogException
+    class QueryLanguageException < CogUtil::OpenCogException
     end
     
     class QueryParseException < QueryLanguageException
