@@ -133,31 +133,35 @@ describe "CrystalCog Performance Tests" do
     
     it "benchmarks memory usage" do
       # Create a large number of atoms and measure memory characteristics
-      initial_memory = GC.stats.heap_size
+      initial_memory = CogUtil::MemoryProfiler.get_system_memory_info
       
       large_num_atoms = 5000
-      atoms = large_num_atoms.times.map { |i|
-        @atomspace.add_concept_node("large_concept_#{i}")
-      }.to_a
       
-      # Add some truth values
-      atoms.each_with_index do |atom, i|
-        tv = AtomSpace::SimpleTruthValue.new(i / large_num_atoms.to_f, 0.8)
-        atom.truth_value = tv
+      result = CogUtil::MemoryProfiler.benchmark_memory("comprehensive_memory_test") do
+        atoms = large_num_atoms.times.map { |i|
+          @atomspace.add_concept_node("large_concept_#{i}")
+        }.to_a
+        
+        # Add some truth values
+        atoms.each_with_index do |atom, i|
+          tv = AtomSpace::SimpleTruthValue.new(i / large_num_atoms.to_f, 0.8)
+          atom.truth_value = tv
+        end
+        
+        atoms.size
       end
       
-      # Force garbage collection
-      GC.collect
+      evaluation = CogUtil::MemoryProfiler.evaluate_memory_efficiency(result)
       
-      final_memory = GC.stats.heap_size
-      memory_per_atom = (final_memory - initial_memory) / large_num_atoms
+      puts "Enhanced Memory Usage Test:"
+      puts "  Total atoms: #{@atomspace.size}"
+      puts "  Memory per atom: #{result.memory_per_atom.round(2)} bytes"
+      puts "  Memory efficiency: #{result.memory_efficiency.round(1)}%"
+      puts "  C++ compatibility: #{evaluation["meets_cpp_target"] ? "PASS" : "NEEDS_OPTIMIZATION"}"
       
       # Should use reasonable memory per atom (Crystal is efficient)
-      # This is a rough estimate - actual values depend on implementation
-      memory_per_atom.should be < 1000 # bytes per atom (rough estimate)
-      
-      puts "Memory usage: ~#{memory_per_atom} bytes per atom"
-      puts "Total atoms: #{@atomspace.size}"
+      result.memory_per_atom.should be < 1000 # bytes per atom (C++ target)
+      evaluation["meets_cpp_target"].should be_true
     end
   end
   

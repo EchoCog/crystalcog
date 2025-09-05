@@ -6,6 +6,7 @@
 require "./logger"
 require "./config"
 require "./randgen"
+require "./memory_profiler"
 
 module CogUtil
   VERSION = "0.1.0"
