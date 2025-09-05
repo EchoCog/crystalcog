@@ -415,14 +415,16 @@ crystalcog/
 2. **Phase 2 Implementation** (Week 3-4)
    - ✅ Complete opencog core libraries
    - ✅ Implement cogserver with network API
-   - [ ] Add attention allocation mechanisms
+   - ✅ Add attention allocation mechanisms
    - ✅ Create pattern matching engine
    - ✅ Implement basic query language
 
 3. **Phase 3 Implementation** (Week 5-8)
    - ✅ Implement moses (Meta-Optimizing Semantic Evolutionary Search)
    - ✅ Add advanced PLN rules (modus ponens, abduction, etc.)
-   - [ ] Create mining algorithms for pattern discovery
+   - ✅ Create mining algorithms for pattern discovery
+   - ✅ Implement moses (Meta-Optimizing Semantic Evolutionary Search)
+   - ✅ Add advanced PLN rules (modus ponens, abduction, etc.)
    - [ ] Implement natural language processing basics
 
 ### Current Status Summary
