@@ -123,3 +123,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Crystal build artifacts
+crystalcog
+cogutil_lib
+opencog_lib
+atomspace_lib
+*.o
+*.a

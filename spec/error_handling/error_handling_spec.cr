@@ -7,13 +7,11 @@ require "../../src/opencog/opencog"
 
 describe "Error Handling and Edge Cases" do
   describe "AtomSpace error handling" do
-    before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-    end
-    
     it "handles empty names gracefully" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Test creating nodes with empty names
-      empty_concept = @atomspace.add_concept_node("")
+      empty_concept = atomspace.add_concept_node("")
       empty_concept.should be_a(AtomSpace::Atom)
       empty_concept.as(AtomSpace::Node).name.should eq("")
     end

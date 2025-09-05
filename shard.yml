@@ -14,35 +14,11 @@ description: |
   in Crystal, providing better performance, memory safety, and maintainability.
 
 dependencies:
-  # Core dependencies for AtomSpace functionality
-  json:
-    github: crystal-lang/json
-  yaml:
-    github: crystal-lang/yaml
-  log:
-    github: crystal-lang/log
-  
   # Database and persistence
   sqlite3:
     github: crystal-lang/crystal-sqlite3
-  
-  # Networking for CogServer
-  http:
-    github: crystal-lang/http
-  
-  # Scientific computing
-  linalg:
-    github: konovod/linalg
-    version: ~> 1.0.0
 
 development_dependencies:
-  # Testing framework
-  spec:
-    github: crystal-lang/spec
-  
-  # Documentation generation  
-  crystal-docs:
-    github: crystal-lang/crystal-docs
 
 targets:
   crystalcog:
