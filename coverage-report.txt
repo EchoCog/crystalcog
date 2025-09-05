@@ -1,14 +1,29 @@
 Test Coverage Analysis
 =====================
-Generated: Thu Sep  4 05:51:58 UTC 2025
+Generated: Fri Sep  5 13:04:33 UTC 2025
 
-Source files: 17
-Spec files: 16
+Source files: 39
+Spec files: 24
 
 Files without corresponding specs:
 - src/crystalcog.cr
+- src/moses/representation.cr
+- src/moses/deme.cr
+- src/moses/scoring.cr
+- src/moses/types.cr
+- src/moses/moses_main.cr
+- src/moses/moses.cr
+- src/moses/metapopulation.cr
+- src/moses/optimization.cr
 - src/cogutil/cogutil.cr
 - src/cogserver/cogserver_main.cr
 - src/pattern_matching/pattern_matching_main.cr
+- src/pattern_mining/pattern_mining_main.cr
+- src/attention/allocation_engine.cr
+- src/attention/attention_main.cr
+- src/attention/diffusion.cr
+- src/attention/rent_collector.cr
+- src/attention/attention_bank.cr
+- src/nlp/nlp_main.cr
 - src/atomspace/atomspace_main.cr
 - src/atomspace/atomspace_module.cr
