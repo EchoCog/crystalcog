@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Default configuration
 FORCE_INSTALL=false
-CRYSTAL_VERSION="1.17.1"
+CRYSTAL_VERSION="1.10.1"
 INSTALL_METHOD=""
 VERBOSE=false
 DRY_RUN=false
@@ -165,25 +165,17 @@ install_via_apt() {
         return 1
     fi
     
-    # Try the dedicated APT installation script
+    # Try the dedicated official Crystal installation script
     local apt_script="$(dirname "$0")/../crystal-lang/install/install-via-apt.sh"
     if [[ -f "$apt_script" ]]; then
-        print_status "Using dedicated APT installation script..."
+        print_status "Using official Crystal installation script..."
         "$apt_script"
         return $?
     fi
     
-    # Fallback: Try to install build-essential and dependencies manually
-    print_status "Installing dependencies..."
-    sudo apt update
-    sudo apt install -y curl build-essential
-    
-    # Try alternative installation methods since crystal-lang.org might be blocked
-    print_warning "Direct crystal-lang.org access may be blocked, trying alternative sources..."
-    
-    # For now, we'll fall back to binary installation
-    print_status "Falling back to binary installation method..."
-    install_via_binary
+    # Fallback: Try to use snap or other methods
+    print_status "Falling back to snap installation method..."
+    install_via_snap
 }
 
 # Install Crystal via precompiled binary
@@ -191,7 +183,7 @@ install_via_binary() {
     print_status "Installing Crystal via precompiled binary..."
     
     local crystal_dir="/opt/crystal"
-    local crystal_url="https://github.com/crystal-lang/crystal/releases/download/${CRYSTAL_VERSION}/crystal-${CRYSTAL_VERSION}-linux-x86_64.tar.gz"
+    local crystal_url="https://github.com/crystal-lang/crystal/releases/download/${CRYSTAL_VERSION}/crystal-${CRYSTAL_VERSION}-1-linux-x86_64.tar.gz"
     local crystal_archive="/tmp/crystal-${CRYSTAL_VERSION}.tar.gz"
     
     if [[ "$DRY_RUN" == "true" ]]; then
@@ -204,12 +196,12 @@ install_via_binary() {
     # Create crystal directory
     sudo mkdir -p "$crystal_dir"
     
-    # Try to download from GitHub releases (alternative to crystal-lang.org)
-    print_status "Downloading Crystal ${CRYSTAL_VERSION} from GitHub releases..."
+    # Try to download from GitHub releases (official Crystal releases)
+    print_status "Downloading Crystal ${CRYSTAL_VERSION} from official GitHub releases..."
     if curl -L -o "$crystal_archive" "$crystal_url"; then
         print_success "Downloaded Crystal archive"
     else
-        print_error "Failed to download Crystal from GitHub releases"
+        print_error "Failed to download Crystal from official GitHub releases"
         
         # Try to use pre-downloaded binary if available in the monorepo
         local local_binary="$(dirname "$0")/../crystal-lang/crystal-${CRYSTAL_VERSION}-linux-x86_64.tar.gz"

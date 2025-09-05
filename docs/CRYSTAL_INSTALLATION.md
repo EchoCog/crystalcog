@@ -49,7 +49,7 @@ This installs Crystal via Ubuntu's snap package manager. Most reliable when netw
 ./scripts/install-crystal.sh --method apt
 ```
 
-This installs Crystal using system package managers and creates development wrapper scripts when the full Crystal installation is not available.
+This installs Crystal using official Crystal language sources.
 
 ### 3. Binary Installation
 
@@ -57,7 +57,7 @@ This installs Crystal using system package managers and creates development wrap
 ./scripts/install-crystal.sh --method binary
 ```
 
-Downloads and installs precompiled Crystal binaries from GitHub releases.
+Downloads and installs precompiled Crystal binaries from official GitHub releases.
 
 ### 4. Source Installation (Future)
 
@@ -91,14 +91,13 @@ crystal version
 shards version
 ```
 
-## Development Environment
+## Installation from Official Sources
 
-The fallback installation creates a development environment with Crystal wrapper scripts that:
+The project uses the official Crystal language installation system. All installation methods download and install the real Crystal compiler and Shards package manager from official sources:
 
-- Provide basic Crystal command compatibility
-- Support common operations like `crystal version`
-- Enable the CrystalCog build and test system to function
-- Display helpful messages about the development nature
+- Crystal binaries from GitHub releases: https://github.com/crystal-lang/crystal/releases  
+- Dependencies from crystal-lang organization repositories
+- Installation methods follow https://crystal-lang.org/install/ guidelines
 
 ## Troubleshooting
 

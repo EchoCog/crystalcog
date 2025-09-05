@@ -70,66 +70,42 @@ install_crystal_system() {
     # Remove any existing symlinks
     sudo rm -f /usr/local/bin/crystal /usr/local/bin/shards
     
-    # Create a basic crystal command wrapper
-    cat > /tmp/crystal_wrapper << 'EOF'
-#!/bin/bash
-echo "Crystal Language Wrapper v1.0.0 (Mock implementation for development)"
-echo "This is a development wrapper for Crystal functionality."
-
-case "$1" in
-    version|--version)
-        echo "Crystal 1.17.1 [development] (2024-01-01)"
-        echo "LLVM: 14.0.0"
-        echo "Default target: x86_64-unknown-linux-gnu"
-        ;;
-    build)
-        echo "Crystal build wrapper - would compile: $2"
-        echo "Note: This is a development environment."
-        echo "For full Crystal functionality, install from crystal-lang.org when available."
-        ;;
-    spec)
-        echo "Crystal spec wrapper - would run tests"
-        echo "Note: This is a development environment."
-        ;;
-    *)
-        echo "Crystal wrapper - command: $*"
-        echo "Available commands: version, build, spec"
-        echo "Note: This is a development wrapper for the CrystalCog project."
-        ;;
-esac
-EOF
+    # Install Crystal from official sources using the install-crystal action method
+    print_status "Installing Crystal from official GitHub releases..."
     
-    sudo cp /tmp/crystal_wrapper /usr/local/bin/crystal
-    sudo chmod +x /usr/local/bin/crystal
+    # Download and install Crystal using the same method as crystal-lang/install-crystal action
+    CRYSTAL_VERSION="1.10.1"
+    CRYSTAL_URL="https://github.com/crystal-lang/crystal/releases/download/${CRYSTAL_VERSION}/crystal-${CRYSTAL_VERSION}-1-linux-x86_64.tar.gz"
+    CRYSTAL_ARCHIVE="/tmp/crystal-${CRYSTAL_VERSION}.tar.gz"
+    CRYSTAL_DIR="/opt/crystal"
     
-    # Create shards wrapper
-    cat > /tmp/shards_wrapper << 'EOF'
-#!/bin/bash
-echo "Shards v0.17.4 [development] (2024-01-01)"
-
-case "$1" in
-    version|--version)
-        echo "Shards 0.17.4 [development]"
-        ;;
-    install)
-        echo "Shards install wrapper - would install dependencies"
-        echo "Note: This is a development environment."
-        ;;
-    *)
-        echo "Shards wrapper - command: $*"
-        echo "Available commands: version, install"
-        echo "Note: This is a development wrapper for the CrystalCog project."
-        ;;
-esac
-EOF
+    # Create Crystal directory
+    sudo mkdir -p "$CRYSTAL_DIR"
     
-    sudo cp /tmp/shards_wrapper /usr/local/bin/shards
-    sudo chmod +x /usr/local/bin/shards
+    # Download Crystal from official GitHub releases
+    print_status "Downloading Crystal ${CRYSTAL_VERSION} from official GitHub releases..."
+    if curl -L -o "$CRYSTAL_ARCHIVE" "$CRYSTAL_URL"; then
+        print_success "Downloaded Crystal archive"
+        
+        # Extract Crystal
+        print_status "Extracting Crystal to $CRYSTAL_DIR..."
+        sudo tar -xzf "$CRYSTAL_ARCHIVE" -C "$CRYSTAL_DIR" --strip-components=1
+        
+        # Create symlinks to official Crystal binaries
+        print_status "Creating symlinks to official Crystal binaries..."
+        sudo ln -sf "$CRYSTAL_DIR/bin/crystal" /usr/local/bin/crystal
+        sudo ln -sf "$CRYSTAL_DIR/bin/shards" /usr/local/bin/shards
+        
+        # Clean up
+        rm -f "$CRYSTAL_ARCHIVE"
+        
+    else
+        print_error "Failed to download Crystal from official sources"
+        print_error "Please install Crystal manually from https://crystal-lang.org/install/"
+        return 1
+    fi
     
-    # Clean up temp files
-    rm /tmp/crystal_wrapper /tmp/shards_wrapper
-    
-    print_success "Crystal development environment installed successfully!"
+    print_success "Crystal installed successfully from official sources!"
     return 0
 }
 
@@ -158,11 +134,11 @@ verify_installation() {
 
 # Main function
 main() {
-    print_status "Crystal Development Environment Setup"
-    print_status "====================================="
+    print_status "Crystal Installation from Official Sources"
+    print_status "=========================================="
     
     install_crystal_system || {
-        print_error "Failed to install Crystal development environment"
+        print_error "Failed to install Crystal from official sources"
         exit 1
     }
     
@@ -171,14 +147,15 @@ main() {
         exit 1
     }
     
-    print_success "Crystal development environment setup complete!"
+    print_success "Crystal installation from official sources complete!"
     print_status ""
-    print_status "Note: This is a development wrapper environment."
-    print_status "For full Crystal functionality, install from crystal-lang.org when network access is available."
+    print_status "Crystal has been installed from the official GitHub releases."
     print_status ""
     print_status "You can now run:"
     print_status "  crystal version"
     print_status "  shards version"
+    print_status "  crystal build your_program.cr"
+    print_status "  shards install"
 }
 
 main "$@"
