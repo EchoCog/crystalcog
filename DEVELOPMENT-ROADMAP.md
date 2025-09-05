@@ -420,7 +420,7 @@ crystalcog/
    - ✅ Implement basic query language
 
 3. **Phase 3 Implementation** (Week 5-8)
-   - [ ] Implement moses (Meta-Optimizing Semantic Evolutionary Search)
+   - ✅ Implement moses (Meta-Optimizing Semantic Evolutionary Search)
    - [ ] Add advanced PLN rules (modus ponens, abduction, etc.)
    - [ ] Create mining algorithms for pattern discovery
    - [ ] Implement natural language processing basics
@@ -432,6 +432,7 @@ crystalcog/
 - **atomspace (18M)**: Atom hierarchy, Truth values, AtomSpace container, Basic operations
 - **PLN (1.8M)**: Deduction rules, Inversion rules, Reasoning engine, Forward chaining
 - **URE (1.3M)**: Rule interface, Forward/backward chaining, Mixed inference
+- **moses (7.9M)**: Evolutionary optimization algorithms, Program learning, Metapopulation search
 
 **🔧 In Progress:**
 - Testing framework development
@@ -441,7 +442,7 @@ crystalcog/
 **📋 Next Priority:**
 1. **cogserver (788K)** - Network server and API endpoints
 2. **opencog query** - Pattern matching and query processing
-3. **moses (7.9M)** - Evolutionary optimization algorithms
+3. **attention** - Attention allocation mechanisms
 
 ### Development Workflow
 
