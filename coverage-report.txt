@@ -1,9 +1,12 @@
 Test Coverage Analysis
 =====================
-Generated: Fri Sep  5 13:26:13 UTC 2025
+Generated: Sat Sep  6 07:36:18 UTC 2025
 
-Source files: 39
-Spec files: 45
+Source files: 42
+Spec files: 52
 
 Files without corresponding specs:
 - src/crystalcog.cr
+- src/ai_integration/ai_bridge.cr
+- src/cogutil/memory_profiler.cr
+- src/atomspace/storage.cr

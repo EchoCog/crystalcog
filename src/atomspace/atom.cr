@@ -24,6 +24,7 @@ module AtomSpace
     VARIABLE_NODE = 107
     TYPE_NODE = 108
     NUMBER_NODE = 109
+    STORAGE_NODE = 110
     
     # Link types  
     LIST_LINK = 201
