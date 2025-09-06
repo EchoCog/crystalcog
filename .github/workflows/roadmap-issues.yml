@@ -59,6 +59,15 @@ jobs:
         
         echo "✅ Roadmap structure verified"
 
+    - name: Validate roadmap content with parser
+      run: |
+        if [ -f "scripts/validate-roadmap.js" ]; then
+          echo "🔍 Running detailed roadmap validation..."
+          node scripts/validate-roadmap.js
+        else
+          echo "⚠️ Validation script not found, skipping detailed validation"
+        fi
+
     - name: Check roadmap freshness
       id: freshness
       run: |
@@ -118,6 +127,7 @@ jobs:
             }
             
             const nextStepsContent = nextStepsMatch[1];
+            console.log(`Found Next Steps section with ${nextStepsContent.length} characters`);
             
             // Parse subsections like "Immediate Actions", "Phase 2 Implementation", etc.
             const subsectionRegex = /### ([^#\n]+)\n\n([\s\S]*?)(?=\n### |\n## |$)/g;
@@ -125,10 +135,12 @@ jobs:
             
             while ((subsectionMatch = subsectionRegex.exec(nextStepsContent)) !== null) {
               const [, sectionTitle, sectionContent] = subsectionMatch;
+              console.log(`Processing section: "${sectionTitle.trim()}"`);
               
               // Skip sections that don't contain actionable items
               if (sectionTitle.includes('Summary') || sectionTitle.includes('Resources') || 
                   sectionTitle.includes('Metrics') || sectionTitle.includes('Workflow')) {
+                console.log(`  Skipping non-actionable section: ${sectionTitle.trim()}`);
                 continue;
               }
               
@@ -138,18 +150,57 @@ jobs:
               
               while ((itemMatch = itemRegex.exec(sectionContent)) !== null) {
                 const [, itemNumber, itemTitle, tasksText] = itemMatch;
+                console.log(`  Found item ${itemNumber}: "${itemTitle.trim()}"`);
                 const tasks = [];
                 
-                // Parse individual tasks with checkboxes
+                // Parse individual tasks with standard markdown checkboxes
                 const taskRegex = /\s*-\s\[([^\]]*)\]\s(.+)/g;
                 let taskMatch;
                 while ((taskMatch = taskRegex.exec(tasksText)) !== null) {
                   const [, status, description] = taskMatch;
                   tasks.push({
                     completed: status.trim() === 'x',
-                    description: description.trim()
+                    description: description.trim(),
+                    format: 'checkbox'
                   });
                 }
+                
+                // NEW: Parse tasks with checkmark emojis (completed items)
+                const checkmarkRegex = /\s*-\s✅\s(.+)/g;
+                let checkmarkMatch;
+                while ((checkmarkMatch = checkmarkRegex.exec(tasksText)) !== null) {
+                  const [, description] = checkmarkMatch;
+                  tasks.push({
+                    completed: true,
+                    description: description.trim(),
+                    format: 'checkmark'
+                  });
+                }
+                
+                // NEW: Parse tasks without checkmarks or checkboxes (assume incomplete)
+                const lines = tasksText.split('\n').filter(line => line.trim());
+                for (const line of lines) {
+                  const trimmedLine = line.trim();
+                  // Skip if already processed as checkbox or checkmark
+                  if (trimmedLine.match(/^\s*-\s\[.*\]/) || trimmedLine.match(/^\s*-\s✅/)) {
+                    continue;
+                  }
+                  // Match plain bullet points
+                  const plainMatch = trimmedLine.match(/^\s*-\s(.+)/);
+                  if (plainMatch) {
+                    const [, description] = plainMatch;
+                    // Only add if it doesn't contain completed indicators
+                    if (!description.includes('✅') && !description.includes('[x]')) {
+                      tasks.push({
+                        completed: false,
+                        description: description.trim(),
+                        format: 'plain'
+                      });
+                    }
+                  }
+                }
+                
+                console.log(`    Found ${tasks.length} tasks (${tasks.filter(t => !t.completed).length} incomplete)`);
                 
                 if (tasks.length > 0) {
                   sections.push({
@@ -162,18 +213,23 @@ jobs:
               }
             }
             
+            console.log(`Total sections with actionable items: ${sections.length}`);
             return sections;
           };
           
           // Parse Success Metrics section for additional trackable items
           const parseSuccessMetrics = (content) => {
             const metricsMatch = content.match(/### Success Metrics\n\n([\s\S]*?)(?=\n### |\n## |$)/);
-            if (!metricsMatch) return [];
+            if (!metricsMatch) {
+              console.log('No Success Metrics section found');
+              return [];
+            }
             
             const metricsContent = metricsMatch[1];
+            console.log(`Found Success Metrics section with ${metricsContent.length} characters`);
             const items = [];
             
-            // Parse bullet points with checkboxes
+            // Parse bullet points with standard markdown checkboxes
             const metricRegex = /-\s\[([^\]]*)\]\s(.+)/g;
             let match;
             while ((match = metricRegex.exec(metricsContent)) !== null) {
@@ -185,12 +241,51 @@ jobs:
                   itemTitle: 'Success Metrics',
                   tasks: [{
                     completed: false,
-                    description: description.trim()
+                    description: description.trim(),
+                    format: 'checkbox'
                   }]
                 });
               }
             }
             
+            // NEW: Parse metrics with checkmark emojis  
+            const checkmarkMetricRegex = /-\s✅\s(.+)/g;
+            let checkmarkMatch;
+            while ((checkmarkMatch = checkmarkMetricRegex.exec(metricsContent)) !== null) {
+              const [, description] = checkmarkMatch;
+              // Skip if it's already completed (we don't create issues for completed items)
+              console.log(`  Found completed metric: ${description.trim()}`);
+            }
+            
+            // NEW: Parse plain metrics (assume incomplete if no checkbox or checkmark)
+            const lines = metricsContent.split('\n').filter(line => line.trim().startsWith('-'));
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              // Skip if already processed as checkbox or checkmark
+              if (trimmedLine.match(/^\s*-\s\[.*\]/) || trimmedLine.match(/^\s*-\s✅/)) {
+                continue;
+              }
+              // Match plain bullet points
+              const plainMatch = trimmedLine.match(/^\s*-\s(.+)/);
+              if (plainMatch) {
+                const [, description] = plainMatch;
+                // Only add if it doesn't contain completed indicators
+                if (!description.includes('✅') && !description.includes('[x]')) {
+                  items.push({
+                    section: 'Success Metrics',
+                    itemNumber: 0,
+                    itemTitle: 'Success Metrics',
+                    tasks: [{
+                      completed: false,
+                      description: description.trim(),
+                      format: 'plain'
+                    }]
+                  });
+                }
+              }
+            }
+            
+            console.log(`Found ${items.length} incomplete metrics items`);
             return items;
           };
           
