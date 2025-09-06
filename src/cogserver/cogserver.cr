@@ -254,6 +254,16 @@ module CogServer
         handle_ping_request(context)
       when "/version"
         handle_version_request(context)
+      when "/storage"
+        handle_storage_request(context)
+      when "/storage/save"
+        handle_storage_save_request(context)
+      when "/storage/load"
+        handle_storage_load_request(context)
+      when "/storage/attach"
+        handle_storage_attach_request(context)
+      when "/storage/detach"
+        handle_storage_detach_request(context)
       else
         context.response.status_code = 404
         context.response.content_type = "application/json"
@@ -415,6 +425,231 @@ module CogServer
         "server_type" => "CogServer",
         "api_version" => "1.0"
       }.to_json)
+    end
+    
+    # New persistence endpoints
+    private def handle_storage_request(context)
+      case context.request.method
+      when "GET"
+        # Get list of attached storage nodes
+        storages = @atomspace.get_attached_storages
+        response = {
+          "storage_count" => storages.size,
+          "storages" => storages.map do |storage|
+            stats = storage.get_stats
+            {
+              "name" => storage.name,
+              "type" => stats["type"]?,
+              "connected" => stats["connected"]?,
+              "stats" => stats
+            }
+          end
+        }
+        context.response.content_type = "application/json"
+        context.response.print(response.to_json)
+      else
+        context.response.status_code = 405
+        context.response.content_type = "application/json"
+        context.response.print({"error" => "Method not allowed"}.to_json)
+      end
+    end
+    
+    private def handle_storage_save_request(context)
+      case context.request.method
+      when "POST"
+        begin
+          body = context.request.body.try(&.gets_to_end) || "{}"
+          data = JSON.parse(body)
+          
+          if storage_name = data["storage"]?.try(&.as_s)
+            # Save to specific storage
+            storage = @atomspace.get_attached_storages.find { |s| s.name == storage_name }
+            if storage
+              success = @atomspace.store_to(storage)
+              status_code = success ? 200 : 500
+              response = {
+                "success" => success,
+                "message" => success ? "AtomSpace saved to #{storage_name}" : "Failed to save to #{storage_name}",
+                "storage" => storage_name
+              }
+            else
+              status_code = 404
+              response = {"error" => "Storage not found: #{storage_name}"}
+            end
+          else
+            # Save to all attached storages
+            success = @atomspace.store_all
+            status_code = success ? 200 : 500
+            response = {
+              "success" => success,
+              "message" => success ? "AtomSpace saved to all storages" : "Failed to save to some storages",
+              "storage_count" => @atomspace.get_attached_storages.size
+            }
+          end
+          
+          context.response.status_code = status_code
+          context.response.content_type = "application/json"
+          context.response.print(response.to_json)
+        rescue ex
+          context.response.status_code = 400
+          context.response.content_type = "application/json"
+          context.response.print({"error" => "Invalid request: #{ex.message}"}.to_json)
+        end
+      else
+        context.response.status_code = 405
+        context.response.content_type = "application/json"
+        context.response.print({"error" => "Method not allowed"}.to_json)
+      end
+    end
+    
+    private def handle_storage_load_request(context)
+      case context.request.method
+      when "POST"
+        begin
+          body = context.request.body.try(&.gets_to_end) || "{}"
+          data = JSON.parse(body)
+          
+          if storage_name = data["storage"]?.try(&.as_s)
+            # Load from specific storage
+            storage = @atomspace.get_attached_storages.find { |s| s.name == storage_name }
+            if storage
+              success = @atomspace.load_from(storage)
+              status_code = success ? 200 : 500
+              response = {
+                "success" => success,
+                "message" => success ? "AtomSpace loaded from #{storage_name}" : "Failed to load from #{storage_name}",
+                "storage" => storage_name,
+                "atomspace_size" => @atomspace.size
+              }
+            else
+              status_code = 404
+              response = {"error" => "Storage not found: #{storage_name}"}
+            end
+          else
+            # Load from all attached storages
+            success = @atomspace.load_all
+            status_code = success ? 200 : 500
+            response = {
+              "success" => success,
+              "message" => success ? "AtomSpace loaded from all storages" : "Failed to load from some storages",
+              "storage_count" => @atomspace.get_attached_storages.size,
+              "atomspace_size" => @atomspace.size
+            }
+          end
+          
+          context.response.status_code = status_code
+          context.response.content_type = "application/json"
+          context.response.print(response.to_json)
+        rescue ex
+          context.response.status_code = 400
+          context.response.content_type = "application/json"
+          context.response.print({"error" => "Invalid request: #{ex.message}"}.to_json)
+        end
+      else
+        context.response.status_code = 405
+        context.response.content_type = "application/json"
+        context.response.print({"error" => "Method not allowed"}.to_json)
+      end
+    end
+    
+    private def handle_storage_attach_request(context)
+      case context.request.method
+      when "POST"
+        begin
+          body = context.request.body.try(&.gets_to_end) || "{}"
+          data = JSON.parse(body)
+          
+          storage_type = data["type"].as_s
+          storage_name = data["name"].as_s
+          
+          storage = case storage_type.downcase
+          when "file"
+            file_path = data["path"].as_s
+            file_storage = AtomSpace::FileStorageNode.new(storage_name, file_path)
+            file_storage.open if file_storage
+            file_storage
+          when "sqlite"
+            db_path = data["path"].as_s
+            sqlite_storage = AtomSpace::SQLiteStorageNode.new(storage_name, db_path)
+            sqlite_storage.open if sqlite_storage
+            sqlite_storage
+          when "cog", "network"
+            host = data["host"].as_s
+            port = data["port"].as_i
+            cog_storage = AtomSpace::CogStorageNode.new(storage_name, host, port)
+            cog_storage.open if cog_storage
+            cog_storage
+          else
+            nil
+          end
+          
+          if storage
+            @atomspace.attach_storage(storage)
+            response = {
+              "success" => true,
+              "message" => "Storage attached successfully",
+              "storage" => {
+                "name" => storage.name,
+                "type" => storage_type,
+                "connected" => storage.connected?
+              }
+            }
+            context.response.status_code = 201
+          else
+            response = {"error" => "Unsupported storage type: #{storage_type}"}
+            context.response.status_code = 400
+          end
+          
+          context.response.content_type = "application/json"
+          context.response.print(response.to_json)
+        rescue ex
+          context.response.status_code = 400
+          context.response.content_type = "application/json"
+          context.response.print({"error" => "Invalid request: #{ex.message}"}.to_json)
+        end
+      else
+        context.response.status_code = 405
+        context.response.content_type = "application/json"
+        context.response.print({"error" => "Method not allowed"}.to_json)
+      end
+    end
+    
+    private def handle_storage_detach_request(context)
+      case context.request.method
+      when "POST"
+        begin
+          body = context.request.body.try(&.gets_to_end) || "{}"
+          data = JSON.parse(body)
+          
+          storage_name = data["name"].as_s
+          storage = @atomspace.get_attached_storages.find { |s| s.name == storage_name }
+          
+          if storage
+            storage.close
+            @atomspace.detach_storage(storage)
+            response = {
+              "success" => true,
+              "message" => "Storage detached successfully",
+              "storage" => storage_name
+            }
+            context.response.status_code = 200
+          else
+            response = {"error" => "Storage not found: #{storage_name}"}
+            context.response.status_code = 404
+          end
+          
+          context.response.content_type = "application/json"
+          context.response.print(response.to_json)
+        rescue ex
+          context.response.status_code = 400
+          context.response.content_type = "application/json"
+          context.response.print({"error" => "Invalid request: #{ex.message}"}.to_json)
+        end
+      else
+        context.response.status_code = 405
+        context.response.content_type = "application/json"
+        context.response.print({"error" => "Method not allowed"}.to_json)
+      end
     end
     
     private def generate_session_id
