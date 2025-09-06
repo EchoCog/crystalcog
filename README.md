@@ -97,11 +97,44 @@ shards install
 CrystalCog implements the complete OpenCog stack:
 
 - **CogUtil**: Core utilities and logging
-- **AtomSpace**: Hypergraph knowledge representation
+- **AtomSpace**: Hypergraph knowledge representation with comprehensive persistence
 - **PLN**: Probabilistic Logic Networks for reasoning
 - **URE**: Unified Rule Engine for inference
-- **CogServer**: Network server for distributed processing
+- **CogServer**: Network server for distributed processing with REST API
 - **Pattern Matching**: Advanced pattern matching and query engine
+- **Persistence**: Multiple storage backends (File, SQLite, Network)
+
+### Key Features
+
+#### AtomSpace Persistence
+- **File Storage**: Human-readable Scheme format for small datasets
+- **SQLite Storage**: Relational database with indexing for large datasets  
+- **Network Storage**: Distributed AtomSpace access via CogServer
+- **Multiple Storage**: Attach multiple backends for redundancy
+
+#### Enhanced Network API
+- **REST Endpoints**: Complete HTTP API for AtomSpace operations
+- **Storage Management**: Attach/detach storage via REST API
+- **WebSocket Support**: Real-time communication capabilities
+- **Session Management**: Track client connections and state
+
+#### Example Usage
+```crystal
+# Create AtomSpace with persistence
+atomspace = AtomSpace::AtomSpace.new
+
+# Add some knowledge
+dog = atomspace.add_concept_node("dog")
+animal = atomspace.add_concept_node("animal") 
+atomspace.add_inheritance_link(dog, animal)
+
+# Save to file storage
+file_storage = atomspace.create_file_storage("main", "knowledge.scm")
+atomspace.store_all
+
+# Save via REST API
+curl -X POST http://localhost:18080/storage/save
+```
 
 ## Set up (Legacy Python/Rust Environment)
 
@@ -118,6 +151,7 @@ For complete documentation:
 
 - [Crystal Installation Guide](docs/CRYSTAL_INSTALLATION.md)
 - [Development Roadmap](DEVELOPMENT-ROADMAP.md)
+- [Persistence API Documentation](PERSISTENCE_API_DOCUMENTATION.md)
 - [Complete API Documentation](README_COMPLETE.md)
 - [Agent-Zero Implementation](AGENT-ZERO-GENESIS.md)
 - [CI/CD Pipeline](docs/CI-CD-PIPELINE.md)
