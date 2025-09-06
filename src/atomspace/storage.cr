@@ -6,6 +6,7 @@
 require "./atom"
 require "./truthvalue"
 require "../cogutil/cogutil"
+require "sqlite3"
 
 module AtomSpace
   # Base interface for persistent storage
@@ -247,7 +248,7 @@ module AtomSpace
           # Parse node: (TYPE "name" [truth_value])
           if parts.size >= 2
             name_part = parts[1].strip
-            if name_part.starts_with?('"') && name_part.includes?("\"", 1)
+            if name_part.starts_with?('"') && name_part[1..].includes?('"')
               quote_end = name_part.index('"', 1)
               if quote_end
                 name = name_part[1...quote_end]
@@ -299,8 +300,6 @@ module AtomSpace
       return true if @connected
       
       begin
-        require "sqlite3"
-        
         # Ensure directory exists
         dir = File.dirname(@db_path)
         Dir.mkdir_p(dir) unless Dir.exists?(dir)
@@ -383,7 +382,7 @@ module AtomSpace
             name = rs.read(String)
             strength = rs.read(Float64)
             confidence = rs.read(Float64)
-            tv = TruthValue.new(strength, confidence)
+            tv = SimpleTruthValue.new(strength, confidence)
             
             if type.node?
               return Node.new(type, name, tv)
@@ -562,7 +561,6 @@ module AtomSpace
       
       begin
         # Test connection with ping
-        require "http/client"
         response = HTTP::Client.get("#{@base_url}/ping")
         
         if response.status_code == 200
@@ -593,8 +591,6 @@ module AtomSpace
       return false unless @connected
       
       begin
-        require "http/client"
-        require "json"
         
         data = {
           "type" => atom.type.to_s,
@@ -626,7 +622,6 @@ module AtomSpace
       return nil unless @connected
       
       begin
-        require "http/client"
         response = HTTP::Client.get("#{@base_url}/atoms/#{handle}")
         
         if response.status_code == 200
@@ -647,7 +642,6 @@ module AtomSpace
       return false unless @connected
       
       begin
-        require "http/client"
         response = HTTP::Client.delete("#{@base_url}/atoms/#{atom.handle}")
         
         response.status_code == 200
@@ -666,8 +660,6 @@ module AtomSpace
       return false unless @connected
       
       begin
-        require "http/client"
-        require "json"
         
         response = HTTP::Client.get("#{@base_url}/atoms")
         
@@ -697,8 +689,6 @@ module AtomSpace
       
       if @connected
         begin
-          require "http/client"
-          require "json"
           
           response = HTTP::Client.get("#{@base_url}/status")
           if response.status_code == 200
