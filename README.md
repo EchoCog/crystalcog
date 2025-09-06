@@ -92,6 +92,41 @@ crystal build src/atomspace/atomspace.cr
 shards install
 ```
 
+### Testing
+
+#### CogServer Integration Test
+
+The CogServer includes a comprehensive integration test that validates all network API functionality:
+
+```bash
+# Build the CogServer
+crystal build src/cogserver/cogserver_main.cr -o cogserver_bin
+
+# Start CogServer for testing
+crystal run start_test_cogserver.cr &
+
+# Run integration test script
+./test_cogserver_integration.sh
+```
+
+The integration test validates:
+- HTTP REST API endpoints (7 endpoints)
+- Telnet command interface (4 commands)
+- WebSocket protocol upgrade
+- Atom CRUD operations
+- Error handling and validation
+
+#### Full Test Suite
+
+```bash
+# Run all Crystal tests
+crystal spec
+
+# Run individual component tests
+crystal run test_cogserver_api.cr
+crystal run test_enhanced_api.cr
+```
+
 ## Components
 
 CrystalCog implements the complete OpenCog stack:
