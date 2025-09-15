@@ -13,14 +13,12 @@ module AtomSpace
   # Initialize the AtomSpace subsystem
   def self.initialize
     CogUtil::Logger.info("AtomSpace #{VERSION} initializing")
-    
-    # Create default AtomSpace if configured
-    if CogUtil::Config::Shortcuts.enable_attention?
-      AtomSpaceManager.default_atomspace
-      CogUtil::Logger.info("Default AtomSpace created")
-    end
-    
     CogUtil::Logger.info("AtomSpace #{VERSION} initialized")
+  end
+  
+  # Create a new AtomSpace instance
+  def self.create_atomspace : AtomSpace
+    AtomSpace::AtomSpace.new
   end
   
   # Shutdown and cleanup

@@ -26,6 +26,11 @@ module CogUtil
     end
   end
   
+  # Get a configuration value
+  def self.config_get(key : String) : String
+    Config.instance.get(key) || ""
+  end
+  
   # Shutdown and cleanup
   def self.finalize
     Logger.info("CogUtil shutting down")

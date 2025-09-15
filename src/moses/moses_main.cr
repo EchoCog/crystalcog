@@ -2,6 +2,7 @@
 # Command-line interface for running MOSES evolutionary search
 
 require "./moses"
+require "./moses_framework"
 
 module Moses
   # Command-line interface for MOSES
