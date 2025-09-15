@@ -6,11 +6,10 @@
 require "./atom"
 require "./truthvalue"
 require "../cogutil/cogutil"
-#<<<<<<< copilot/fix-56
-#=======
-#require "db"
-#>>>>>>> main
 require "sqlite3"
+require "db"
+require "json"
+require "http/client"
 
 module AtomSpace
   # Base interface for persistent storage
@@ -709,6 +708,231 @@ module AtomSpace
       end
       
       stats
+    end
+  end
+  
+  # Hypergraph state representation
+  record HypergraphState, atomspace : AtomSpace, tensor_shape : Array(Int32), 
+                         attention : Float64, meta_level : Int32, 
+                         cognitive_operation : String?, timestamp : Time
+
+  # Hypergraph state persistence implementation  
+  class HypergraphStateStorageNode < StorageNode
+    @storage_path : String
+    @connected : Bool = false
+    @backend_storage : StorageNode?
+    
+    def initialize(name : String, @storage_path : String, backend_type : String = "file")
+      super(name)
+      @backend_storage = create_backend_storage(backend_type, @storage_path)
+      log_info("HypergraphStateStorageNode created with #{backend_type} backend: #{@storage_path}")
+    end
+    
+    private def create_backend_storage(backend_type : String, path : String) : StorageNode
+      case backend_type.downcase
+      when "file"
+        FileStorageNode.new("#{name}_file", path)
+      when "sqlite", "db"
+        SQLiteStorageNode.new("#{name}_sqlite", path)
+      else
+        FileStorageNode.new("#{name}_file", path)
+      end
+    end
+    
+    def open : Bool
+      return true if @connected
+      
+      backend = @backend_storage
+      return false unless backend
+      
+      if backend.open
+        @connected = true
+        log_info("Opened hypergraph state storage: #{@storage_path}")
+        true
+      else
+        log_error("Failed to open backend storage")
+        false
+      end
+    end
+    
+    def close : Bool
+      backend = @backend_storage
+      backend.try(&.close)
+      @connected = false
+      log_info("Closed hypergraph state storage: #{@storage_path}")
+      true
+    end
+    
+    def connected? : Bool
+      @connected
+    end
+    
+    # Store complete hypergraph state
+    def store_hypergraph_state(state : HypergraphState) : Bool
+      return false unless @connected
+      
+      begin
+        # Serialize hypergraph state to JSON-like format
+        state_data = serialize_hypergraph_state(state)
+        
+        # Create a special atom to represent the hypergraph state
+        state_atom = Node.new(AtomType::CONCEPT_NODE, "HYPERGRAPH_STATE_#{state.timestamp.to_unix}")
+        state_atom.truth_value = SimpleTruthValue.new(1.0, 1.0)
+        
+        backend = @backend_storage
+        return false unless backend
+        
+        # Store the atomspace content first
+        unless backend.store_atomspace(state.atomspace)
+          log_error("Failed to store atomspace content")
+          return false
+        end
+        
+        # Store the hypergraph state metadata
+        if store_hypergraph_metadata(state_data)
+          log_info("Stored hypergraph state: tensor_shape=#{state.tensor_shape}, attention=#{state.attention}")
+          true
+        else
+          log_error("Failed to store hypergraph metadata")
+          false
+        end
+      rescue ex
+        log_error("Failed to store hypergraph state: #{ex.message}")
+        false
+      end
+    end
+    
+    # Load complete hypergraph state  
+    def load_hypergraph_state(target_atomspace : AtomSpace) : HypergraphState?
+      return nil unless @connected
+      
+      begin
+        backend = @backend_storage
+        return nil unless backend
+        
+        # Load atomspace content
+        unless backend.load_atomspace(target_atomspace)
+          log_error("Failed to load atomspace content")
+          return nil
+        end
+        
+        # Load hypergraph state metadata
+        metadata = load_hypergraph_metadata
+        return nil unless metadata
+        
+        # Reconstruct hypergraph state
+        state = HypergraphState.new(
+          atomspace: target_atomspace,
+          tensor_shape: metadata["tensor_shape"].as(Array(Int32)),
+          attention: metadata["attention"].as(Float64),
+          meta_level: metadata["meta_level"].as(Int32),
+          cognitive_operation: metadata["cognitive_operation"]?.as(String?),
+          timestamp: Time.unix(metadata["timestamp"].as(Int64))
+        )
+        
+        log_info("Loaded hypergraph state: tensor_shape=#{state.tensor_shape}, attention=#{state.attention}")
+        state
+      rescue ex
+        log_error("Failed to load hypergraph state: #{ex.message}")
+        nil
+      end
+    end
+    
+    # Standard StorageNode interface (delegated to backend)
+    def store_atom(atom : Atom) : Bool
+      backend = @backend_storage
+      return false unless backend && @connected
+      backend.store_atom(atom)
+    end
+    
+    def fetch_atom(handle : Handle) : Atom?
+      backend = @backend_storage
+      return nil unless backend && @connected
+      backend.fetch_atom(handle)
+    end
+    
+    def remove_atom(atom : Atom) : Bool
+      backend = @backend_storage
+      return false unless backend && @connected
+      backend.remove_atom(atom)
+    end
+    
+    def store_atomspace(atomspace : AtomSpace) : Bool
+      backend = @backend_storage
+      return false unless backend && @connected
+      backend.store_atomspace(atomspace)
+    end
+    
+    def load_atomspace(atomspace : AtomSpace) : Bool
+      backend = @backend_storage
+      return false unless backend && @connected
+      backend.load_atomspace(atomspace)
+    end
+    
+    def get_stats : Hash(String, String | Int32 | Int64)
+      stats = Hash(String, String | Int32 | Int64).new
+      stats["type"] = "HypergraphStateStorage"
+      stats["path"] = @storage_path
+      stats["connected"] = @connected ? "true" : "false"
+      
+      backend = @backend_storage
+      if backend
+        backend_stats = backend.get_stats
+        stats["backend_type"] = backend_stats["type"]
+        stats["backend_connected"] = backend_stats["connected"]
+      end
+      
+      stats
+    end
+    
+    private def serialize_hypergraph_state(state : HypergraphState) : Hash(String, JSON::Any)
+      data = Hash(String, JSON::Any).new
+      data["tensor_shape"] = JSON::Any.new(state.tensor_shape.map(&.as(JSON::Any)))
+      data["attention"] = JSON::Any.new(state.attention)
+      data["meta_level"] = JSON::Any.new(state.meta_level)
+      data["cognitive_operation"] = JSON::Any.new(state.cognitive_operation)
+      data["timestamp"] = JSON::Any.new(state.timestamp.to_unix)
+      data["atomspace_size"] = JSON::Any.new(state.atomspace.size.to_i64)
+      data
+    end
+    
+    private def store_hypergraph_metadata(data : Hash(String, JSON::Any)) : Bool
+      metadata_path = get_metadata_path
+      
+      begin
+        File.open(metadata_path, "w") do |file|
+          file.puts(data.to_json)
+        end
+        true
+      rescue ex
+        log_error("Failed to store hypergraph metadata: #{ex.message}")
+        false
+      end
+    end
+    
+    private def load_hypergraph_metadata : Hash(String, JSON::Any)?
+      metadata_path = get_metadata_path
+      
+      return nil unless File.exists?(metadata_path)
+      
+      begin
+        content = File.read(metadata_path)
+        JSON.parse(content).as_h
+      rescue ex
+        log_error("Failed to load hypergraph metadata: #{ex.message}")
+        nil
+      end
+    end
+    
+    private def get_metadata_path : String
+      case @storage_path
+      when .ends_with?(".scm")
+        @storage_path.sub(".scm", "_metadata.json")
+      when .ends_with?(".db")
+        @storage_path.sub(".db", "_metadata.json")
+      else
+        "#{@storage_path}_metadata.json"
+      end
     end
   end
 end
