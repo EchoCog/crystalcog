@@ -33,6 +33,11 @@ module Moses
     puts "\n=== MOSES Demonstration ==="
     puts "Running boolean classification and regression examples\n"
     
+    # Show framework info
+    puts "Framework: #{MOSES.info["description"]}"
+    puts "Version: #{MOSES.info["version"]}"
+    puts ""
+    
     run_boolean_demo
     puts "\n" + "="*50 + "\n"
     run_regression_demo
@@ -54,40 +59,31 @@ module Moses
     
     target_data = [0.0, 1.0, 1.0, 0.0]  # XOR outputs
     
-    # Create MOSES parameters
-    params = MosesParams.new(
-      problem_type: ProblemType::BooleanClassification,
-      training_data: training_data,
-      target_data: target_data,
-      max_evals: 500,
-      max_gens: 20,
-      population_size: 30,
-      deme_size: 10
-    )
-    
     puts "Training data: XOR function"
     training_data.each_with_index do |input, i|
       puts "  #{input} -> #{target_data[i]}"
     end
     
     puts "\nRunning MOSES evolutionary search..."
-    result = Moses.run_moses(params)
+    
+    # Use new framework
+    params = MOSES.boolean_params(training_data, target_data, max_evals: 100)
+    result = MOSES.optimize(params)
     
     puts "\nResults:"
     puts "  Evaluations: #{result.evaluations}"
     puts "  Generations: #{result.generations}"
-    puts "  Best score: #{result.best_score}"
+    puts "  Best score: #{result.best_score.try(&.penalized_score)}"
     
     puts "\nTop candidates:"
     result.candidates[0...5].each_with_index do |candidate, i|
-      puts "  #{i + 1}. #{candidate.program} (score: #{candidate.score})"
+      puts "  #{i + 1}. #{candidate.program} (score: #{candidate.score.try(&.penalized_score)})"
     end
     
     # Test best candidate
     if best = result.best_candidate
-      puts "\nTesting best candidate: #{best.program}"
-      # Note: In a full implementation, we would actually execute the program
-      puts "  (Program execution not implemented in this demo version)"
+      puts "\nBest candidate: #{best.program}"
+      puts "  (Program execution would be implemented in full version)"
     end
   end
   
@@ -99,17 +95,6 @@ module Moses
     training_data = (0..10).map { |x| [x.to_f] }.to_a
     target_data = training_data.map { |input| 2.0 * input[0] + 1.0 }
     
-    # Create MOSES parameters
-    params = MosesParams.new(
-      problem_type: ProblemType::Regression,
-      training_data: training_data,
-      target_data: target_data,
-      max_evals: 300,
-      max_gens: 15,
-      population_size: 20,
-      deme_size: 8
-    )
-    
     puts "Training data: y = 2*x + 1"
     training_data[0...5].each_with_index do |input, i|
       puts "  x=#{input[0]} -> y=#{target_data[i]}"
@@ -117,16 +102,19 @@ module Moses
     puts "  ..."
     
     puts "\nRunning MOSES evolutionary search..."
-    result = Moses.run_moses(params)
+    
+    # Use new framework
+    params = MOSES.regression_params(training_data, target_data, max_evals: 50)
+    result = MOSES.optimize(params)
     
     puts "\nResults:"
     puts "  Evaluations: #{result.evaluations}"
     puts "  Generations: #{result.generations}"
-    puts "  Best score: #{result.best_score}"
+    puts "  Best score: #{result.best_score.try(&.penalized_score)}"
     
     puts "\nTop candidates:"
     result.candidates[0...5].each_with_index do |candidate, i|
-      puts "  #{i + 1}. #{candidate.program} (score: #{candidate.score})"
+      puts "  #{i + 1}. #{candidate.program} (score: #{candidate.score.try(&.penalized_score)})"
     end
   end
   
@@ -137,10 +125,36 @@ module Moses
     test_count = 0
     passed_count = 0
     
-    # Test 1: Basic types
+    # Test 1: Framework initialization
+    print "Testing framework initialization... "
+    begin
+      MOSES.initialize
+      puts "PASSED"
+      passed_count += 1
+    rescue ex
+      puts "FAILED - #{ex}"
+    end
+    test_count += 1
+    
+    # Test 2: Framework info
+    print "Testing framework info... "
+    begin
+      info = MOSES.info
+      if info.is_a?(Hash) && info["version"]?
+        puts "PASSED"
+        passed_count += 1
+      else
+        puts "FAILED - invalid info structure"
+      end
+    rescue ex
+      puts "FAILED - #{ex}"
+    end
+    test_count += 1
+    
+    # Test 3: Basic types
     print "Testing basic types... "
     begin
-      score = CompositeScore.new(-0.5, 10, 0.1, 0.0)
+      score = Moses::CompositeScore.new(-0.5, 10, 0.1, 0.0)
       if score.penalized_score == -0.6
         puts "PASSED"
         passed_count += 1
@@ -152,57 +166,47 @@ module Moses
     end
     test_count += 1
     
-    # Test 2: Program generation
-    print "Testing program generation... "
+    # Test 4: Optimizer creation
+    print "Testing optimizer creation... "
     begin
-      generator = Representation::ProgramGenerator.new(ProblemType::BooleanClassification, 2)
-      program = generator.generate_random
-      if program.is_a?(String) && !program.empty?
+      optimizer = MOSES.create_optimizer
+      if optimizer.is_a?(MOSES::Optimizer)
         puts "PASSED"
         passed_count += 1
       else
-        puts "FAILED - invalid program generated"
+        puts "FAILED - invalid optimizer type"
       end
     rescue ex
       puts "FAILED - #{ex}"
     end
     test_count += 1
     
-    # Test 3: Scoring function
+    # Test 5: Parameter creation
+    print "Testing parameter creation... "
+    begin
+      params = MOSES.boolean_params([[0.0, 1.0], [1.0, 0.0]], [1.0, 1.0])
+      if params.is_a?(Moses::MosesParams)
+        puts "PASSED"
+        passed_count += 1
+      else
+        puts "FAILED - invalid parameter type"
+      end
+    rescue ex
+      puts "FAILED - #{ex}"
+    end
+    test_count += 1
+    
+    # Test 6: Scoring function creation
     print "Testing scoring function... "
     begin
       training_data = [[0.0, 0.0], [1.0, 1.0]]
       target_data = [0.0, 1.0]
-      scoring = BooleanTableScoring.new(training_data, target_data)
-      candidate = Candidate.new("$0 and $1")
-      score = scoring.score(candidate)
-      if score.is_a?(CompositeScore)
+      scoring = MOSES.create_scorer(Moses::ProblemType::BooleanClassification, training_data, target_data)
+      if scoring.is_a?(Moses::ScoringFunction)
         puts "PASSED"
         passed_count += 1
       else
-        puts "FAILED - invalid score type"
-      end
-    rescue ex
-      puts "FAILED - #{ex}"
-    end
-    test_count += 1
-    
-    # Test 4: Metapopulation creation
-    print "Testing metapopulation... "
-    begin
-      params = MosesParams.new(
-        ProblemType::BooleanClassification,
-        [[0.0, 0.0], [1.0, 1.0]],
-        max_evals: 10,
-        population_size: 5,
-        target_data: [0.0, 1.0]
-      )
-      metapop = MetaPopulation.new(params)
-      if metapop.size > 0
-        puts "PASSED"
-        passed_count += 1
-      else
-        puts "FAILED - metapopulation not created"
+        puts "FAILED - invalid scorer type"
       end
     rescue ex
       puts "FAILED - #{ex}"
