@@ -6,6 +6,10 @@
 require "./atom"
 require "./truthvalue"
 require "../cogutil/cogutil"
+#<<<<<<< copilot/fix-56
+#=======
+#require "db"
+#>>>>>>> main
 require "sqlite3"
 
 module AtomSpace
@@ -248,7 +252,11 @@ module AtomSpace
           # Parse node: (TYPE "name" [truth_value])
           if parts.size >= 2
             name_part = parts[1].strip
+#<<<<<<< copilot/fix-56
             if name_part.starts_with?('"') && name_part[1..].includes?('"')
+#=======
+#            if name_part.starts_with?('"') && name_part[1..].includes?("\"")
+#>>>>>>> main
               quote_end = name_part.index('"', 1)
               if quote_end
                 name = name_part[1...quote_end]

@@ -157,7 +157,33 @@ crystal spec spec/nlp/
 crystal spec spec/nlp/tokenizer_spec.cr
 crystal spec spec/nlp/text_processor_spec.cr
 crystal spec spec/nlp/linguistic_atoms_spec.cr
+
+# Validate NLP module structure and dependencies
+./test_nlp_structure.sh
 ```
+
+### Validation Script
+
+The `test_nlp_structure.sh` script provides comprehensive validation of:
+
+- **File Structure**: Verifies all required NLP module files exist
+- **Module Definitions**: Checks proper module and class definitions
+- **Dependency Compatibility**: Validates CogUtil and AtomSpace dependencies
+- **Integration Points**: Confirms proper integration with main system
+- **Guix Environment**: Checks Guix package configuration compatibility
+- **Reasoning Systems**: Validates PLN and URE integration potential
+- **Test Coverage**: Ensures comprehensive test suite is in place
+
+```bash
+# Run comprehensive NLP validation
+./test_nlp_structure.sh
+```
+
+This validation script is particularly useful for:
+- Continuous integration checks
+- Development environment setup verification
+- Dependency troubleshooting
+- Package distribution validation
 
 ## Architecture
 
