@@ -138,6 +138,8 @@ CrystalCog implements the complete OpenCog stack:
 - **CogServer**: Network server for distributed processing with REST API
 - **Pattern Matching**: Advanced pattern matching and query engine
 - **Persistence**: Multiple storage backends (File, SQLite, Network)
+- **Cognitive Kernels**: Agent-Zero Genesis cognitive processing units with hypergraph state persistence
+- **Tensor Field Encoding**: Mathematical sequence generators for cognitive state representation
 
 ### Key Features
 
@@ -146,6 +148,14 @@ CrystalCog implements the complete OpenCog stack:
 - **SQLite Storage**: Relational database with indexing for large datasets  
 - **Network Storage**: Distributed AtomSpace access via CogServer
 - **Multiple Storage**: Attach multiple backends for redundancy
+- **Hypergraph State Persistence**: Complete cognitive kernel state management
+
+#### Cognitive Kernel System (Agent-Zero Genesis)
+- **Cognitive Kernels**: Complete cognitive processing units with state persistence
+- **Tensor Field Encoding**: Mathematical sequence generators (prime, fibonacci, harmonic, factorial, powers of two)
+- **Attention Allocation**: Adaptive priority management across multiple kernels
+- **Meta-Cognitive Processing**: Recursive self-description and meta-level tracking
+- **Operation-Specific Encodings**: Specialized tensor configurations for reasoning, learning, memory, attention
 
 #### Enhanced Network API
 - **REST Endpoints**: Complete HTTP API for AtomSpace operations
@@ -167,6 +177,19 @@ atomspace.add_inheritance_link(dog, animal)
 file_storage = atomspace.create_file_storage("main", "knowledge.scm")
 atomspace.store_all
 
+# Create cognitive kernel with hypergraph state persistence
+kernel = AtomSpace::CognitiveKernel.new([128, 64], 0.8, 1, "reasoning")
+kernel.add_concept_node("agent-zero")
+
+# Store complete cognitive state
+hypergraph_storage = kernel.atomspace.create_hypergraph_storage("cognitive", "state.scm")
+hypergraph_storage.open
+kernel.store_hypergraph_state(hypergraph_storage)
+
+# Generate tensor field encodings
+prime_encoding = kernel.tensor_field_encoding("prime", include_attention: true)
+hypergraph_encoding = kernel.hypergraph_tensor_encoding
+
 # Save via REST API
 curl -X POST http://localhost:18080/storage/save
 ```
@@ -187,6 +210,7 @@ For complete documentation:
 - [Crystal Installation Guide](docs/CRYSTAL_INSTALLATION.md)
 - [Development Roadmap](DEVELOPMENT-ROADMAP.md)
 - [Persistence API Documentation](PERSISTENCE_API_DOCUMENTATION.md)
+- [Hypergraph State Persistence Documentation](HYPERGRAPH_STATE_PERSISTENCE_DOCUMENTATION.md)
 - [Complete API Documentation](README_COMPLETE.md)
 - [Agent-Zero Implementation](AGENT-ZERO-GENESIS.md)
 - [CI/CD Pipeline](docs/CI-CD-PIPELINE.md)

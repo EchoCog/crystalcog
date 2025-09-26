@@ -413,6 +413,64 @@ module AtomSpace
       storage
     end
     
+    # Hypergraph state persistence methods
+    def create_hypergraph_storage(name : String, storage_path : String, backend_type : String = "file") : HypergraphStateStorageNode
+      storage = HypergraphStateStorageNode.new(name, storage_path, backend_type)
+      attach_storage(storage)
+      storage
+    end
+    
+    # Extract hypergraph state from current AtomSpace
+    def extract_hypergraph_state(tensor_shape : Array(Int32), attention : Float64, 
+                                meta_level : Int32 = 0, cognitive_operation : String? = nil) : HypergraphState
+      HypergraphState.new(
+        atomspace: self,
+        tensor_shape: tensor_shape,
+        attention: attention,
+        meta_level: meta_level,
+        cognitive_operation: cognitive_operation,
+        timestamp: Time.utc
+      )
+    end
+    
+    # Store hypergraph state to all attached hypergraph storages
+    def store_hypergraph_state(tensor_shape : Array(Int32), attention : Float64, 
+                              meta_level : Int32 = 0, cognitive_operation : String? = nil) : Bool
+      state = extract_hypergraph_state(tensor_shape, attention, meta_level, cognitive_operation)
+      
+      success = true
+      get_attached_storages.each do |storage|
+        if storage.is_a?(HypergraphStateStorageNode)
+          success = false unless storage.store_hypergraph_state(state)
+        end
+      end
+      success
+    end
+    
+    # Load hypergraph state from the first available hypergraph storage
+    def load_hypergraph_state : HypergraphState?
+      get_attached_storages.each do |storage|
+        if storage.is_a?(HypergraphStateStorageNode)
+          state = storage.load_hypergraph_state(self)
+          return state if state
+        end
+      end
+      nil
+    end
+    
+    # Store to specific hypergraph storage
+    def store_hypergraph_state_to(storage : HypergraphStateStorageNode, tensor_shape : Array(Int32), 
+                                 attention : Float64, meta_level : Int32 = 0, 
+                                 cognitive_operation : String? = nil) : Bool
+      state = extract_hypergraph_state(tensor_shape, attention, meta_level, cognitive_operation)
+      storage.store_hypergraph_state(state)
+    end
+    
+    # Load from specific hypergraph storage
+    def load_hypergraph_state_from(storage : HypergraphStateStorageNode) : HypergraphState?
+      storage.load_hypergraph_state(self)
+    end
+    
     # Export to string representation
     def to_s(io : IO) : Nil
       io << "AtomSpace(#{@atom_count} atoms)"

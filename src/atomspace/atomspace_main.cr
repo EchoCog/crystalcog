@@ -4,4 +4,6 @@
 require "./truthvalue"
 require "./atom"
 require "./atomspace"
+require "./storage"
+require "./cognitive_kernel"
 require "./atomspace_module"
