@@ -49,6 +49,67 @@ Options:
 - ✅ Error handling improved for problematic spec files
 - ✅ Dependencies cleaned up and working correctly
 
+### `generate-system-image.sh` - Agent-Zero System Image Generation
+Generates bootable system images for the Agent-Zero Genesis cognitive operating system using Guix.
+
+**Prerequisites:**
+- Guix package manager must be installed
+- Agent-Zero build must be completed first (`make agent-zero`)
+
+**Usage:**
+```bash
+./generate-system-image.sh [OPTIONS] [IMAGE_TYPE] [OUTPUT_NAME]
+
+IMAGE_TYPE:
+  disk-image    Generate a disk image (default)
+  vm-image      Generate a VM image  
+  iso-image     Generate an ISO image
+
+OUTPUT_NAME:
+  Custom name for the output image (default: agent-zero-system)
+
+OPTIONS:
+  --minimal     Use minimal configuration for faster builds
+  --help        Show this help message
+```
+
+**Examples:**
+```bash
+# Generate default disk image
+./generate-system-image.sh
+
+# Generate VM image with custom name
+./generate-system-image.sh vm-image agent-zero-vm
+
+# Generate minimal disk image for testing
+./generate-system-image.sh --minimal disk-image
+
+# Generate ISO image
+./generate-system-image.sh iso-image agent-zero-live
+```
+
+**Makefile Integration:**
+```bash
+# Build Agent-Zero and generate system image
+make agent-zero-image
+
+# Generate VM image
+make agent-zero-vm-image
+
+# Generate ISO image  
+make agent-zero-iso-image
+
+# Generate minimal image for testing
+make agent-zero-minimal-image
+```
+
+**Validation Status:**
+- ✅ Script functionality validated and tested
+- ✅ Proper error handling for missing Guix dependency
+- ✅ Integration with existing Agent-Zero build system
+- ✅ Support for multiple image types (disk, VM, ISO)
+- ✅ Makefile targets configured and working
+
 ### `build-monorepo.sh` - Monorepo Build Script
 Legacy build script for the monorepo structure (primarily C++ components).
 
