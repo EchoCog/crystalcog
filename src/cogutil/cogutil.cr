@@ -27,8 +27,23 @@ module CogUtil
   end
   
   # Get a configuration value
-  def self.config_get(key : String) : String
-    Config.instance.get(key) || ""
+  def self.config_get(key : String, default : String = "") : String
+    Config.instance.get(key, default)
+  end
+  
+  # Set a configuration value
+  def self.config_set(key : String, value)
+    Config.instance.set(key, value)
+  end
+  
+  # Get current timestamp as string
+  def self.timestamp : String
+    Time.utc.to_s("%Y-%m-%d %H:%M:%S UTC")
+  end
+  
+  # Convert value to string (utility method)
+  def self.to_string(value) : String
+    value.to_s
   end
   
   # Shutdown and cleanup

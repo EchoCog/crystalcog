@@ -54,7 +54,8 @@ module NLP
     
     # Check if a token is a word (contains only letters)
     def self.is_word?(token : String) : Bool
-      token.match(WORD_PATTERN) && token.size == token.match(WORD_PATTERN).not_nil!.string.size
+      match = token.match(WORD_PATTERN)
+      match && token.size == match.string.size || false
     end
     
     # Check if a token is a number
