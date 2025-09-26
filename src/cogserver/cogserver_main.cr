@@ -7,12 +7,12 @@ module CogServer
   # Main entry point for command-line usage
   def self.main(args = ARGV)
     puts "CogServer #{VERSION} - OpenCog Network Server"
-    
+
     # Parse command line arguments
     host = CogServer::DEFAULT_HOST
     port = CogServer::DEFAULT_PORT
     ws_port = CogServer::DEFAULT_WS_PORT
-    
+
     i = 0
     while i < args.size
       case args[i]
@@ -34,40 +34,40 @@ module CogServer
         return
       end
     end
-    
+
     # Initialize the system
     CogServer.initialize
-    
+
     # Create and start the server
     server = CogServer::Server.new(host, port, ws_port)
-    
+
     # Handle shutdown gracefully
     Signal::INT.trap do
       puts "\nShutting down CogServer..."
       server.stop
       exit(0)
     end
-    
+
     Signal::TERM.trap do
       puts "\nShutting down CogServer..."
       server.stop
       exit(0)
     end
-    
+
     # Start the server
     server.start
-    
+
     puts "\nCogServer is running. Press Ctrl+C to stop."
     puts "Telnet interface: telnet #{host} #{port}"
     puts "HTTP API: http://#{host}:#{ws_port}"
     puts "Status: http://#{host}:#{ws_port}/status"
-    
+
     # Keep the main thread alive
     while server.running?
       sleep 1
     end
   end
-  
+
   private def self.print_usage
     puts <<-USAGE
     Usage: cogserver [options]
