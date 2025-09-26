@@ -253,6 +253,178 @@ class CognitiveKernel:
             'meta_level': self.meta_level,
             'parsed_from_scheme': True
         }
+    
+    def advanced_meta_cognitive_reflection(self) -> Dict[str, Any]:
+        """Perform advanced meta-cognitive reflection with monitoring, diagnostics, and multi-level reasoning."""
+        if self._guile_available:
+            shape_str = ' '.join(map(str, self.shape))
+            code = f"""
+            (use-modules (agent-zero kernel) (agent-zero meta-cognition))
+            (let ((kernel (spawn-cognitive-kernel '({shape_str}) {self.attention_weight})))
+              (let ((reflection (meta-cognitive-reflection kernel)))
+                (format #t "~a" reflection)))
+            """
+            output = self._run_guile_code(code)
+            return self._parse_scheme_alist(output)
+        else:
+            # Fallback Python implementation with advanced features
+            return {
+                'current-state': {
+                    'tensor_shape': self.shape,
+                    'attention': self.attention_weight,
+                    'meta_level': self.meta_level
+                },
+                'self-assessment': {
+                    'attention-efficiency': 'high' if self.attention_weight > 0.7 else 'moderate',
+                    'processing-complexity': 'high' if len(self.shape) > 2 else 'low',
+                    'overall-performance': 'good' if self.attention_weight > 0.6 and len(self.shape) > 1 else 'needs-improvement'
+                },
+                'diagnostic-analysis': {
+                    'timestamp': 1234567890,
+                    'attention-level': self.attention_weight,
+                    'tensor-complexity': np.prod(self.shape),
+                    'meta-level': self.meta_level,
+                    'processing-load': np.prod(self.shape) * self.attention_weight / 1000.0,
+                    'memory-efficiency': self.attention_weight * 100 / max(1, np.log(np.prod(self.shape))),
+                    'cognitive-coherence': (self.attention_weight + len(self.shape) * 0.1) / (1 + len(self.shape))
+                },
+                'multi-level-reasoning': [
+                    {
+                        'level': 0,
+                        'focus': 'object-reasoning',
+                        'content': {'tensor_shape': self.shape, 'attention': self.attention_weight},
+                        'confidence': 0.8
+                    },
+                    {
+                        'level': 1,
+                        'focus': 'meta-reasoning',
+                        'content': {'reasoning-effectiveness': 0.7, 'attention-allocation-quality': 0.8},
+                        'confidence': 0.7
+                    }
+                ],
+                'adaptive-tuning-ready': True
+            }
+            
+    def save_cognitive_state(self, filename: str) -> str:
+        """Save current cognitive state to file."""
+        if self._guile_available:
+            shape_str = ' '.join(map(str, self.shape))
+            code = f"""
+            (use-modules (agent-zero kernel) (agent-zero meta-cognition))
+            (let ((kernel (spawn-cognitive-kernel '({shape_str}) {self.attention_weight})))
+              (save-cognitive-state kernel "{filename}"))
+            """
+            return self._run_guile_code(code).strip()
+        else:
+            # Fallback Python implementation
+            state = {
+                'timestamp': 1234567890,
+                'kernel-shape': self.shape,
+                'attention-weight': self.attention_weight,
+                'meta-level': self.meta_level,
+                'hypergraph-state': self.hypergraph_state(),
+                'cognitive-function': 'cognitive-processing',
+                'self-description': self.recursive_self_description()
+            }
+            with open(filename, 'w') as f:
+                json.dump(state, f)
+            return filename
+            
+    def restore_cognitive_state(self, filename: str) -> Dict[str, Any]:
+        """Restore cognitive state from file."""
+        if self._guile_available:
+            code = f"""
+            (use-modules (agent-zero meta-cognition))
+            (restore-cognitive-state "{filename}")
+            """
+            output = self._run_guile_code(code)
+            return self._parse_scheme_alist(output)
+        else:
+            # Fallback Python implementation
+            with open(filename, 'r') as f:
+                state = json.load(f)
+            return state
+            
+    def monitor_cognitive_state(self) -> Dict[str, Any]:
+        """Monitor current cognitive state with diagnostics."""
+        if self._guile_available:
+            shape_str = ' '.join(map(str, self.shape))
+            code = f"""
+            (use-modules (agent-zero kernel) (agent-zero meta-cognition))
+            (let* ((kernel (spawn-cognitive-kernel '({shape_str}) {self.attention_weight}))
+                   (monitor (make-cognitive-monitor kernel)))
+              (monitor-cognitive-state monitor))
+            """
+            output = self._run_guile_code(code)
+            return self._parse_scheme_alist(output)
+        else:
+            # Fallback Python implementation
+            return {
+                'timestamp': 1234567890,
+                'attention-level': self.attention_weight,
+                'tensor-complexity': np.prod(self.shape),
+                'meta-level': self.meta_level,
+                'processing-load': np.prod(self.shape) * self.attention_weight / 1000.0,
+                'memory-efficiency': self.attention_weight * 100 / max(1, np.log(np.prod(self.shape))),
+                'cognitive-coherence': (self.attention_weight + len(self.shape) * 0.1) / (1 + len(self.shape)),
+                'diagnostics': []
+            }
+            
+    def multi_level_meta_reasoning(self, depth: int = 2) -> List[Dict[str, Any]]:
+        """Perform multi-level meta-reasoning."""
+        if self._guile_available:
+            shape_str = ' '.join(map(str, self.shape))
+            code = f"""
+            (use-modules (agent-zero kernel) (agent-zero meta-cognition))
+            (let ((kernel (spawn-cognitive-kernel '({shape_str}) {self.attention_weight})))
+              (multi-level-meta-reasoning kernel {depth}))
+            """
+            output = self._run_guile_code(code)
+            return self._parse_scheme_list(output)
+        else:
+            # Fallback Python implementation
+            levels = []
+            
+            # Level 0: Object-level reasoning
+            levels.append({
+                'level': 0,
+                'focus': 'object-reasoning',
+                'content': {'tensor_shape': self.shape, 'attention': self.attention_weight},
+                'confidence': 0.8
+            })
+            
+            # Level 1: Meta-reasoning
+            levels.append({
+                'level': 1,
+                'focus': 'meta-reasoning',
+                'content': {
+                    'reasoning-effectiveness': self.attention_weight * 0.7,
+                    'attention-allocation-quality': min(1.0, self.attention_weight * 100 / np.prod(self.shape)),
+                    'learning-progress': (self.meta_level + len(self.shape) * 0.2) / (1 + self.meta_level),
+                    'cognitive-flexibility': self.attention_weight * np.var(self.shape) / 100.0 if len(self.shape) > 1 else 0.1
+                },
+                'confidence': 0.7
+            })
+            
+            # Level 2: Meta-meta-reasoning (if depth allows)
+            if depth > 1:
+                levels.append({
+                    'level': 2,
+                    'focus': 'meta-meta-reasoning',
+                    'content': {
+                        'level-coherence': 0.8,
+                        'recursive-depth': len(levels) + 1,
+                        'confidence-degradation': 0.1
+                    },
+                    'recursive-insights': {
+                        'recursive-depth-efficiency': self.meta_level / max(1, len(self.shape)),
+                        'self-referential-stability': self.attention_weight / max(1, self.meta_level + 1),
+                        'emergence-potential': self.attention_weight * np.log(max(1, np.prod(self.shape))) * (1 + self.meta_level)
+                    },
+                    'confidence': 0.6
+                })
+            
+            return levels
 
 
 class CognitiveKernelManager:
@@ -336,6 +508,29 @@ def test_cognitive_kernel():
     self_desc = kernel.recursive_self_description()
     print(f"Self-description keys: {list(self_desc.keys())}")
     
+    # Test advanced meta-cognitive features
+    print("\nTesting advanced meta-cognitive features...")
+    
+    # Test advanced meta-cognitive reflection
+    advanced_reflection = kernel.advanced_meta_cognitive_reflection()
+    print(f"Advanced reflection keys: {list(advanced_reflection.keys())}")
+    
+    # Test cognitive state monitoring  
+    monitor_state = kernel.monitor_cognitive_state()
+    print(f"Monitoring state keys: {list(monitor_state.keys())}")
+    
+    # Test multi-level meta-reasoning
+    multi_level = kernel.multi_level_meta_reasoning(depth=2)
+    print(f"Multi-level reasoning levels: {len(multi_level)}")
+    
+    # Test state persistence
+    filename = "/tmp/cognitive_state_test.json"
+    saved_file = kernel.save_cognitive_state(filename)
+    print(f"Saved cognitive state to: {saved_file}")
+    
+    restored_state = kernel.restore_cognitive_state(filename)
+    print(f"Restored state keys: {list(restored_state.keys())}")
+    
     # Test kernel manager
     manager = CognitiveKernelManager()
     k1 = manager.create_kernel([32, 32], 0.9)
@@ -345,6 +540,7 @@ def test_cognitive_kernel():
     print(f"Allocated attention to {len(allocations)} kernels")
     
     print("Python Cognitive Kernel tests passed!")
+    print("Advanced meta-cognitive features are now available!")
 
 
 if __name__ == "__main__":

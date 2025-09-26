@@ -38,7 +38,16 @@
             calculate-focused-priority
             ecan-tournament-selection
             attention-score-for-goal
-            calculate-goal-boosts))
+            calculate-goal-boosts
+            ;; Advanced meta-cognitive features
+            make-cognitive-monitor
+            cognitive-monitor?
+            monitor-cognitive-state
+            save-cognitive-state
+            restore-cognitive-state
+            make-meta-parameter-tuner
+            adaptive-parameter-tuning
+            multi-level-meta-reasoning))
 
 ;; Focused ECAN Attention Value System
 (define-record-type <attention-value>
@@ -482,13 +491,320 @@
     ((> score 0.4) 'low)
     (else 'minimal)))
 
-;; Meta-cognitive reasoning functions
+;; Advanced Meta-cognitive Features
+
+;; Meta-cognitive Monitoring and Diagnostics
+(define-record-type <cognitive-monitor>
+  (make-cognitive-monitor-internal kernel history metrics thresholds)
+  cognitive-monitor?
+  (kernel monitor-kernel set-monitor-kernel!)
+  (history monitor-history set-monitor-history!)
+  (metrics monitor-metrics set-monitor-metrics!)
+  (thresholds monitor-thresholds set-monitor-thresholds!))
+
+(define (make-cognitive-monitor kernel)
+  "Create a new cognitive monitoring system for a kernel."
+  (let ((default-thresholds `((attention-efficiency . 0.6)
+                             (processing-speed . 0.5)
+                             (memory-usage . 0.8)
+                             (cognitive-load . 0.7)
+                             (adaptation-rate . 0.4))))
+    (make-cognitive-monitor-internal kernel '() (make-hash-table) default-thresholds)))
+
+(define (monitor-cognitive-state monitor)
+  "Monitor current cognitive state and update metrics."
+  (let* ((kernel (monitor-kernel monitor))
+         (metrics (monitor-metrics monitor))
+         (timestamp (current-time))
+         (state `((timestamp . ,timestamp)
+                 (attention-level . ,(kernel-attention kernel))
+                 (tensor-complexity . ,(apply * (kernel-tensor-shape kernel)))
+                 (meta-level . ,(recursive-depth kernel))
+                 (processing-load . ,(calculate-processing-load kernel))
+                 (memory-efficiency . ,(calculate-memory-efficiency kernel))
+                 (cognitive-coherence . ,(calculate-cognitive-coherence kernel)))))
+    
+    ;; Update metrics history
+    (set-monitor-history! monitor (cons state (monitor-history monitor)))
+    
+    ;; Update current metrics
+    (for-each (lambda (metric)
+                (hash-set! metrics (car metric) (cdr metric)))
+              state)
+    
+    ;; Perform diagnostic analysis
+    (diagnostic-analysis monitor state)))
+
+(define (calculate-processing-load kernel)
+  "Calculate current processing load of the kernel."
+  (let* ((shape (kernel-tensor-shape kernel))
+         (complexity (apply * shape))
+         (attention (kernel-attention kernel))
+         (meta-level (recursive-depth kernel)))
+    (* (/ complexity 1000.0) (+ attention meta-level))))
+
+(define (calculate-memory-efficiency kernel)
+  "Calculate memory efficiency metrics."
+  (let* ((shape (kernel-tensor-shape kernel))
+         (total-elements (apply * shape))
+         (attention-weight (kernel-attention kernel)))
+    (/ (* attention-weight 100) (max 1 (log total-elements)))))
+
+(define (calculate-cognitive-coherence kernel)
+  "Calculate cognitive coherence score."
+  (let* ((attention (kernel-attention kernel))
+         (complexity (length (kernel-tensor-shape kernel)))
+         (meta-level (recursive-depth kernel)))
+    (/ (+ attention (* complexity 0.1) (* meta-level 0.2)) 
+       (+ 1 complexity meta-level))))
+
+(define (diagnostic-analysis monitor state)
+  "Perform diagnostic analysis on cognitive state."
+  (let* ((thresholds (monitor-thresholds monitor))
+         (current-metrics (monitor-metrics monitor))
+         (diagnostics '()))
+    
+    ;; Check attention efficiency
+    (let ((attention-level (cdr (assoc 'attention-level state)))
+          (attention-threshold (cdr (assoc 'attention-efficiency thresholds))))
+      (when (< attention-level attention-threshold)
+        (set! diagnostics (cons '(attention-deficit . critical) diagnostics))))
+    
+    ;; Check processing load
+    (let ((processing-load (cdr (assoc 'processing-load state)))
+          (load-threshold (cdr (assoc 'cognitive-load thresholds))))
+      (when (> processing-load load-threshold)
+        (set! diagnostics (cons '(cognitive-overload . warning) diagnostics))))
+    
+    ;; Check memory efficiency
+    (let ((memory-eff (cdr (assoc 'memory-efficiency state)))
+          (memory-threshold (cdr (assoc 'memory-usage thresholds))))
+      (when (< memory-eff memory-threshold)
+        (set! diagnostics (cons '(memory-inefficiency . moderate) diagnostics))))
+    
+    ;; Update diagnostic results
+    (hash-set! current-metrics 'diagnostics diagnostics)
+    diagnostics))
+
+;; Cognitive State Persistence and Restoration
+(define (save-cognitive-state kernel filename)
+  "Save cognitive state to file for later restoration."
+  (let* ((state `((timestamp . ,(current-time))
+                 (kernel-shape . ,(kernel-tensor-shape kernel))
+                 (attention-weight . ,(kernel-attention kernel))
+                 (meta-level . ,(recursive-depth kernel))
+                 (hypergraph-state . ,(hypergraph-state kernel))
+                 (cognitive-function . ,(kernel-function kernel))
+                 (self-description . ,(recursive-self-description kernel))))
+         (state-string (with-output-to-string
+                         (lambda () (write state)))))
+    (call-with-output-file filename
+      (lambda (port)
+        (display state-string port)))
+    filename))
+
+(define (restore-cognitive-state filename)
+  "Restore cognitive state from file."
+  (let* ((state-string (call-with-input-file filename
+                         (lambda (port)
+                           (read-string port))))
+         (state (call-with-input-string state-string
+                  (lambda (port)
+                    (read port)))))
+    state))
+
+;; Adaptive Meta-parameter Tuning
+(define-record-type <meta-parameter-tuner>
+  (make-meta-parameter-tuner-internal kernel performance-history learning-rate adaptation-threshold)
+  meta-parameter-tuner?
+  (kernel tuner-kernel set-tuner-kernel!)
+  (performance-history tuner-performance-history set-tuner-performance-history!)
+  (learning-rate tuner-learning-rate set-tuner-learning-rate!)
+  (adaptation-threshold tuner-adaptation-threshold set-tuner-adaptation-threshold!))
+
+(define (make-meta-parameter-tuner kernel)
+  "Create adaptive meta-parameter tuning system."
+  (make-meta-parameter-tuner-internal kernel '() 0.1 0.05))
+
+(define (adaptive-parameter-tuning tuner performance-metrics)
+  "Adaptively tune meta-parameters based on performance."
+  (let* ((kernel (tuner-kernel tuner))
+         (history (tuner-performance-history tuner))
+         (learning-rate (tuner-learning-rate tuner))
+         (current-attention (kernel-attention kernel))
+         (performance-trend (calculate-performance-trend history performance-metrics)))
+    
+    ;; Update performance history
+    (set-tuner-performance-history! tuner (cons performance-metrics history))
+    
+    ;; Adaptive attention tuning
+    (let ((attention-adjustment (* learning-rate performance-trend)))
+      (when (> (abs attention-adjustment) (tuner-adaptation-threshold tuner))
+        (let ((new-attention (+ current-attention attention-adjustment)))
+          (set-kernel-attention! kernel (max 0.1 (min 1.0 new-attention))))))
+    
+    ;; Return tuning results
+    `((attention-adjustment . ,attention-adjustment)
+      (performance-trend . ,performance-trend)
+      (new-attention . ,(kernel-attention kernel)))))
+
+(define (calculate-performance-trend history current-metrics)
+  "Calculate performance trend from historical data."
+  (if (< (length history) 2)
+      0.0
+      (let* ((recent-performance (take history 3))
+             (older-performance (drop history 3))
+             (recent-avg (if (null? recent-performance) 
+                           0.5 
+                           (/ (apply + (map (lambda (m) (cdr (assoc 'efficiency m))) recent-performance))
+                              (length recent-performance))))
+             (older-avg (if (null? older-performance) 
+                          0.5 
+                          (/ (apply + (map (lambda (m) (cdr (assoc 'efficiency m))) older-performance))
+                             (length older-performance)))))
+        (- recent-avg older-avg))))
+
+;; Multi-level Meta-reasoning Capabilities
+(define (multi-level-meta-reasoning kernel reasoning-depth)
+  "Perform multi-level meta-reasoning about cognitive processes."
+  (let ((reasoning-levels '()))
+    
+    ;; Level 0: Object-level reasoning
+    (let ((level-0 `((level . 0)
+                    (focus . object-reasoning)
+                    (content . ,(hypergraph-state kernel))
+                    (confidence . 0.8))))
+      (set! reasoning-levels (cons level-0 reasoning-levels)))
+    
+    ;; Level 1: Meta-reasoning about object-level
+    (let ((level-1 `((level . 1)
+                    (focus . meta-reasoning)
+                    (content . ,(assess-cognitive-performance kernel))
+                    (meta-reflection . ,(generate-meta-reflection kernel))
+                    (confidence . 0.7))))
+      (set! reasoning-levels (cons level-1 reasoning-levels)))
+    
+    ;; Level 2: Meta-meta-reasoning (if depth allows)
+    (when (> reasoning-depth 1)
+      (let ((level-2 `((level . 2)
+                      (focus . meta-meta-reasoning)
+                      (content . ,(analyze-reasoning-patterns reasoning-levels))
+                      (recursive-insights . ,(extract-recursive-insights kernel))
+                      (confidence . 0.6))))
+        (set! reasoning-levels (cons level-2 reasoning-levels))))
+    
+    ;; Return multi-level reasoning results
+    (reverse reasoning-levels)))
+
+(define (generate-meta-reflection kernel)
+  "Generate meta-level reflection on cognitive processes."
+  `((reasoning-effectiveness . ,(assess-reasoning-effectiveness kernel))
+    (attention-allocation-quality . ,(assess-attention-allocation kernel))
+    (learning-progress . ,(assess-learning-progress kernel))
+    (cognitive-flexibility . ,(assess-cognitive-flexibility kernel))))
+
+(define (assess-reasoning-effectiveness kernel)
+  "Assess effectiveness of reasoning processes."
+  (let* ((attention (kernel-attention kernel))
+         (complexity (length (kernel-tensor-shape kernel)))
+         (meta-level (recursive-depth kernel)))
+    (/ (+ (* attention 0.4) (* complexity 0.3) (* meta-level 0.3)) 3.0)))
+
+(define (assess-attention-allocation kernel)
+  "Assess quality of attention allocation."
+  (let* ((attention (kernel-attention kernel))
+         (tensor-product (apply * (kernel-tensor-shape kernel))))
+    (* attention (/ 100.0 (max 1 tensor-product)))))
+
+(define (assess-learning-progress kernel)
+  "Assess learning and adaptation progress."
+  (let* ((meta-level (recursive-depth kernel))
+         (complexity (length (kernel-tensor-shape kernel))))
+    (/ (+ meta-level (* complexity 0.2)) (+ 1 meta-level))))
+
+(define (assess-cognitive-flexibility kernel)
+  "Assess cognitive flexibility and adaptation capability."
+  (let* ((attention (kernel-attention kernel))
+         (shape-variance (calculate-shape-variance (kernel-tensor-shape kernel))))
+    (* attention shape-variance)))
+
+(define (calculate-shape-variance shape)
+  "Calculate variance in tensor shape dimensions."
+  (if (< (length shape) 2)
+      0.1
+      (let* ((mean (/ (apply + shape) (length shape)))
+             (squared-diffs (map (lambda (x) (expt (- x mean) 2)) shape))
+             (variance (/ (apply + squared-diffs) (length shape))))
+        (/ variance 100.0))))
+
+(define (analyze-reasoning-patterns levels)
+  "Analyze patterns across reasoning levels."
+  `((level-coherence . ,(calculate-level-coherence levels))
+    (recursive-depth . ,(length levels))
+    (confidence-degradation . ,(calculate-confidence-degradation levels))))
+
+(define (calculate-level-coherence levels)
+  "Calculate coherence across reasoning levels."
+  (if (< (length levels) 2)
+      1.0
+      (let* ((confidences (map (lambda (level) (cdr (assoc 'confidence level))) levels))
+             (confidence-variance (calculate-variance confidences)))
+        (- 1.0 confidence-variance))))
+
+(define (calculate-confidence-degradation levels)
+  "Calculate confidence degradation across levels."
+  (if (< (length levels) 2)
+      0.0
+      (let* ((confidences (map (lambda (level) (cdr (assoc 'confidence level))) levels))
+             (first-confidence (car confidences))
+             (last-confidence (car (reverse confidences))))
+        (- first-confidence last-confidence))))
+
+(define (calculate-variance lst)
+  "Calculate variance of a list of numbers."
+  (if (< (length lst) 2)
+      0.0
+      (let* ((mean (/ (apply + lst) (length lst)))
+             (squared-diffs (map (lambda (x) (expt (- x mean) 2)) lst))
+             (variance (/ (apply + squared-diffs) (length lst))))
+        variance)))
+
+(define (extract-recursive-insights kernel)
+  "Extract insights from recursive cognitive processes."
+  `((recursive-depth-efficiency . ,(/ (recursive-depth kernel) 
+                                     (max 1 (length (kernel-tensor-shape kernel)))))
+    (self-referential-stability . ,(assess-self-referential-stability kernel))
+    (emergence-potential . ,(assess-emergence-potential kernel))))
+
+(define (assess-self-referential-stability kernel)
+  "Assess stability of self-referential processes."
+  (let* ((attention (kernel-attention kernel))
+         (meta-level (recursive-depth kernel)))
+    (/ attention (max 1 meta-level))))
+
+(define (assess-emergence-potential kernel)
+  "Assess potential for cognitive emergence."
+  (let* ((complexity (apply * (kernel-tensor-shape kernel)))
+         (attention (kernel-attention kernel))
+         (meta-level (recursive-depth kernel)))
+    (* attention (log (max 1 complexity)) (+ 1 meta-level))))
+
+;; Meta-cognitive reasoning functions (enhanced)
 (define (meta-cognitive-reflection kernel)
-  "Perform meta-cognitive reflection on kernel state."
-  `((current-state . ,(hypergraph-state kernel))
-    (self-assessment . ,(assess-cognitive-performance kernel))
-    (adaptation-suggestions . ,(suggest-adaptations kernel))
-    (meta-learning . ,(extract-meta-patterns kernel))))
+  "Perform enhanced meta-cognitive reflection on kernel state."
+  (let* ((monitor (make-cognitive-monitor kernel))
+         (tuner (make-meta-parameter-tuner kernel))
+         (basic-state (monitor-cognitive-state monitor))
+         (multi-level-analysis (multi-level-meta-reasoning kernel 2)))
+    
+    `((current-state . ,(hypergraph-state kernel))
+      (self-assessment . ,(assess-cognitive-performance kernel))
+      (adaptation-suggestions . ,(suggest-adaptations kernel))
+      (meta-learning . ,(extract-meta-patterns kernel))
+      (diagnostic-analysis . ,basic-state)
+      (multi-level-reasoning . ,multi-level-analysis)
+      (cognitive-monitoring . ,(monitor-metrics monitor))
+      (adaptive-tuning-ready . #t))))
 
 (define (assess-cognitive-performance kernel)
   "Assess current cognitive performance of kernel."
