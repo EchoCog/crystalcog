@@ -1,28 +1,69 @@
-// Bridge between OpenCog AtomSpace and GGML tensors
+// Optimized Bridge between OpenCog AtomSpace and GGML tensors
 // /src/agent-zero/opencog-ggml-bridge.c
+//
+// Performance optimizations:
+// - Memory pool for tensor allocations
+// - SIMD operations for tensor math
+// - Cache-friendly memory layouts
+// - Batch processing for AtomSpace conversions
 
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
+#include <immintrin.h>  // For SIMD operations
 #include "cognitive.h"
 
-// Complete GGML structures (same as in cognitive-tensors.c)
+// Memory pool for optimized tensor allocations
+#define TENSOR_POOL_SIZE 1024
+#define TENSOR_BLOCK_SIZE 16384  // 16KB blocks
+
+typedef struct {
+    void* blocks[TENSOR_POOL_SIZE];
+    int free_blocks[TENSOR_POOL_SIZE];
+    int allocated_blocks[TENSOR_POOL_SIZE];
+    int free_count;
+    int allocated_count;
+    size_t total_allocated;
+    size_t peak_usage;
+} TensorMemoryPool;
+
+static TensorMemoryPool tensor_pool = {0};
+
+// Initialize tensor memory pool
+static void init_tensor_pool() {
+    for (int i = 0; i < TENSOR_POOL_SIZE; i++) {
+        tensor_pool.blocks[i] = aligned_alloc(32, TENSOR_BLOCK_SIZE);  // 32-byte aligned for SIMD
+        tensor_pool.free_blocks[i] = i;
+    }
+    tensor_pool.free_count = TENSOR_POOL_SIZE;
+    tensor_pool.allocated_count = 0;
+    tensor_pool.total_allocated = 0;
+    tensor_pool.peak_usage = 0;
+}
+
+// Optimized GGML structures with cache-friendly layouts
 struct ggml_tensor {
     int ne[4];       // dimensions
-    void* data;      // tensor data
+    void* data;      // tensor data (32-byte aligned)
     size_t nb[4];    // strides
     int type;        // data type
+    int padding[3];  // Pad to cache line boundary
 };
 
 struct ggml_context {
     void* mem_buffer;
     size_t mem_size;
     size_t mem_used;
+    TensorMemoryPool* pool;  // Reference to memory pool
 };
 
-// GGML function declarations (implemented in cognitive-tensors.c or mocked here)
-static struct ggml_tensor* ggml_new_tensor_2d(struct ggml_context* ctx, int type, int ne0, int ne1) {
+// Optimized tensor allocation using memory pool
+static struct ggml_tensor* ggml_new_tensor_2d_optimized(struct ggml_context* ctx, int type, int ne0, int ne1) {
+    if (!tensor_pool.blocks[0]) {
+        init_tensor_pool();
+    }
+    
     struct ggml_tensor* tensor = malloc(sizeof(struct ggml_tensor));
     if (!tensor) return NULL;
     
@@ -31,14 +72,93 @@ static struct ggml_tensor* ggml_new_tensor_2d(struct ggml_context* ctx, int type
     tensor->ne[2] = 1;
     tensor->ne[3] = 1;
     tensor->type = type;
-    tensor->data = calloc(ne0 * ne1, sizeof(float));
+    
+    // Use memory pool for data allocation
+    size_t data_size = ne0 * ne1 * sizeof(float);
+    
+    if (data_size <= TENSOR_BLOCK_SIZE && tensor_pool.free_count > 0) {
+        // Allocate from pool
+        int block_idx = tensor_pool.free_blocks[--tensor_pool.free_count];
+        tensor_pool.allocated_blocks[tensor_pool.allocated_count++] = block_idx;
+        tensor->data = tensor_pool.blocks[block_idx];
+        tensor_pool.total_allocated += data_size;
+        if (tensor_pool.total_allocated > tensor_pool.peak_usage) {
+            tensor_pool.peak_usage = tensor_pool.total_allocated;
+        }
+    } else {
+        // Fallback to system allocation
+        tensor->data = aligned_alloc(32, data_size);
+    }
     
     if (!tensor->data) {
         free(tensor);
         return NULL;
     }
     
+    // Zero-initialize with SIMD optimization
+    memset(tensor->data, 0, data_size);
+    
     return tensor;
+}
+
+// SIMD-optimized tensor multiplication
+static struct ggml_tensor* ggml_mul_simd(struct ggml_context* ctx, struct ggml_tensor* a, struct ggml_tensor* b) {
+    if (!a || !b || !a->data || !b->data) return NULL;
+    
+    struct ggml_tensor* result = ggml_new_tensor_2d_optimized(ctx, 0, a->ne[0], a->ne[1]);
+    if (!result) return NULL;
+    
+    float* a_data = (float*)a->data;
+    float* b_data = (float*)b->data;
+    float* result_data = (float*)result->data;
+    
+    int size = a->ne[0] * a->ne[1];
+    int simd_size = size - (size % 8);  // Process 8 floats at a time with AVX
+    
+    // SIMD processing
+    for (int i = 0; i < simd_size; i += 8) {
+        __m256 va = _mm256_load_ps(&a_data[i]);
+        __m256 vb = _mm256_load_ps(&b_data[i]);
+        __m256 vresult = _mm256_mul_ps(va, vb);
+        _mm256_store_ps(&result_data[i], vresult);
+    }
+    
+    // Handle remaining elements
+    for (int i = simd_size; i < size; i++) {
+        result_data[i] = a_data[i] * b_data[i];
+    }
+    
+    return result;
+}
+
+// SIMD-optimized tensor addition
+static struct ggml_tensor* ggml_add_simd(struct ggml_context* ctx, struct ggml_tensor* a, struct ggml_tensor* b) {
+    if (!a || !b || !a->data || !b->data) return NULL;
+    
+    struct ggml_tensor* result = ggml_new_tensor_2d_optimized(ctx, 0, a->ne[0], a->ne[1]);
+    if (!result) return NULL;
+    
+    float* a_data = (float*)a->data;
+    float* b_data = (float*)b->data;
+    float* result_data = (float*)result->data;
+    
+    int size = a->ne[0] * a->ne[1];
+    int simd_size = size - (size % 8);
+    
+    // SIMD processing
+    for (int i = 0; i < simd_size; i += 8) {
+        __m256 va = _mm256_load_ps(&a_data[i]);
+        __m256 vb = _mm256_load_ps(&b_data[i]);
+        __m256 vresult = _mm256_add_ps(va, vb);
+        _mm256_store_ps(&result_data[i], vresult);
+    }
+    
+    // Handle remaining elements
+    for (int i = simd_size; i < size; i++) {
+        result_data[i] = a_data[i] + b_data[i];
+    }
+    
+    return result;
 }
 
 typedef struct {
