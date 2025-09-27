@@ -15,30 +15,30 @@ require "./optimization"
 
 module Moses
   VERSION = "0.1.0"
-  
+
   # Initialize the MOSES subsystem
   def self.initialize
     CogUtil::Logger.info("MOSES #{VERSION} initializing")
-    
+
     # Initialize dependencies
     CogUtil.initialize
     AtomSpace.initialize
-    
+
     CogUtil::Logger.info("MOSES #{VERSION} initialized")
   end
-  
+
   # Main MOSES evolutionary search function
   # This is the primary entry point for running MOSES optimization
   def self.run_moses(params : MosesParams) : MosesResult
     CogUtil::Logger.info("Starting MOSES evolutionary search")
-    
+
     # Create metapopulation and scoring function
     metapop = MetaPopulation.new(params)
     scoring_func = create_scoring_function(params)
-    
+
     # Run the main evolutionary loop
     best_candidates = metapop.run(scoring_func, params.max_evals)
-    
+
     # Return results
     MosesResult.new(
       candidates: best_candidates,
@@ -46,7 +46,7 @@ module Moses
       generations: metapop.generations
     )
   end
-  
+
   # Create a scoring function based on the problem type
   private def self.create_scoring_function(params : MosesParams) : ScoringFunction
     case params.problem_type
@@ -62,17 +62,17 @@ module Moses
       raise Moses::MosesException.new("Unsupported problem type: #{params.problem_type}")
     end
   end
-  
+
   # Exception classes for MOSES
   class MosesException < CogUtil::OpenCogException
   end
-  
+
   class EvolutionException < MosesException
   end
-  
-  class ScoringException < MosesException  
+
+  class ScoringException < MosesException
   end
-  
+
   class RepresentationException < MosesException
   end
 end
