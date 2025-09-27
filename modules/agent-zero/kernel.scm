@@ -22,7 +22,11 @@
             generate-fibonacci
             generate-harmonics
             generate-factorials
-            generate-powers-of-two))
+            generate-powers-of-two
+            ;; Additional utilities for advanced meta-cognition
+            set-kernel-attention!
+            current-time
+            read-string))
 
 ;; Define cognitive kernel record type
 (define-record-type <cognitive-kernel>
@@ -251,3 +255,27 @@
     (tensor-shape . ,(kernel-tensor-shape kernel))
     (attention . ,(kernel-attention kernel))
     (meta-level . ,(recursive-depth kernel))))
+
+;; Additional utility functions for advanced meta-cognition
+(define (set-kernel-attention! kernel new-attention)
+  "Set new attention value for kernel."
+  ;; In a proper implementation, this would modify the internal structure
+  ;; For now, we simulate it by returning the kernel with updated attention
+  (make-cognitive-kernel-internal 
+    (kernel-atomspace kernel)
+    (kernel-tensor-field kernel)
+    new-attention
+    (kernel-meta-level kernel)))
+
+(define (current-time)
+  "Get current timestamp (simulated)."
+  ;; Simple timestamp simulation
+  (+ 1000000000 (random 1000000000)))
+
+(define (read-string port)
+  "Read entire string from port."
+  (let loop ((chars '()))
+    (let ((char (read-char port)))
+      (if (eof-object? char)
+          (list->string (reverse chars))
+          (loop (cons char chars))))))
