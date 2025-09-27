@@ -329,26 +329,61 @@ echo "Run './pre-inst-env guile-daemon' to start the cognitive daemon."
 
 ### 2. System Image Generation
 
+The complete system image generation functionality is now available through the `generate-system-image.sh` script:
+
 ```bash
 #!/bin/bash
 # /scripts/generate-system-image.sh
 
-echo "Generating Agent-Zero system image..."
+# Generate different types of Agent-Zero system images
+./scripts/generate-system-image.sh                    # Default disk image
+./scripts/generate-system-image.sh --type vm-image    # VM image
+./scripts/generate-system-image.sh --type iso         # ISO image
 
-# Create system configuration
-cat > /tmp/agent-zero-system.scm << 'EOF'
-(use-modules (gnu)
-             (agent-zero packages cognitive))
+# Or use Makefile targets
+make system-image    # Generate system disk image
+make vm-image       # Generate VM image  
+make iso-image      # Generate ISO image
+make validate-config # Validate configuration only
+```
 
-(operating-system
-  (host-name "agent-zero")
-  (packages (append %base-packages %cognitive-packages)))
-EOF
+The script provides comprehensive system image generation with:
 
-# Build system image
-guix system disk-image /tmp/agent-zero-system.scm
+- **Multiple image types**: disk images, VM images, and ISO images
+- **Full system configuration**: Complete Agent-Zero Genesis environment with cognitive services
+- **Validation**: Pre-build configuration validation
+- **Error handling**: Comprehensive error checking and cleanup
+- **Documentation**: Generated `.info` files with usage instructions
+- **Integration**: Full integration with existing build system
 
-echo "System image generated: /gnu/store/.../disk-image"
+#### System Image Features
+
+Generated images include:
+- Complete GNU/Linux Agent-Zero environment
+- Pre-configured cognitive kernel framework
+- Hypergraph-based OS environment
+- SSH access (default user: `agent`)
+- Agent-Zero daemon service (auto-start)
+- Meta-cognitive processing capabilities
+- Full development environment
+
+#### Usage Examples
+
+```bash
+# Basic usage
+./scripts/generate-system-image.sh
+
+# Custom configuration
+./scripts/generate-system-image.sh \
+  --config ./my-config.scm \
+  --output ./my-images \
+  --name my-agent-zero
+
+# Generate VM image for testing
+./scripts/generate-system-image.sh --type vm-image
+
+# Validate configuration without building
+./scripts/generate-system-image.sh --validate-only
 ```
 
 ## Usage Examples
