@@ -19,22 +19,22 @@ describe "AI Integration - Milestone 5" do
     it "loads and manages AI models" do
       ai_manager = AIIntegration::CrystalAIManager.new
       config = AIIntegration::ModelConfig.new("/models/test_model", AIIntegration::ModelType::CUSTOM)
-      
+
       ai_manager.load_model("test_model", config).should be_true
       ai_manager.is_model_loaded?("test_model").should be_true
       ai_manager.list_models.should contain("test_model")
-      
+
       ai_manager.unload_model("test_model").should be_true
       ai_manager.is_model_loaded?("test_model").should be_false
     end
 
     it "manages inference sessions" do
       ai_manager = AIIntegration::CrystalAIManager.new
-      
+
       ai_manager.create_session("test_session")
       ai_manager.has_session?("test_session").should be_true
       ai_manager.list_sessions.should contain("test_session")
-      
+
       ai_manager.destroy_session("test_session")
       ai_manager.has_session?("test_session").should be_false
     end
@@ -42,10 +42,10 @@ describe "AI Integration - Milestone 5" do
     it "performs AI inference" do
       ai_manager = AIIntegration::CrystalAIManager.new
       config = AIIntegration::ModelConfig.new("/models/demo_model", AIIntegration::ModelType::CUSTOM)
-      
+
       ai_manager.load_model("demo_model", config)
       ai_manager.create_session("inference_test")
-      
+
       response = ai_manager.infer_simple("demo_model", "Hello AI", "inference_test")
       response.success.should be_true
       response.text.should_not be_empty
@@ -57,13 +57,13 @@ describe "AI Integration - Milestone 5" do
       ai_manager = AIIntegration::CrystalAIManager.new
       config = AIIntegration::ModelConfig.new("/models/demo_model", AIIntegration::ModelType::CUSTOM)
       ai_manager.load_model("demo_model", config)
-      
+
       requests = [
         AIIntegration::InferenceRequest.new("Query 1", "batch_1"),
         AIIntegration::InferenceRequest.new("Query 2", "batch_2"),
-        AIIntegration::InferenceRequest.new("Query 3", "batch_3")
+        AIIntegration::InferenceRequest.new("Query 3", "batch_3"),
       ]
-      
+
       responses = ai_manager.batch_infer("demo_model", requests)
       responses.size.should eq(3)
       responses.all?(&.success).should be_true
@@ -83,10 +83,10 @@ describe "AI Integration - Milestone 5" do
       config = @integration.create_default_workbench
       config.name.should eq("crystal_cognitive_workbench")
       config.models.size.should eq(2)
-      
+
       result = @integration.setup_ai_workbench(config)
       result.should be_true
-      
+
       status = @integration.get_integration_status
       status["integration_active"].should eq("true")
       status["ai_models"].should contain("demo_model")
@@ -95,15 +95,15 @@ describe "AI Integration - Milestone 5" do
     it "performs knowledge enrichment" do
       config = @integration.create_default_workbench
       @integration.setup_ai_workbench(config)
-      
+
       enrichments = @integration.knowledge_enrichment("machine_learning")
       enrichments.size.should be > 1
       enrichments.should_not contain("AI integration not active")
-      
+
       # Should have different types of enrichments
       ai_insights = enrichments.select { |e| e.starts_with?("AI Insight:") }
       atomspace_additions = enrichments.select { |e| e.starts_with?("Added concept") }
-      
+
       ai_insights.size.should eq(1)
       atomspace_additions.size.should eq(1)
     end
@@ -111,14 +111,14 @@ describe "AI Integration - Milestone 5" do
     it "performs cognitive-AI reasoning cycles" do
       config = @integration.create_default_workbench
       @integration.setup_ai_workbench(config)
-      
+
       results = @integration.cognitive_ai_reasoning("What is artificial intelligence?", 3)
-      
+
       results.should_not have_key("error")
       results.should have_key("ai_analysis")
       results.should have_key("synthesis")
       results.should have_key("status")
-      
+
       results["status"].should eq("Complete cognitive-AI reasoning cycle")
       results["ai_analysis"].should_not be_empty
       results["synthesis"].should_not be_empty
@@ -127,9 +127,9 @@ describe "AI Integration - Milestone 5" do
     it "handles interactive reasoning sessions" do
       config = @integration.create_default_workbench
       @integration.setup_ai_workbench(config)
-      
+
       response = @integration.interactive_reasoning_session("Explain cognitive architectures")
-      
+
       response.should contain("AI Response:")
       response.should contain("Knowledge Base:")
       response.should_not contain("AI integration not active")
@@ -139,7 +139,7 @@ describe "AI Integration - Milestone 5" do
   describe "Error Handling and Edge Cases" do
     it "handles inference with unloaded model" do
       ai_manager = AIIntegration::CrystalAIManager.new
-      
+
       response = ai_manager.infer_simple("nonexistent_model", "Test prompt", "test_session")
       response.success.should be_false
       response.error_message.should contain("not loaded")
@@ -163,7 +163,7 @@ describe "AI Integration - Milestone 5" do
     it "creates integration from atomspace" do
       atomspace = AtomSpace::AtomSpace.new
       integration = AIIntegration.create_integration(atomspace)
-      
+
       integration.should_not be_nil
       status = integration.get_integration_status
       status["pln_engine"].should eq("active")
@@ -172,7 +172,7 @@ describe "AI Integration - Milestone 5" do
 
     it "creates demo setup successfully" do
       demo_integration = AIIntegration.create_demo_setup
-      
+
       demo_integration.should_not be_nil
       status = demo_integration.get_integration_status
       status["integration_active"].should eq("true")

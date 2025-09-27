@@ -23,6 +23,7 @@ BUILD=false
 HELP=false
 COMPONENT=""
 CRYSTAL_VERSION=""
+COMPREHENSIVE=false
 
 # Print colored output
 print_status() {
@@ -59,6 +60,7 @@ Options:
     -C, --component     Run tests for specific component (cogutil, atomspace, pln, etc.)
     -V, --version       Specify Crystal version to use
     -a, --all          Run all tests (unit, integration, benchmarks, coverage)
+    --comprehensive    Use comprehensive test suite (includes Agent-Zero tests)
 
 Examples:
     $0 --all                    # Run complete test suite
@@ -119,6 +121,10 @@ parse_args() {
                 INTEGRATION=true
                 LINT=true
                 BUILD=true
+                shift
+                ;;
+            --comprehensive)
+                COMPREHENSIVE=true
                 shift
                 ;;
             *)
@@ -388,6 +394,18 @@ main() {
     if [ "$HELP" = true ]; then
         show_help
         exit 0
+    fi
+    
+    # Use comprehensive test suite if requested
+    if [ "$COMPREHENSIVE" = true ]; then
+        print_status "Delegating to comprehensive test suite..."
+        local comprehensive_script="$(dirname "$0")/../tests/comprehensive-test-suite.sh"
+        if [ -f "$comprehensive_script" ]; then
+            exec "$comprehensive_script" --all
+        else
+            print_error "Comprehensive test suite not found at $comprehensive_script"
+            exit 1
+        fi
     fi
     
     print_status "CrystalCog Test Runner Starting..."
