@@ -45,6 +45,10 @@ help:
 	@echo "  agent-zero-test  - Test Agent-Zero components"
 	@echo "  agent-zero-demo  - Run Agent-Zero demonstration"
 	@echo "  agent-zero-clean - Clean Agent-Zero build artifacts"
+	@echo "  agent-zero-image - Generate Agent-Zero system disk image"
+	@echo "  agent-zero-vm-image - Generate Agent-Zero VM image"
+	@echo "  agent-zero-iso-image - Generate Agent-Zero ISO image"
+	@echo "  agent-zero-minimal-image - Generate minimal system image (for testing)"
 	@echo ""
 	@echo "System image generation targets:"
 	@echo "  system-image     - Generate Agent-Zero system disk image"
@@ -334,6 +338,7 @@ agent-zero-clean:
 	@rm -rf build/agent-zero build/system-images
 	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero artifacts cleaned"
 
+#<<<<<<< copilot/fix-62b924d7-f615-47d2-bdef-f907a093d2a7
 # System image generation targets
 
 # Generate Agent-Zero system disk image
@@ -359,6 +364,32 @@ validate-config:
 	@echo "$(BLUE)[INFO]$(NC) Validating Agent-Zero system configuration..."
 	@./scripts/generate-system-image.sh --validate-only
 	@echo "$(GREEN)[SUCCESS]$(NC) System configuration validation complete"
+#=======
+# Generate Agent-Zero system image
+.PHONY: agent-zero-image agent-zero-vm-image agent-zero-iso-image
+agent-zero-image: agent-zero
+	@echo "$(BLUE)[INFO]$(NC) Generating Agent-Zero system disk image..."
+	@./scripts/generate-system-image.sh disk-image
+	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero system image generated"
+
+# Generate Agent-Zero VM image
+agent-zero-vm-image: agent-zero
+	@echo "$(BLUE)[INFO]$(NC) Generating Agent-Zero VM image..."
+	@./scripts/generate-system-image.sh vm-image
+	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero VM image generated"
+
+# Generate Agent-Zero ISO image
+agent-zero-iso-image: agent-zero
+	@echo "$(BLUE)[INFO]$(NC) Generating Agent-Zero ISO image..."
+	@./scripts/generate-system-image.sh iso-image
+	@echo "$(GREEN)[SUCCESS]$(NC) Agent-Zero ISO image generated"
+
+# Generate minimal system image (faster for testing)
+agent-zero-minimal-image: agent-zero
+	@echo "$(BLUE)[INFO]$(NC) Generating minimal Agent-Zero system image..."
+	@./scripts/generate-system-image.sh --minimal disk-image agent-zero-minimal
+	@echo "$(GREEN)[SUCCESS]$(NC) Minimal Agent-Zero system image generated"
+#>>>>>>> main
 
 # Guix environment setup
 .PHONY: guix-env guix-shell

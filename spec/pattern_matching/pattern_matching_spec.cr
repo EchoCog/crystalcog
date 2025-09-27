@@ -8,17 +8,17 @@ describe PatternMatching do
       # Should not crash
     end
   end
-  
+
   describe "Pattern" do
     it "creates pattern with atom" do
       atomspace = AtomSpace::AtomSpace.new
       concept = atomspace.add_concept_node("test")
       pattern = PatternMatching::Pattern.new(concept)
-      
+
       pattern.should_not be_nil
     end
   end
-  
+
   describe "MatchResult" do
     it "creates match result" do
       bindings = {} of AtomSpace::Atom => AtomSpace::Atom
@@ -27,7 +27,7 @@ describe PatternMatching do
       result.should_not be_nil
     end
   end
-  
+
   describe "TypeConstraint" do
     it "creates type constraint" do
       atomspace = AtomSpace::AtomSpace.new
@@ -36,7 +36,7 @@ describe PatternMatching do
       constraint.should_not be_nil
     end
   end
-  
+
   describe "PatternMatcher" do
     it "creates pattern matcher" do
       atomspace = AtomSpace::AtomSpace.new

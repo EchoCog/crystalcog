@@ -84,12 +84,12 @@ module AIIntegration
 
     def load_model(model_name : String, config : ModelConfig) : Bool
       puts "Loading AI model: #{model_name}"
-      
+
       # Validate configuration
       unless File.exists?(config.model_path) || config.model_path.starts_with?("/models/")
         puts "Warning: Model path may not exist: #{config.model_path}"
       end
-      
+
       # Simulate model loading (in real implementation, this would call C++ functions)
       @loaded_models.add(model_name)
       puts "Model #{model_name} loaded successfully"
@@ -154,10 +154,10 @@ module AIIntegration
 
       # Simulate AI inference (in real implementation, this would call C++ AI functions)
       start_time = Time.monotonic
-      
+
       # Generate a simple response based on the prompt
       response_text = generate_demo_response(request.prompt)
-      
+
       end_time = Time.monotonic
       inference_time = (end_time - start_time).total_milliseconds.to_u64
 
@@ -195,9 +195,9 @@ module AIIntegration
 
     def get_stats : Hash(String, Int32)
       {
-        "loaded_models" => @loaded_models.size,
-        "active_sessions" => @sessions.size,
-        "total_inferences" => 0 # Would track in real implementation
+        "loaded_models"    => @loaded_models.size,
+        "active_sessions"  => @sessions.size,
+        "total_inferences" => 0, # Would track in real implementation
       }
     end
   end
@@ -223,7 +223,7 @@ module AIIntegration
 
     def setup_ai_workbench(config : AIWorkbenchConfig) : Bool
       puts "Setting up AI workbench: #{config.name}"
-      
+
       # Load all models
       config.models.each do |model_name|
         if model_config = config.model_configs[model_name]?
@@ -236,7 +236,7 @@ module AIIntegration
           return false
         end
       end
-      
+
       @ai_manager.set_default_model(config.default_model)
       @integration_active = true
       puts "AI workbench setup complete"
@@ -245,21 +245,21 @@ module AIIntegration
 
     def create_default_workbench : AIWorkbenchConfig
       config = AIWorkbenchConfig.new("crystal_cognitive_workbench", "demo_model")
-      
+
       # Add demo models
       config.models = ["demo_model", "reasoning_model"]
-      
+
       demo_config = ModelConfig.new("/models/demo_model", ModelType::CUSTOM)
       demo_config.context_length = 2048_u32
       demo_config.temperature = 0.7_f32
-      
+
       reasoning_config = ModelConfig.new("/models/reasoning_model", ModelType::CUSTOM)
       reasoning_config.context_length = 4096_u32
       reasoning_config.temperature = 0.5_f32
-      
+
       config.model_configs["demo_model"] = demo_config
       config.model_configs["reasoning_model"] = reasoning_config
-      
+
       config
     end
 
@@ -269,30 +269,30 @@ module AIIntegration
       end
 
       results = {} of String => String
-      
+
       # Step 1: Use AI to understand and expand the query
-      ai_response = @ai_manager.infer_simple("demo_model", 
-        "Analyze this query for cognitive reasoning: #{query}", 
+      ai_response = @ai_manager.infer_simple("demo_model",
+        "Analyze this query for cognitive reasoning: #{query}",
         "cognitive_session")
-      
+
       results["ai_analysis"] = ai_response.text
-      
+
       # Step 2: Use cognitive reasoning engines
       if pln = @pln_engine
         pln_atoms = pln.reason(max_iterations)
         results["pln_results"] = "PLN generated #{pln_atoms.size} new knowledge atoms"
       end
-      
+
       if ure = @ure_engine
         ure_atoms = ure.forward_chain(max_iterations)
         results["ure_results"] = "URE derived #{ure_atoms.size} new facts"
       end
-      
+
       # Step 3: Synthesize results with AI
       synthesis_prompt = "Synthesize these cognitive reasoning results: #{results.values.join(". ")}"
       synthesis_response = @ai_manager.infer_simple("demo_model", synthesis_prompt, "synthesis_session")
       results["synthesis"] = synthesis_response.text
-      
+
       results["status"] = "Complete cognitive-AI reasoning cycle"
       results
     end
@@ -303,28 +303,28 @@ module AIIntegration
       end
 
       enrichments = [] of String
-      
+
       # Get AI insights about the concept
       ai_prompt = "Provide knowledge enrichment for the concept: #{concept}"
       ai_response = @ai_manager.infer_simple("reasoning_model", ai_prompt, "enrichment_session")
       enrichments << "AI Insight: #{ai_response.text}"
-      
+
       # Add concept to AtomSpace if not exists
       concept_node = @atomspace.add_concept_node(concept)
       enrichments << "Added concept to AtomSpace: #{concept}"
-      
+
       # Use PLN to find related concepts
       if pln = @pln_engine
         # In a real implementation, this would use PLN to find semantic relationships
         enrichments << "PLN analysis: Found semantic relationships in knowledge base"
       end
-      
+
       # Use URE to derive properties
       if ure = @ure_engine
         # In a real implementation, this would use URE to derive properties
         enrichments << "URE analysis: Derived logical properties and relationships"
       end
-      
+
       enrichments
     end
 
@@ -335,11 +335,11 @@ module AIIntegration
 
       # Create comprehensive reasoning response
       responses = [] of String
-      
+
       # AI understanding
       ai_response = @ai_manager.infer_simple("demo_model", user_input, "interactive_session")
       responses << "AI Response: #{ai_response.text}"
-      
+
       # Cognitive processing
       cognitive_results = cognitive_ai_reasoning(user_input, 3)
       if cognitive_results["error"]?
@@ -347,11 +347,11 @@ module AIIntegration
       else
         responses << "Cognitive Analysis: #{cognitive_results["synthesis"]?}"
       end
-      
+
       # Knowledge base state
       atomspace_size = @atomspace.size
       responses << "Knowledge Base: #{atomspace_size} atoms in AtomSpace"
-      
+
       responses.join("\n\n")
     end
 
@@ -361,19 +361,19 @@ module AIIntegration
       status["atomspace_size"] = @atomspace.size.to_s
       status["ai_models"] = @ai_manager.list_models.join(", ")
       status["ai_sessions"] = @ai_manager.list_sessions.size.to_s
-      
+
       if @pln_engine
         status["pln_engine"] = "active"
       else
         status["pln_engine"] = "inactive"
       end
-      
+
       if @ure_engine
         status["ure_engine"] = "active"
       else
         status["ure_engine"] = "inactive"
       end
-      
+
       status
     end
   end
@@ -388,7 +388,7 @@ module AIIntegration
   def self.create_demo_setup : CognitiveAIIntegration
     atomspace = AtomSpace::AtomSpace.new
     integration = create_integration(atomspace)
-    
+
     # Setup default workbench
     config = integration.create_default_workbench
     if integration.setup_ai_workbench(config)
@@ -396,7 +396,7 @@ module AIIntegration
     else
       puts "Failed to setup demo AI integration"
     end
-    
+
     integration
   end
 end

@@ -10,54 +10,69 @@ require "./memory_profiler"
 
 module CogUtil
   VERSION = "0.1.0"
-  
+
   # Initialize the CogUtil subsystem
   def self.initialize
     # Load configuration
     Config.create_instance
-    
+
     # Setup default logger
     Logger.info("CogUtil #{VERSION} initialized")
-    
+
     # Seed random number generator if configured
     if seed = config_get("RANDOM_SEED").to_i32?
       RandGen.seed(seed.to_u32)
       Logger.debug("Random seed set to: #{seed}")
     end
   end
-  
+
   # Get a configuration value
-  def self.config_get(key : String) : String
-    Config.instance.get(key) || ""
+  def self.config_get(key : String, default : String = "") : String
+    Config.instance.get(key, default)
   end
-  
+
+  # Set a configuration value
+  def self.config_set(key : String, value)
+    Config.instance.set(key, value)
+  end
+
+  # Get current timestamp as string
+  def self.timestamp : String
+    Time.utc.to_s("%Y-%m-%d %H:%M:%S UTC")
+  end
+
+  # Convert value to string (utility method)
+  def self.to_string(value) : String
+    value.to_s
+  end
+
   # Shutdown and cleanup
   def self.finalize
     Logger.info("CogUtil shutting down")
   end
-  
+
   # Exception classes for OpenCog
   class OpenCogException < Exception
   end
-  
+
   class InvalidParamException < OpenCogException
   end
-  
+
   class AssertionException < OpenCogException
   end
-  
+
   class RuntimeException < OpenCogException
   end
-  
+
   class IOException < OpenCogException
   end
-  
+
   class ComboException < OpenCogException
   end
-  
+
   class StandardException < OpenCogException
   end
-  
+
   # OpenCog assertion macro - similar to oc_assert
   macro oc_assert(condition, message = "Assertion failed")
     {% if flag?(:release) %}
@@ -68,7 +83,7 @@ module CogUtil
       end
     {% end %}
   end
-  
+
   # Platform-specific utilities
   module Platform
     # Get number of CPU cores
@@ -83,7 +98,7 @@ module CogUtil
     rescue
       1
     end
-    
+
     # Get total system memory in bytes
     def self.total_memory : Int64
       {% if flag?(:linux) %}
@@ -100,7 +115,7 @@ module CogUtil
     rescue
       0_i64
     end
-    
+
     # Get available memory in bytes
     def self.available_memory : Int64
       {% if flag?(:linux) %}
@@ -116,21 +131,21 @@ module CogUtil
       0_i64
     end
   end
-  
+
   # String utilities
   module StringUtil
     # Trim whitespace and convert to lowercase
     def self.normalize(str : String) : String
       str.strip.downcase
     end
-    
+
     # Split string by delimiter, handling quoted sections
     def self.tokenize(str : String, delimiter : Char = ' ') : Array(String)
       tokens = [] of String
       current_token = String::Builder.new
       in_quotes = false
       quote_char = '"'
-      
+
       str.each_char do |char|
         case char
         when '"', '\''
@@ -153,22 +168,22 @@ module CogUtil
           current_token << char
         end
       end
-      
+
       tokens << current_token.to_s.strip unless current_token.empty?
       tokens
     end
-    
+
     # Convert string to snake_case
     def self.to_snake_case(str : String) : String
       str.gsub(/([A-Z])/, "_\\1").downcase.lstrip('_')
     end
-    
+
     # Convert string to CamelCase
     def self.to_camel_case(str : String) : String
       str.split('_').map(&.capitalize).join
     end
   end
-  
+
   # Timing utilities
   module Timer
     # Benchmark block execution time
@@ -177,22 +192,22 @@ module CogUtil
       result = yield
       end_time = Time.monotonic
       elapsed = end_time - start_time
-      
+
       Logger.info("#{description} took #{elapsed.total_milliseconds.round(3)}ms")
       result
     end
-    
+
     # Get current timestamp in milliseconds
     def self.current_millis : Int64
       Time.utc.to_unix_ms
     end
-    
+
     # Get current timestamp in microseconds
     def self.current_micros : Int64
       Time.utc.to_unix_ms * 1000
     end
   end
-  
+
   # Memory utilities
   module Memory
     # Get current memory usage of the process
@@ -208,12 +223,12 @@ module CogUtil
     rescue
       0_i64
     end
-    
+
     # Force garbage collection
     def self.gc_collect
       GC.collect
     end
-    
+
     # Get GC statistics
     def self.gc_stats
       GC.stats
