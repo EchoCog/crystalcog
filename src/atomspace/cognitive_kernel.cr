@@ -23,7 +23,6 @@ module AtomSpace
     property attention_weight : Float64
     property meta_level : Int32
     property cognitive_operation : String?
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
     
     # Performance optimization components
     @tensor_cache : CogUtil::CognitiveCache(String, Array(Float32))
@@ -62,13 +61,6 @@ module AtomSpace
       @memory_pool = CogUtil::AtomMemoryPool.new
       @operation_metrics = Hash(String, OperationMetrics).new
       
-#=======
-
-    def initialize(@tensor_shape : Array(Int32), @attention_weight : Float64 = 0.5,
-                   @meta_level : Int32 = 0, @cognitive_operation : String? = nil)
-      @atomspace = AtomSpace.new
-
-#>>>>>>> main
       # Apply attention to atomspace
       CogUtil::Logger.info("CognitiveKernel created: shape=#{@tensor_shape}, attention=#{@attention_weight}")
     end
@@ -82,7 +74,6 @@ module AtomSpace
       
       CogUtil::Logger.info("CognitiveKernel created from existing AtomSpace: shape=#{@tensor_shape}")
     end
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
     
     # Optimized tensor field encoding with caching and SIMD operations
     def tensor_field_encoding(encoding_type : String = "prime", include_attention : Bool = true,
@@ -149,56 +140,6 @@ module AtomSpace
       record_operation("tensor_field_encoding", duration_ms, false)
       
       CogUtil::Logger.debug("Generated tensor field encoding: type=#{encoding_type}, size=#{normalized.size}, duration=#{duration_ms.round(2)}ms")
-#=======
-
-    # Generate tensor field encoding based on mathematical sequences
-    def tensor_field_encoding(encoding_type : String = "prime", include_attention : Bool = true,
-                              include_meta_level : Bool = false, normalization : String = "none") : Array(Float64)
-      # Generate base sequence based on encoding type
-      base_sequence = case encoding_type.downcase
-                      when "prime"
-                        generate_primes(tensor_shape.size)
-                      when "fibonacci"
-                        generate_fibonacci(tensor_shape.size)
-                      when "harmonic"
-                        generate_harmonic(tensor_shape.size)
-                      when "factorial"
-                        generate_factorial(tensor_shape.size)
-                      when "power_of_two"
-                        generate_powers_of_two(tensor_shape.size)
-                      else
-                        generate_primes(tensor_shape.size)
-                      end
-
-      # Apply tensor field encoding (multiply shape by sequence)
-      base_encoding = tensor_shape.zip(base_sequence).map { |shape, seq| shape.to_f64 * seq.to_f64 }
-
-      # Apply attention weighting if requested
-      attention_weighted = if include_attention
-                             base_encoding.map { |x| x * attention_weight }
-                           else
-                             base_encoding
-                           end
-
-      # Include meta-level information if requested
-      meta_enhanced = if include_meta_level
-                        attention_weighted + [meta_level.to_f64]
-                      else
-                        attention_weighted
-                      end
-
-      # Apply normalization
-      normalized = case normalization.downcase
-                   when "unit"
-                     normalize_to_unit_length(meta_enhanced)
-                   when "standard"
-                     standardize_encoding(meta_enhanced)
-                   else
-                     meta_enhanced
-                   end
-
-      CogUtil::Logger.debug("Generated tensor field encoding: type=#{encoding_type}, size=#{normalized.size}")
-#>>>>>>> main
       normalized
     end
 
@@ -226,7 +167,6 @@ module AtomSpace
       CogUtil::Logger.info("Loaded hypergraph state: shape=#{@tensor_shape}, attention=#{@attention_weight}")
       true
     end
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
     
     # Create hypergraph-aware tensor encoding with caching
     def hypergraph_tensor_encoding : Array(Float32)
@@ -247,27 +187,11 @@ module AtomSpace
       end
       
       # Base encoding with performance optimization
-#=======
-
-    # Create hypergraph-aware tensor encoding
-    def hypergraph_tensor_encoding : Array(Float64)
-      # Get AtomSpace metrics
-      node_count = @atomspace.node_count.to_f64
-      link_count = @atomspace.link_count.to_f64
-      connectivity = node_count > 0 ? (link_count / node_count) : 0.0
-
-      # Base encoding
-#>>>>>>> main
       base_encoding = tensor_field_encoding("prime", include_attention: false, include_meta_level: false)
 
       # Hypergraph factors
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
       hypergraph_factors = [connectivity, @attention_weight.to_f32, @tensor_shape.size.to_f32]
       
-#=======
-      hypergraph_factors = [connectivity, @attention_weight, @tensor_shape.size.to_f64]
-
-#>>>>>>> main
       # Combined encoding
       result = base_encoding + hypergraph_factors
       
@@ -278,22 +202,22 @@ module AtomSpace
     end
 
     # Cognitive operation-specific encoding
-    def cognitive_tensor_field_encoding(operation : String) : Array(Float64)
+    def cognitive_tensor_field_encoding(operation : String) : Array(Float32)
       base_encoding = tensor_field_encoding
 
       operation_weights = case operation.downcase
                           when "reasoning"
-                            [1.5, 1.2, 1.0]
+                            [1.5_f32, 1.2_f32, 1.0_f32]
                           when "learning"
-                            [1.0, 1.8, 1.3]
+                            [1.0_f32, 1.8_f32, 1.3_f32]
                           when "attention"
-                            [2.0, 1.0, 1.1]
+                            [2.0_f32, 1.0_f32, 1.1_f32]
                           when "memory"
-                            [1.1, 1.0, 1.9]
+                            [1.1_f32, 1.0_f32, 1.9_f32]
                           when "adaptation"
-                            [1.3, 1.6, 1.4]
+                            [1.3_f32, 1.6_f32, 1.4_f32]
                           else
-                            [1.0, 1.0, 1.0]
+                            [1.0_f32, 1.0_f32, 1.0_f32]
                           end
 
       # Apply operation weights cyclically
@@ -305,7 +229,6 @@ module AtomSpace
       @cognitive_operation = operation
       weighted_encoding
     end
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
     
     # Optimized mathematical sequence generators with caching
     private def generate_primes_optimized(n : Int32) : Array(Float32)
@@ -333,23 +256,9 @@ module AtomSpace
             sieve[j] = false
             j += i
           end
-#=======
-
-    # Mathematical sequence generators
-    private def generate_primes(n : Int32) : Array(Float64)
-      return [] of Float64 if n <= 0
-
-      primes = [] of Float64
-      num = 2
-
-      while primes.size < n
-        if is_prime?(num)
-          primes << num.to_f64
-#>>>>>>> main
         end
         i += 1
       end
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
       
       # Collect remaining primes
       while i < limit && primes.size < n
@@ -357,26 +266,12 @@ module AtomSpace
           primes << i.to_f32
         end
         i += 1
-#=======
-
-      primes
-    end
-
-    private def is_prime?(num : Int32) : Bool
-      return false if num <= 1
-      return true if num == 2
-      return false if num.even?
-
-      (3..Math.sqrt(num).to_i).step(2) do |i|
-        return false if num % i == 0
-#>>>>>>> main
       end
       
       result = primes[0...n]
       @tensor_cache[cache_key] = result
       result
     end
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
     
     private def generate_fibonacci_optimized(n : Int32) : Array(Float32)
       return [] of Float32 if n <= 0
@@ -389,19 +284,10 @@ module AtomSpace
       
       # Matrix exponentiation for large Fibonacci numbers (more efficient)
       fib = [1.0_f32, 1.0_f32]
-#=======
-
-    private def generate_fibonacci(n : Int32) : Array(Float64)
-      return [] of Float64 if n <= 0
-      return [1.0] if n == 1
-
-      fib = [1.0, 1.0]
-#>>>>>>> main
       while fib.size < n
         next_fib = fib[-1] + fib[-2]
         fib << next_fib
       end
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
       
       result = fib[0...n]
       @tensor_cache[cache_key] = result
@@ -430,26 +316,10 @@ module AtomSpace
       factorials = [1.0_f32]
       current_factorial = 1.0_f32
       
-#=======
-
-      fib[0...n]
-    end
-
-    private def generate_harmonic(n : Int32) : Array(Float64)
-      return [] of Float64 if n <= 0
-      (1..n).map { |k| 1.0 / k.to_f64 }
-    end
-
-    private def generate_factorial(n : Int32) : Array(Float64)
-      return [] of Float64 if n <= 0
-
-      factorials = [1.0]
-#>>>>>>> main
       (1...n).each do |i|
         current_factorial *= (i + 1).to_f32
         factorials << current_factorial
       end
-#<<<<<<< copilot/fix-7784c0d0-45bc-4538-b826-8546b9a2c5f1
       
       @tensor_cache[cache_key] = factorials
       factorials
@@ -540,9 +410,6 @@ module AtomSpace
         "pool_utilization" => pool_stats.utilization_percentage,
         "pool_hit_rate" => pool_stats.hit_rate
       }
-#=======
-
-      factorials
     end
 
     private def generate_powers_of_two(n : Int32) : Array(Float64)
@@ -571,7 +438,7 @@ module AtomSpace
 
       factor = 1.0 / std_dev
       centered.map { |x| x * factor }
-#>>>>>>> main
+    end
     end
 
     # Convenience methods for AtomSpace operations
