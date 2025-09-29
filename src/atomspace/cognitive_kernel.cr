@@ -177,13 +177,13 @@ module AtomSpace
       cached_metrics = @tensor_cache[metrics_key]
       
       node_count, link_count, connectivity = if cached_metrics && cached_metrics.size == 3
-        cached_metrics[0], cached_metrics[1], cached_metrics[2]
+        {cached_metrics[0], cached_metrics[1], cached_metrics[2]}
       else
         nc = @atomspace.node_count.to_f32
         lc = @atomspace.link_count.to_f32
         conn = nc > 0 ? (lc / nc) : 0.0_f32
         @tensor_cache[metrics_key] = [nc, lc, conn]
-        nc, lc, conn
+        {nc, lc, conn}
       end
       
       # Base encoding with performance optimization
@@ -527,4 +527,3 @@ module AtomSpace
       @kernels.size
     end
   end
-end
