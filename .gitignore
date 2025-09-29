@@ -131,3 +131,29 @@ opencog_lib
 atomspace_lib
 *.o
 *.a
+
+# Production environment and deployment files
+.env.production
+.env.staging
+config/production/ssl/*.key
+config/production/ssl/*.crt
+config/production/ssl/*.pem
+backup/
+logs/
+data/
+
+# Docker volumes and runtime data
+docker-compose.override.yml
+.docker/
+volumes/
+
+# Kubernetes secrets
+deployments/k8s/production/secrets/
+deployments/k8s/staging/secrets/
+
+# Build and deployment artifacts
+build/system-images/
+build/agent-zero/
+dist/
+*.tar.gz
+*.zip
