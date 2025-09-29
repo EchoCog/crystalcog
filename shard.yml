@@ -48,6 +48,10 @@ targets:
   cogserver:
     main: src/cogserver/cogserver_main.cr
     
+  # Agent-Zero distributed networks
+  distributed_network_demo:
+    main: src/agent-zero/distributed_network_demo.cr
+    
   # Command line tools
   cogshell:
     main: src/tools/cogshell.cr
