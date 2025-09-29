@@ -136,7 +136,7 @@ CrystalCog implements the complete OpenCog stack:
 - **PLN**: Probabilistic Logic Networks for reasoning
 - **URE**: Unified Rule Engine for inference
 - **CogServer**: Network server for distributed processing with REST API
-- **Pattern Matching**: Advanced pattern matching and query engine
+- **Pattern Matching**: Advanced pattern matching and query engine with recursive composition, temporal analysis, machine learning, and statistical inference
 - **Persistence**: Multiple storage backends (File, SQLite, Network)
 - **Cognitive Kernels**: Agent-Zero Genesis cognitive processing units with hypergraph state persistence
 - **Tensor Field Encoding**: Mathematical sequence generators for cognitive state representation
@@ -211,6 +211,7 @@ For complete documentation:
 - [Development Roadmap](DEVELOPMENT-ROADMAP.md)
 - [Persistence API Documentation](PERSISTENCE_API_DOCUMENTATION.md)
 - [Hypergraph State Persistence Documentation](HYPERGRAPH_STATE_PERSISTENCE_DOCUMENTATION.md)
+- [Advanced Pattern Matching Documentation](docs/ADVANCED_PATTERN_MATCHING.md)
 - [Complete API Documentation](README_COMPLETE.md)
 - [Agent-Zero Implementation](AGENT-ZERO-GENESIS.md)
 - [CI/CD Pipeline](docs/CI-CD-PIPELINE.md)

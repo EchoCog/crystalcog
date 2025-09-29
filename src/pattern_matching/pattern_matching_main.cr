@@ -1,7 +1,9 @@
 # Pattern Matching main module entry point
 # This provides convenient access to pattern matching functionality
+# Including advanced features for Agent-Zero Genesis
 
 require "./pattern_matching"
+require "./advanced_pattern_matching"
 
 module PatternMatching
   # Convenience methods for common pattern matching operations
@@ -87,6 +89,26 @@ module PatternMatching
 
       matcher.match(pattern)
     end
+
+    # Advanced utility: Create recursive query composer
+    def self.create_recursive_composer(atomspace : AtomSpace::AtomSpace) : Advanced::RecursiveQueryComposer
+      Advanced::RecursiveQueryComposer.new(atomspace)
+    end
+
+    # Advanced utility: Create temporal pattern matcher
+    def self.create_temporal_matcher(atomspace : AtomSpace::AtomSpace, time_window_ms : Int64 = 5000) : Advanced::TemporalPatternMatcher
+      Advanced::TemporalPatternMatcher.new(atomspace, time_window_ms)
+    end
+
+    # Advanced utility: Create pattern learner
+    def self.create_pattern_learner(atomspace : AtomSpace::AtomSpace, frequency_threshold : Float64 = 0.1, confidence_threshold : Float64 = 0.8) : Advanced::PatternLearner
+      Advanced::PatternLearner.new(atomspace, frequency_threshold, confidence_threshold)
+    end
+
+    # Advanced utility: Create statistical matcher
+    def self.create_statistical_matcher(atomspace : AtomSpace::AtomSpace, fuzzy_threshold : Float64 = 0.7) : Advanced::StatisticalMatcher
+      Advanced::StatisticalMatcher.new(atomspace, fuzzy_threshold)
+    end
   end
 
   # Query builder for more complex patterns
@@ -168,6 +190,94 @@ module PatternMatching
 
       matcher = PatternMatcher.new(@atomspace)
       matcher.match(pattern)
+    end
+
+    # Advanced: Execute with probabilistic matching
+    def execute_probabilistic(template : AtomSpace::Atom, threshold : Float64 = 0.7) : Array(Advanced::StatisticalMatcher::ProbabilisticMatch)
+      pattern = Pattern.new(template)
+      @constraints.each { |constraint| pattern.add_constraint(constraint) }
+
+      statistical_matcher = Utils.create_statistical_matcher(@atomspace, threshold)
+      statistical_matcher.probabilistic_match(pattern)
+    end
+
+    # Advanced: Execute with fuzzy matching
+    def execute_fuzzy(template : AtomSpace::Atom, similarity_threshold : Float64 = 0.8) : Array(Advanced::StatisticalMatcher::ProbabilisticMatch)
+      pattern = Pattern.new(template)
+      @constraints.each { |constraint| pattern.add_constraint(constraint) }
+
+      statistical_matcher = Utils.create_statistical_matcher(@atomspace)
+      statistical_matcher.fuzzy_match(pattern, similarity_threshold)
+    end
+  end
+
+  # Enhanced pattern builder for advanced pattern matching
+  class AdvancedPatternBuilder
+    getter atomspace : AtomSpace::AtomSpace
+    getter composer : Advanced::RecursiveQueryComposer
+    getter temporal_matcher : Advanced::TemporalPatternMatcher
+    getter learner : Advanced::PatternLearner
+    getter statistical_matcher : Advanced::StatisticalMatcher
+
+    def initialize(@atomspace : AtomSpace::AtomSpace)
+      @composer = Advanced::RecursiveQueryComposer.new(@atomspace)
+      @temporal_matcher = Advanced::TemporalPatternMatcher.new(@atomspace)
+      @learner = Advanced::PatternLearner.new(@atomspace)
+      @statistical_matcher = Advanced::StatisticalMatcher.new(@atomspace)
+    end
+
+    # Register a reusable pattern
+    def register_pattern(name : String, template : AtomSpace::Atom, constraints : Array(Constraint) = [] of Constraint)
+      @composer.register_pattern(name, template, constraints)
+      self
+    end
+
+    # Compose patterns using logical operations
+    def and_patterns(pattern_names : Array(String)) : Array(MatchResult)
+      @composer.compose_and(pattern_names)
+    end
+
+    def or_patterns(pattern_names : Array(String)) : Array(MatchResult)
+      @composer.compose_or(pattern_names)
+    end
+
+    def not_patterns(base_pattern : String, exclude_pattern : String) : Array(MatchResult)
+      @composer.compose_not(base_pattern, exclude_pattern)
+    end
+
+    # Temporal pattern operations
+    def temporal_sequence(patterns : Array(Pattern), sequence_name : String = "default") : Array(Advanced::TemporalPatternMatcher::TemporalMatch)
+      @temporal_matcher.match_sequence(patterns, sequence_name)
+    end
+
+    def temporal_interval(pattern : Pattern, interval_ms : Int64) : Array(Advanced::TemporalPatternMatcher::TemporalMatch)
+      @temporal_matcher.match_within_interval(pattern, interval_ms)
+    end
+
+    # Pattern learning operations
+    def learn_patterns : Array(Advanced::PatternLearner::LearnedPattern)
+      @learner.learn_patterns
+    end
+
+    def apply_learned_patterns : Array(MatchResult)
+      @learner.apply_learned_patterns
+    end
+
+    # Statistical pattern operations
+    def probabilistic_match(pattern : Pattern) : Array(Advanced::StatisticalMatcher::ProbabilisticMatch)
+      @statistical_matcher.probabilistic_match(pattern)
+    end
+
+    def fuzzy_match(pattern : Pattern, similarity_threshold : Float64 = 0.8) : Array(Advanced::StatisticalMatcher::ProbabilisticMatch)
+      @statistical_matcher.fuzzy_match(pattern, similarity_threshold)
+    end
+
+    def bayesian_inference(evidence : Array(Pattern), hypothesis : Pattern) : Advanced::StatisticalMatcher::ProbabilisticMatch?
+      @statistical_matcher.bayesian_inference(evidence, hypothesis)
+    end
+
+    def monte_carlo_sampling(pattern : Pattern, num_samples : Int32 = 1000) : Array(Advanced::StatisticalMatcher::ProbabilisticMatch)
+      @statistical_matcher.monte_carlo_sampling(pattern, num_samples)
     end
   end
 end
