@@ -66,7 +66,7 @@ builder2 = PatternMatching::QueryBuilder.new(atomspace)
 # Find all mammals using type constraints
 builder2.constrain_type("animal", AtomSpace::AtomType::CONCEPT_NODE)
 animal_var = builder2.variable("animal")
-mammal_concept = atomspace.get_concept_node("mammal").first
+mammal_concept = atomspace.get_nodes_by_name("mammal", AtomSpace::AtomType::CONCEPT_NODE).first?
 
 if mammal_concept
   pattern2 = builder2.inheritance(animal_var, mammal_concept)

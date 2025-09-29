@@ -60,6 +60,20 @@ help:
 	@echo "  guix-env         - Enter Guix development environment"
 	@echo "  guix-shell       - Enter Guix containerized shell"
 	@echo ""
+	@echo "Production deployment targets:"
+	@echo "  production-setup - Setup production environment"
+	@echo "  production-build - Build production Docker image"
+	@echo "  production-deploy - Deploy to production"
+	@echo "  production-status - Check production deployment status"
+	@echo "  production-health - Run production health check"
+	@echo "  production-backup - Create production backup"
+	@echo "  production-rollback - Rollback production deployment"
+	@echo "  production-logs  - View production logs"
+	@echo "  production-up    - Start production services (Docker Compose)"
+	@echo "  production-down  - Stop production services (Docker Compose)"
+	@echo "  production-k8s-deploy - Deploy to Kubernetes production"
+	@echo "  production-k8s-remove - Remove Kubernetes production deployment"
+	@echo ""
 	@echo "  help             - Show this help message"
 	@echo ""
 	@echo "Environment variables:"
@@ -405,3 +419,66 @@ guix-shell:
 	@echo "$(BLUE)[INFO]$(NC) Entering Guix containerized shell..."
 	@echo "$(YELLOW)[NOTE]$(NC) This will start a containerized environment"
 	@guix shell -m guix.scm --container --pure
+
+# Production deployment targets
+.PHONY: production-setup production-deploy production-status production-backup production-rollback production-logs
+
+# Setup production environment
+production-setup:
+	@echo "$(BLUE)[INFO]$(NC) Setting up production environment..."
+	@sudo ./scripts/production/setup-production.sh
+
+# Deploy to production
+production-deploy:
+	@echo "$(BLUE)[INFO]$(NC) Deploying to production..."
+	@./scripts/production/deploy.sh
+
+# Check production deployment status
+production-status:
+	@echo "$(BLUE)[INFO]$(NC) Checking production deployment status..."
+	@./scripts/production/deploy.sh --action status
+
+# Backup production data
+production-backup:
+	@echo "$(BLUE)[INFO]$(NC) Creating production backup..."
+	@./scripts/production/backup.sh
+
+# Rollback production deployment
+production-rollback:
+	@echo "$(BLUE)[INFO]$(NC) Rolling back production deployment..."
+	@./scripts/production/deploy.sh --action rollback
+
+# View production logs
+production-logs:
+	@echo "$(BLUE)[INFO]$(NC) Viewing production logs..."
+	@./scripts/production/deploy.sh --action logs
+
+# Build production Docker image
+production-build:
+	@echo "$(BLUE)[INFO]$(NC) Building production Docker image..."
+	@docker build -f Dockerfile.production -t crystalcog/app:production .
+
+# Run production health check
+production-health:
+	@echo "$(BLUE)[INFO]$(NC) Running production health check..."
+	@./scripts/production/healthcheck.sh
+
+# Production deployment with Docker Compose
+production-up:
+	@echo "$(BLUE)[INFO]$(NC) Starting production services with Docker Compose..."
+	@docker-compose -f docker-compose.production.yml up -d
+
+# Stop production services
+production-down:
+	@echo "$(BLUE)[INFO]$(NC) Stopping production services..."
+	@docker-compose -f docker-compose.production.yml down
+
+# Production deployment to Kubernetes
+production-k8s-deploy:
+	@echo "$(BLUE)[INFO]$(NC) Deploying to Kubernetes production..."
+	@kubectl apply -f deployments/k8s/production/
+
+# Remove Kubernetes production deployment
+production-k8s-remove:
+	@echo "$(BLUE)[INFO]$(NC) Removing Kubernetes production deployment..."
+	@kubectl delete -f deployments/k8s/production/

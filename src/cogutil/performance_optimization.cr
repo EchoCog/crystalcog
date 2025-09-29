@@ -9,8 +9,9 @@ module CogUtil
     # Pool configuration
     POOL_SIZE = 10000
     BLOCK_SIZE = 128  # bytes per block
+    TOTAL_SIZE = 1280000  # POOL_SIZE * BLOCK_SIZE
     
-    @blocks : StaticArray(UInt8, POOL_SIZE * BLOCK_SIZE)
+    @blocks : StaticArray(UInt8, TOTAL_SIZE)
     @free_blocks : Array(Int32)
     @allocated_blocks : Set(Int32)
     @mutex : Mutex
@@ -46,7 +47,7 @@ module CogUtil
     end
     
     def initialize
-      @blocks = StaticArray(UInt8, POOL_SIZE * BLOCK_SIZE).new(0_u8)
+      @blocks = StaticArray(UInt8, TOTAL_SIZE).new(0_u8)
       @free_blocks = Array(Int32).new(POOL_SIZE) { |i| i }
       @allocated_blocks = Set(Int32).new
       @mutex = Mutex.new
