@@ -49,7 +49,52 @@ module URE
     end
   end
 
-  # Rule to handle modus ponens inference
+  # Simple inheritance transitivity rule for demonstration
+  class InheritanceTransitivityRule < Rule
+    def name : String
+      "InheritanceTransitivityRule"
+    end
+
+    def premises : Array(AtomSpace::AtomType)
+      [AtomSpace::AtomType::INHERITANCE_LINK, AtomSpace::AtomType::INHERITANCE_LINK]
+    end
+
+    def conclusion : AtomSpace::AtomType
+      AtomSpace::AtomType::INHERITANCE_LINK
+    end
+
+    def apply(premises : Array(AtomSpace::Atom), atomspace : AtomSpace::AtomSpace) : AtomSpace::Atom?
+      return nil unless premises.size == 2
+      
+      link1, link2 = premises[0], premises[1]
+      return nil unless link1.is_a?(AtomSpace::Link) && link2.is_a?(AtomSpace::Link)
+      return nil unless link1.outgoing.size == 2 && link2.outgoing.size == 2
+
+      # Check for transitivity: A->B, B->C => A->C
+      if link1.outgoing[1] == link2.outgoing[0]
+        # A inherits from B, B inherits from C => A inherits from C
+        a, b = link1.outgoing[0], link1.outgoing[1]
+        c = link2.outgoing[1]
+        
+        # Calculate new truth value using transitivity formula
+        tv1, tv2 = link1.truth_value, link2.truth_value
+        new_strength = tv1.strength * tv2.strength
+        new_confidence = tv1.confidence * tv2.confidence * 0.9  # Slight confidence reduction
+        
+        tv = AtomSpace::SimpleTruthValue.new(new_strength, new_confidence)
+        
+        # Create new inheritance link
+        atomspace.add_inheritance_link(a, c, tv)
+      else
+        nil
+      end
+    end
+
+    def fitness(premises : Array(AtomSpace::Atom)) : Float64
+      # High fitness for inheritance links with good confidence
+      premises.map(&.truth_value.confidence).sum / premises.size
+    end
+  end
   class ModusPonensRule < Rule
     def name : String
       "ModusPonensRule"
@@ -113,6 +158,7 @@ module URE
     def add_default_rules
       add_rule(ConjunctionRule.new)
       add_rule(ModusPonensRule.new)
+      add_rule(InheritanceTransitivityRule.new)
     end
 
     def run : Array(AtomSpace::Atom)
@@ -242,6 +288,7 @@ module URE
     def add_default_rules
       add_rule(ConjunctionRule.new)
       add_rule(ModusPonensRule.new)
+      add_rule(InheritanceTransitivityRule.new)
     end
 
     # Advanced backward chaining with BIT construction
