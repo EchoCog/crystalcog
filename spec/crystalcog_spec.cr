@@ -1,5 +1,5 @@
 require "spec"
-require "../../src/crystalcog"
+require "../src/crystalcog"
 
 describe "CrystalCog Main" do
   describe "application initialization" do

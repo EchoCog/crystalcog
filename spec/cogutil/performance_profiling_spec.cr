@@ -264,7 +264,7 @@ describe "Performance Profiling Tools" do
       
       if session
         engine = CogUtil::OptimizationEngine.new
-        engine.@profiler_session = session
+        engine.profiler_session = session
         
         impact = engine.estimate_optimization_impact("impact_test", "algorithm_improvement")
         impact.should be > 0.0
