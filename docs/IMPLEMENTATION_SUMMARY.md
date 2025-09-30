@@ -21,6 +21,10 @@ The original issue was that the roadmap issues tracking system needed to properl
 - Added automatic validation step
 - Better component detection and labeling
 
+**Supported roadmap files**:
+- `DEVELOPMENT-ROADMAP.md` - Comprehensive conversion roadmap 
+- `AGENT-ZERO-GENESIS.md` - Agent-Zero implementation timeline
+
 **Supported task formats**:
 ```markdown
 - ✅ Completed task with checkmark emoji
@@ -28,6 +32,10 @@ The original issue was that the roadmap issues tracking system needed to properl
 - [ ] Incomplete task with markdown checkbox  
 - Plain incomplete task without completion indicator
 ```
+
+**Supported section formats**:
+- `## Next Steps` with `### Section Name` subsections
+- `## Next Development Steps` with numbered timeline format (`1. **Timeline (Period)**:`)
 
 ### 2. Local Validation Script
 
@@ -42,7 +50,11 @@ The original issue was that the roadmap issues tracking system needed to properl
 
 **Usage**:
 ```bash
+# Default: DEVELOPMENT-ROADMAP.md
 node scripts/validate-roadmap.js
+
+# Alternative: AGENT-ZERO-GENESIS.md
+ROADMAP_FILE=AGENT-ZERO-GENESIS.md node scripts/validate-roadmap.js
 ```
 
 ### 3. Complete Documentation
@@ -78,8 +90,9 @@ node scripts/validate-roadmap.js
 
 The system automatically runs:
 
-1. **Weekly**: Every Monday at 10 AM UTC
-2. **On changes**: When `DEVELOPMENT-ROADMAP.md` is updated
+1. **Weekly**: Every Monday at 10 AM UTC to check for new roadmap tasks
+2. **On changes**: When `DEVELOPMENT-ROADMAP.md` or `AGENT-ZERO-GENESIS.md` is updated
+3. **Manual**: Via GitHub Actions interface with configurable roadmap file selection
 3. **Manual**: Via GitHub Actions interface
 
 ## Testing Results
@@ -99,18 +112,19 @@ The system automatically runs:
 
 ### For Developers
 
-1. **Check roadmap status**: `node scripts/validate-roadmap.js`
-2. **Add new tasks**: Update `DEVELOPMENT-ROADMAP.md` 
-3. **Let automation work**: Issues auto-generated on commit
+1. **Check roadmap status**: `node scripts/validate-roadmap.js` or `ROADMAP_FILE=AGENT-ZERO-GENESIS.md node scripts/validate-roadmap.js`
+2. **Add new tasks**: Update `DEVELOPMENT-ROADMAP.md` or `AGENT-ZERO-GENESIS.md`
+3. **Let automation work**: Issues auto-generated on commit or via manual workflow dispatch
 4. **Work on issues**: Reference issue numbers in commits
 5. **Mark complete**: Update roadmap and close issues
 
 ### For Project Managers
 
 1. **Monitor progress**: Check issue #28 for tracking summaries
-2. **Review generated issues**: Look for `roadmap` label
+2. **Review generated issues**: Look for `roadmap` or `next-steps` label
 3. **Assign work**: Assign issues to team members
-4. **Force regeneration**: Use GitHub Actions if needed
+4. **Force regeneration**: Use GitHub Actions with configurable roadmap file selection
+5. **Choose roadmap file**: Select between DEVELOPMENT-ROADMAP.md and AGENT-ZERO-GENESIS.md in workflow dispatch
 
 ## File Structure
 
