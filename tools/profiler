@@ -1,0 +1,8 @@
+#!/usr/bin/env crystal
+
+require "./src/cogutil/profiling_cli"
+
+# CrystalCog Performance Profiling CLI Tool
+# This executable provides command-line access to all performance profiling features
+
+CogUtil::ProfilingCLI.new.run(ARGV)
