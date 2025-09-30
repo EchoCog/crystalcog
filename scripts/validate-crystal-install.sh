@@ -209,6 +209,66 @@ test_integration_with_project() {
     fi
 }
 
+# Guix environment tests
+test_guix_environment() {
+    print_status "Testing Guix environment compatibility..."
+    
+    cd "$REPO_ROOT"
+    
+    local exit_code=0
+    
+    # Test 1: Check for required Guix files
+    print_status "1. Checking Guix configuration files..."
+    local guix_files=(".guix-channel" "guix.scm")
+    for file in "${guix_files[@]}"; do
+        if [[ -f "$file" ]]; then
+            print_success "Found Guix file: $file"
+        else
+            print_error "Missing required Guix file: $file"
+            exit_code=1
+        fi
+    done
+    
+    # Test 2: Validate Guix manifest syntax
+    print_status "2. Validating Guix manifest syntax..."
+    if [[ -f "guix.scm" ]]; then
+        # Basic syntax check - look for required Guile structures
+        if grep -q "packages->manifest" "guix.scm" && grep -q "use-modules" "guix.scm"; then
+            print_success "Guix manifest has proper structure"
+        else
+            print_warning "Guix manifest structure check failed"
+            exit_code=1
+        fi
+        
+        # Check for cognitive packages
+        if grep -q "opencog\|cognitive" "guix.scm"; then
+            print_success "Cognitive framework packages found in manifest"
+        else
+            print_warning "No cognitive framework packages found in manifest"
+        fi
+    fi
+    
+    # Test 3: Check for OpenCog Guix packages
+    print_status "3. Checking for OpenCog package definitions..."
+    if [[ -d "modules" ]] && find modules -name "*.scm" -type f | grep -q "cognitive\|opencog"; then
+        print_success "OpenCog package definitions found"
+    else
+        print_warning "OpenCog package definitions not found or incomplete"
+    fi
+    
+    # Test 4: Validate channel configuration
+    print_status "4. Validating Guix channel configuration..."
+    if [[ -f ".guix-channel" ]]; then
+        if grep -q "name\|url\|branch" ".guix-channel"; then
+            print_success "Guix channel configuration is valid"
+        else
+            print_warning "Guix channel configuration incomplete"
+        fi
+    fi
+    
+    return $exit_code
+}
+
 # Main validation execution
 main() {
     print_status "Crystal Installation Script Validation Test Suite"
@@ -224,6 +284,11 @@ main() {
     
     # Run integration tests
     test_integration_with_project || exit_code=1
+    
+    echo
+    
+    # Run Guix environment tests
+    test_guix_environment || exit_code=1
     
     echo
     print_status "Validation Summary"
