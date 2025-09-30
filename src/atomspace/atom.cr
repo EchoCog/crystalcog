@@ -68,12 +68,12 @@ module AtomSpace
     @@handle_mutex = Mutex.new
 
     def initialize(@type : AtomType, @truth_value : TruthValue = TruthValue::DEFAULT_TV)
-      @handle = self.class.next_handle
+      @handle = Atom.next_handle
       @attention_value = nil
     end
 
     # Generate next unique handle
-    protected def self.next_handle : Handle
+    def self.next_handle : Handle
       @@handle_mutex.synchronize do
         handle = @@next_handle
         @@next_handle += 1

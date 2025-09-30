@@ -1143,6 +1143,7 @@ module AtomSpace
       begin
         db = @db.not_nil!
         count = 0
+        handle_mapping = {} of Handle => Atom
 
         # First pass: Load all nodes (no recursion risk)
         node_handles = [] of Handle
@@ -1160,14 +1161,15 @@ module AtomSpace
             type = AtomType.parse(data["type"].as_s)
             
             if type.node?
-              # Load nodes immediately
+              # Load nodes immediately and create handle mapping
               strength = data["truth_strength"].as_f
               confidence = data["truth_confidence"].as_f
               tv = SimpleTruthValue.new(strength, confidence)
               name = data["name"].as_s
               
               node = Node.new(type, name, tv)
-              atomspace.add_atom(node)
+              new_atom = atomspace.add_atom(node)
+              handle_mapping[handle] = new_atom
               count += 1
             else
               # Store link data for second pass
@@ -1176,25 +1178,26 @@ module AtomSpace
           end
         end
         
-        # Second pass: Load all links (now that all nodes exist)
-        link_data.each do |handle, data|
+        # Second pass: Load all links using handle mapping
+        link_data.each do |original_handle, data|
           type = AtomType.parse(data["type"].as_s)
           strength = data["truth_strength"].as_f
           confidence = data["truth_confidence"].as_f
           tv = SimpleTruthValue.new(strength, confidence)
           
-          # Build outgoing array from handles
+          # Build outgoing array using handle mapping
           outgoing_handles = data["outgoing"].as_a.map { |h| Handle.new(h.as_s) }
           outgoing = [] of Atom
           
-          outgoing_handles.each do |out_handle|
-            # Look for the atom in the atomspace first
-            out_atom = atomspace.get_atom(out_handle)
-            outgoing << out_atom if out_atom
+          outgoing_handles.each do |old_handle|
+            # Use handle mapping to find the new atom
+            mapped_atom = handle_mapping[old_handle]?
+            outgoing << mapped_atom if mapped_atom
           end
           
           link = Link.new(type, outgoing, tv)
-          atomspace.add_atom(link)
+          new_link = atomspace.add_atom(link)
+          handle_mapping[original_handle] = new_link
           count += 1
         end
 

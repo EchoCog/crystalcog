@@ -294,6 +294,31 @@ module AtomSpace
       add_atom(link)
     end
 
+    # Storage backend factory methods
+    def create_file_storage(name : String, path : String) : FileStorageNode
+      FileStorageNode.new(name, path)
+    end
+
+    def create_sqlite_storage(name : String, path : String) : SQLiteStorageNode
+      SQLiteStorageNode.new(name, path)
+    end
+
+    def create_postgres_storage(name : String, connection_string : String) : PostgresStorageNode
+      PostgresStorageNode.new(name, connection_string)
+    end
+
+    def create_rocksdb_storage(name : String, path : String) : RocksDBStorageNode
+      RocksDBStorageNode.new(name, path)
+    end
+
+    def create_cog_storage(name : String, host : String, port : Int32) : CogStorageNode
+      CogStorageNode.new(name, host, port)
+    end
+
+    def create_hypergraph_storage(name : String, path : String, backend_type : String = "file") : HypergraphStateStorageNode
+      HypergraphStateStorageNode.new(name, path, backend_type)
+    end
+
     # Event system
     def add_observer(observer : AtomSpaceSignal)
       @observers << observer
