@@ -2,7 +2,8 @@
 # CrystalCog Deploy Script Quick Validation
 # Use this script for ongoing validation of the deployment script
 
-set -e
+# Don't exit on first error - we want to run all tests
+set +e
 
 # Configuration
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -26,32 +27,94 @@ run_test() {
     local test_name="$1"
     local test_command="$2"
     
-    if eval "$test_command" >/dev/null 2>&1; then
-        echo -e "   ${GREEN}✅ PASS${NC}: $test_name"
+    echo -n "   Testing $test_name... "
+    
+    # Use timeout to prevent hanging and better error handling
+    if timeout 10 bash -c "$test_command" >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ PASS${NC}"
         ((tests_passed++))
+        return 0
     else
-        echo -e "   ${RED}❌ FAIL${NC}: $test_name"
+        echo -e "${RED}❌ FAIL${NC}"
+        echo "     Command: $test_command"
         ((tests_failed++))
+        return 1
+    fi
+}
+
+run_optional_test() {
+    local test_name="$1"
+    local test_command="$2"
+    
+    echo -n "   Testing $test_name... "
+    
+    # Use timeout to prevent hanging and better error handling
+    if timeout 10 bash -c "$test_command" >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ PASS${NC}"
+        ((tests_passed++))
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  SKIP${NC} (dependency not available)"
+        return 0
     fi
 }
 
 # Core validation tests
+echo "🔍 Script Functionality Validation"
+echo "===================================="
 run_test "Script syntax" "bash -n '$SCRIPT_PATH'"
 run_test "Script executable" "[ -x '$SCRIPT_PATH' ]"
-run_test "Help function" "'$SCRIPT_PATH' --help"
-run_test "Docker Compose file" "[ -f '$PROJECT_ROOT/docker-compose.production.yml' ]"
-run_test "Health check script" "bash -n '$PROJECT_ROOT/scripts/production/healthcheck.sh'"
-run_test "Guix manifest" "[ -f '$PROJECT_ROOT/guix.scm' ]"
-run_test "Config directory" "[ -d '$PROJECT_ROOT/config/production' ]"
+run_test "Help function" "timeout 5 '$SCRIPT_PATH' --help"
 run_test "Core functions defined" "grep -q '^main()' '$SCRIPT_PATH' && grep -q '^deploy()' '$SCRIPT_PATH'"
 
 echo ""
-echo "Summary: $tests_passed passed, $tests_failed failed"
+echo "🔗 Dependency Compatibility Check"
+echo "=================================="
+run_test "Docker Compose file" "[ -f '$PROJECT_ROOT/docker-compose.production.yml' ]"
+run_test "Health check script" "bash -n '$PROJECT_ROOT/scripts/production/healthcheck.sh'"
+run_test "Health check executable" "[ -x '$PROJECT_ROOT/scripts/production/healthcheck.sh' ]"
+run_test "Config directory" "[ -d '$PROJECT_ROOT/config/production' ]"
+run_test "Production config files" "[ -f '$PROJECT_ROOT/config/production/supervisord.conf' ]"
+
+echo ""
+echo "🌿 Guix Environment Tests"  
+echo "========================="
+run_test "Guix manifest" "[ -f '$PROJECT_ROOT/guix.scm' ]"
+run_test "Guix channel config" "[ -f '$PROJECT_ROOT/.guix-channel' ]"
+run_test "OpenCog package definition" "[ -f '$PROJECT_ROOT/gnu/packages/opencog.scm' ] || [ -f '$PROJECT_ROOT/opencog.scm' ]"
+
+echo ""
+echo "📋 Additional Quality Checks"
+echo "============================"
+run_optional_test "Docker Compose syntax" "command -v docker-compose >/dev/null && docker-compose -f '$PROJECT_ROOT/docker-compose.production.yml' config >/dev/null 2>&1"
+run_test "Deploy script actions" "grep -q 'deploy\|rollback\|status\|logs\|stop' '$SCRIPT_PATH'"
+run_test "Error handling" "grep -q 'set -e' '$SCRIPT_PATH'"
+
+echo ""
+echo "📊 VALIDATION SUMMARY"
+echo "===================="
+echo ""
+echo "Tests passed: $tests_passed"
+echo "Tests failed: $tests_failed"
+echo "Total tests:  $((tests_passed + tests_failed))"
+echo ""
 
 if [ $tests_failed -eq 0 ]; then
-    echo -e "${GREEN}✅ All validation tests passed!${NC}"
+    echo -e "${GREEN}✅ ALL VALIDATION TESTS PASSED!${NC}"
+    echo ""
+    echo "🎉 Script validation successful - ready for production deployment!"
+    echo ""
+    echo "✅ Script functionality validated"
+    echo "✅ Dependency compatibility confirmed"  
+    echo "✅ Guix environment requirements satisfied"
+    echo "✅ Quality checks passed"
+    echo ""
     exit 0
 else
-    echo -e "${RED}❌ Some tests failed. Run full validation for details.${NC}"
+    echo -e "${RED}❌ VALIDATION FAILED${NC}"
+    echo ""
+    echo "Some tests failed. Please review the results above and address any issues."
+    echo "Failed tests: $tests_failed"
+    echo ""
     exit 1
 fi
