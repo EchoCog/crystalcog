@@ -66,13 +66,27 @@ check_process() {
 # Check disk space
 check_disk_space() {
     local threshold=90
-    local usage=$(df /app | tail -1 | awk '{print $5}' | sed 's/%//')
+    local mount_point="/app"
+    
+    # Fall back to root filesystem if /app doesn't exist
+    if [ ! -d "$mount_point" ]; then
+        mount_point="/"
+        log "$YELLOW" "⚠ /app directory not found, checking root filesystem instead"
+    fi
+    
+    local usage=$(df "$mount_point" 2>/dev/null | tail -1 | awk '{print $5}' | sed 's/%//')
+    
+    # Check if usage is a valid number
+    if ! [[ "$usage" =~ ^[0-9]+$ ]]; then
+        log "$RED" "✗ Could not determine disk space usage for $mount_point"
+        return 1
+    fi
     
     if [ "$usage" -lt "$threshold" ]; then
-        log "$GREEN" "✓ Disk space usage: ${usage}% (< ${threshold}%)"
+        log "$GREEN" "✓ Disk space usage: ${usage}% (< ${threshold}%) on $mount_point"
         return 0
     else
-        log "$RED" "✗ Disk space usage: ${usage}% (>= ${threshold}%)"
+        log "$RED" "✗ Disk space usage: ${usage}% (>= ${threshold}%) on $mount_point"
         return 1
     fi
 }
@@ -131,5 +145,7 @@ main() {
     exit $exit_code
 }
 
-# Run health check
-main "$@"
+# Run health check (only if not being sourced)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
