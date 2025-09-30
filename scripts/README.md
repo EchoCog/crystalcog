@@ -116,6 +116,24 @@ Legacy build script for the monorepo structure (primarily C++ components).
 ### `demo-monorepo.sh` - Monorepo Demo Script  
 Interactive demo script for the monorepo build system.
 
+## Production Scripts
+
+### `production/` Directory
+Contains production deployment and management scripts:
+
+- **`healthcheck.sh`** - Comprehensive health monitoring for all CrystalCog services
+- **`deploy.sh`** - Production deployment with Docker Compose orchestration  
+- **`setup-production.sh`** - Initial production environment setup
+
+See [production/README.md](production/README.md) for detailed documentation.
+
+**Key Features:**
+- ✅ Automated health monitoring with graceful fallbacks
+- ✅ Docker-based deployment with rollback capabilities
+- ✅ Guix environment compatibility
+- ✅ Robust error handling and monitoring
+- ✅ Integration with CI/CD pipelines
+
 ## CI/CD Integration
 
 The test-runner.sh script is designed to mirror the CI/CD pipeline behavior locally:
