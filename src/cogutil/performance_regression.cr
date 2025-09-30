@@ -261,8 +261,9 @@ module CogUtil
         json_data = File.read(@storage_path)
         parsed = JSON.parse(json_data)
         
-        if data_array = parsed["data"]?.as_a?
-          @historical_data = data_array.map do |item|
+        if data_json = parsed["data"]?
+          if data_array = data_json.as_a?
+            @historical_data = data_array.map do |item|
             # Would need proper HistoricalData.from_json implementation
             # For now, we'll use a simplified version
             timestamp = Time.parse_rfc3339(item["timestamp"].as_s)
@@ -273,6 +274,7 @@ module CogUtil
             HistoricalData.new(timestamp, metrics, version, environment)
           end
         end
+      end
       rescue ex
         puts "Warning: Could not load historical performance data: #{ex.message}"
         @historical_data = Array(HistoricalData).new

@@ -55,6 +55,10 @@ module AtomSpace
       log_info("DistributedStorageNode created with #{partition_strategy} partitioning and #{replication_strategy} replication")
     end
 
+    private def find_cluster_node(node_id : String) : ClusterNodeInfo?
+      @cluster.cluster_nodes.find { |node| node.id == node_id }
+    end
+
     def open : Bool
       success = @local_storage.open
       log_info("DistributedStorageNode opened, local backend: #{success}")
@@ -310,7 +314,7 @@ module AtomSpace
 
     private def consistent_hash_node(key : String) : String
       # Simple consistent hashing implementation
-      node_list = @cluster.cluster_nodes.keys.sort
+      node_list = @cluster.cluster_nodes.map(&.id).sort
       hash_value = key.hash.abs.to_u64
       
       node_list.each do |node_id|
@@ -333,9 +337,9 @@ module AtomSpace
       when ReplicationStrategy::PrimaryBackup
         select_backup_nodes(responsible_node, @replication_factor - 1)
       when ReplicationStrategy::FullReplication
-        @cluster.cluster_nodes.keys.reject { |id| id == responsible_node }
+        @cluster.cluster_nodes.map(&.id).reject { |id| id == responsible_node }
       when ReplicationStrategy::QuorumBased
-        quorum_size = (@cluster.cluster_nodes.size / 2) + 1
+        quorum_size = (@cluster.cluster_nodes.size // 2) + 1
         select_backup_nodes(responsible_node, quorum_size - 1)
       else
         [] of String
@@ -343,12 +347,12 @@ module AtomSpace
     end
 
     private def select_backup_nodes(exclude_node : String, count : Int32) : Array(String)
-      available_nodes = @cluster.cluster_nodes.keys.reject { |id| id == exclude_node }
+      available_nodes = @cluster.cluster_nodes.map(&.id).reject { |id| id == exclude_node }
       available_nodes.sample(Math.min(count, available_nodes.size))
     end
 
     private def replicate_atom_to_node(atom : Atom, node_id : String) : Bool
-      node_info = @cluster.cluster_nodes[node_id]?
+      node_info = find_cluster_node(node_id)
       return false unless node_info
 
       begin
@@ -366,7 +370,7 @@ module AtomSpace
     end
 
     private def fetch_atom_from_node(handle : Handle, node_id : String) : Atom?
-      node_info = @cluster.cluster_nodes[node_id]?
+      node_info = find_cluster_node(node_id)
       return nil unless node_info
 
       begin
@@ -379,8 +383,10 @@ module AtomSpace
         response = send_message_to_node_with_response(node_info, message)
         return nil unless response
 
-        if response["status"] == "found" && atom_data = response["atom_data"]?
-          return deserialize_atom_from_replication(atom_data.as_h)
+        if response["status"] == "found"
+          if atom_data = response["atom_data"]?
+            return deserialize_atom_from_replication(atom_data.as_h)
+          end
         end
       rescue ex
         log_error("Failed to fetch atom from node #{node_id}: #{ex.message}")
@@ -390,7 +396,7 @@ module AtomSpace
     end
 
     private def remove_atom_from_node(atom : Atom, node_id : String) : Bool
-      node_info = @cluster.cluster_nodes[node_id]?
+      node_info = find_cluster_node(node_id)
       return false unless node_info
 
       begin
@@ -408,7 +414,7 @@ module AtomSpace
     end
 
     private def fetch_all_atoms_from_node(node_id : String) : Array(Atom)
-      node_info = @cluster.cluster_nodes[node_id]?
+      node_info = find_cluster_node(node_id)
       return [] of Atom unless node_info
 
       begin
@@ -420,10 +426,12 @@ module AtomSpace
         response = send_message_to_node_with_response(node_info, message)
         return [] of Atom unless response
 
-        if response["status"] == "success" && atoms_data = response["atoms"]?
-          return atoms_data.as_a.compact_map { |atom_json|
-            deserialize_atom_from_replication(atom_json.as_h)
-          }
+        if response["status"] == "success"
+          if atoms_data = response["atoms"]?
+            return atoms_data.as_a.compact_map { |atom_json|
+              deserialize_atom_from_replication(atom_json.as_h)
+            }
+          end
         end
       rescue ex
         log_error("Failed to fetch all atoms from node #{node_id}: #{ex.message}")
@@ -502,8 +510,8 @@ module AtomSpace
       loads = Hash(String, Int32).new
       
       # Initialize all nodes with zero load
-      @cluster.cluster_nodes.each_key do |node_id|
-        loads[node_id] = 0
+      @cluster.cluster_nodes.each do |node_info|
+        loads[node_info.id] = 0
       end
 
       # Count atoms per node based on partition map
