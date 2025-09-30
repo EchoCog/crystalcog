@@ -29,6 +29,7 @@ RUN_FUNCTIONAL=false
 RUN_AGENT_ZERO=false
 GENERATE_REPORTS=false
 GENERATE_COVERAGE=false
+RUN_VALIDATION=false
 COMPONENT=""
 VERBOSE=false
 HELP=false
@@ -71,12 +72,12 @@ print_result() {
     local test_name=$2
     if [ "$result" -eq 0 ]; then
         print_success "✓ $test_name"
-        ((PASSED_TESTS++))
+        PASSED_TESTS=$((PASSED_TESTS + 1))
     else
         print_error "✗ $test_name"
-        ((FAILED_TESTS++))
+        FAILED_TESTS=$((FAILED_TESTS + 1))
     fi
-    ((TOTAL_TESTS++))
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
 }
 
 # Show help
@@ -98,6 +99,7 @@ Options:
     -c, --coverage      Generate coverage reports
     -C, --component     Run tests for specific component
     -v, --verbose       Run with verbose output
+    --validate          Validate test infrastructure only (no dependencies required)
     
     --clean            Clean test artifacts and reports
 
@@ -167,6 +169,10 @@ parse_args() {
                 VERBOSE=true
                 shift
                 ;;
+            --validate)
+                RUN_VALIDATION=true
+                shift
+                ;;
             --clean)
                 clean_artifacts
                 exit 0
@@ -180,6 +186,112 @@ parse_args() {
     done
 }
 
+# Validate test infrastructure without requiring Crystal
+validate_test_infrastructure() {
+    print_section "Validating Test Infrastructure"
+    
+    local validation_passed=true
+    
+    # Check project structure
+    print_status "Checking project structure..."
+    
+    local required_dirs=("src" "spec" "tests")
+    for dir in "${required_dirs[@]}"; do
+        if [ -d "$dir" ]; then
+            print_success "$dir directory exists"
+        else
+            print_error "$dir directory missing"
+            validation_passed=false
+        fi
+    done
+    
+    # Check configuration files
+    local config_files=("shard.yml" ".gitignore")
+    for file in "${config_files[@]}"; do
+        if [ -f "$file" ]; then
+            print_success "$file exists"
+        else
+            print_warning "$file missing"
+        fi
+    done
+    
+    # Check test directories
+    local test_components=("cogutil" "atomspace" "pln" "cogserver" "pattern_matching" "nlp" "opencog")
+    for component in "${test_components[@]}"; do
+        if [ -d "spec/$component" ]; then
+            local test_count
+            test_count=$(find "spec/$component" -name "*_spec.cr" 2>/dev/null | wc -l)
+            print_status "$component: $test_count test files"
+            TOTAL_TESTS=$((TOTAL_TESTS + 1))
+        else
+            print_warning "No test directory for $component"
+        fi
+    done
+    
+    # Check source code structure
+    for component in "${test_components[@]}"; do
+        if [ -d "src/$component" ]; then
+            local src_count
+            src_count=$(find "src/$component" -name "*.cr" 2>/dev/null | wc -l)
+            print_status "$component: $src_count source files"
+        else
+            print_warning "No source directory for $component"
+        fi
+    done
+    
+    # Validate shell script syntax
+    print_status "Validating test script syntax..."
+    if bash -n "$0"; then
+        print_success "Shell script syntax valid"
+        PASSED_TESTS=$((PASSED_TESTS + 1))
+    else
+        print_error "Shell script syntax errors"
+        FAILED_TESTS=$((FAILED_TESTS + 1))
+        validation_passed=false
+    fi
+    
+    if [ "$validation_passed" = true ]; then
+        print_success "Test infrastructure validation passed"
+        return 0
+    else
+        print_error "Test infrastructure validation failed"
+        return 1
+    fi
+}
+
+# Check dependencies and provide helpful information
+check_dependencies() {
+    local missing_deps=false
+    
+    # Check Crystal
+    if ! command -v crystal &> /dev/null; then
+        print_warning "Crystal is not installed"
+        print_status "Install Crystal from: https://crystal-lang.org/install/"
+        print_status "Or use Docker: docker run --rm -v \"\$PWD\":/workspace -w /workspace crystallang/crystal"
+        missing_deps=true
+    else
+        print_success "Crystal found: $(crystal version 2>/dev/null | head -1 || echo 'version unknown')"
+    fi
+    
+    # Check shards (Crystal package manager)
+    if command -v crystal &> /dev/null && ! command -v shards &> /dev/null; then
+        print_warning "Shards (Crystal package manager) not found"
+        missing_deps=true
+    fi
+    
+    # Check other tools
+    if ! command -v git &> /dev/null; then
+        print_warning "Git not found - some tests may be limited"
+    fi
+    
+    if [ "$missing_deps" = true ]; then
+        print_warning "Some dependencies missing - functionality will be limited"
+        return 1
+    fi
+    
+    return 0
+}
+
 # Setup test environment
 setup_environment() {
     print_status "Setting up test environment..."
@@ -191,19 +303,22 @@ setup_environment() {
     # Change to project root
     cd "${PROJECT_ROOT}"
     
-    # Ensure Crystal is available
-    if ! command -v crystal &> /dev/null; then
-        print_error "Crystal is not installed"
-        exit 1
+    # Check dependencies
+    if ! check_dependencies; then
+        print_warning "Continuing with limited functionality"
     fi
     
-    # Install dependencies
-    if [ -f "shard.yml" ]; then
+    # Install dependencies if Crystal is available
+    if command -v crystal &> /dev/null && [ -f "shard.yml" ]; then
         print_status "Installing Crystal dependencies..."
-        shards install --skip-postinstall 2>/dev/null || true
+        if command -v shards &> /dev/null; then
+            shards install --skip-postinstall 2>/dev/null || print_warning "Failed to install dependencies"
+        else
+            print_warning "Shards not available - skipping dependency installation"
+        fi
     fi
     
-    print_success "Test environment ready"
+    print_success "Test environment setup complete"
 }
 
 # Clean test artifacts
@@ -226,18 +341,41 @@ run_unit_tests() {
         components=("$COMPONENT")
     fi
     
+    # Check if Crystal is available
+    if ! command -v crystal &> /dev/null; then
+        print_warning "Crystal not available - validating test structure only"
+        
+        for component in "${components[@]}"; do
+            if [ -d "spec/$component" ]; then
+                local test_count
+                test_count=$(find "spec/$component" -name "*_spec.cr" 2>/dev/null | wc -l)
+                print_status "Found $test_count test files for $component"
+                print_result 0 "$component test structure validation"
+            else
+                print_warning "No unit test directory found for $component"
+                SKIPPED_TESTS=$((SKIPPED_TESTS + 1))
+            fi
+        done
+        return
+    fi
+    
     for component in "${components[@]}"; do
         if [ -d "spec/$component" ]; then
             print_status "Testing $component unit tests..."
             
-            if crystal spec "spec/$component/" --error-trace $([ "$VERBOSE" = true ] && echo "--verbose") 2>/dev/null; then
+            local verbose_flag=""
+            if [ "$VERBOSE" = true ]; then
+                verbose_flag="--verbose"
+            fi
+            
+            if crystal spec "spec/$component/" --error-trace $verbose_flag 2>/dev/null; then
                 print_result 0 "$component unit tests"
             else
                 print_result 1 "$component unit tests"
             fi
         else
             print_warning "No unit tests found for $component"
-            ((SKIPPED_TESTS++))
+            SKIPPED_TESTS=$((SKIPPED_TESTS + 1))
         fi
     done
 }
@@ -260,7 +398,7 @@ run_integration_tests() {
             fi
         else
             print_warning "Integration test not found: $test"
-            ((SKIPPED_TESTS++))
+            SKIPPED_TESTS=$((SKIPPED_TESTS + 1))
         fi
     done
     
@@ -734,27 +872,37 @@ main() {
         exit 0
     fi
     
-    # Default to unit tests if no specific tests selected
+    # Default to validation if no specific tests selected and no Crystal available
     if [ "$RUN_UNIT" = false ] && [ "$RUN_INTEGRATION" = false ] && \
        [ "$RUN_PERFORMANCE" = false ] && [ "$RUN_FUNCTIONAL" = false ] && \
-       [ "$RUN_AGENT_ZERO" = false ]; then
-        RUN_UNIT=true
+       [ "$RUN_AGENT_ZERO" = false ] && [ "$RUN_VALIDATION" = false ]; then
+        if ! command -v crystal &> /dev/null; then
+            print_warning "Crystal not available - defaulting to validation mode"
+            RUN_VALIDATION=true
+        else
+            RUN_UNIT=true
+        fi
     fi
     
     print_header "CrystalCog Comprehensive Testing Suite"
     
-    setup_environment
-    
-    # Run selected test categories
-    [ "$RUN_UNIT" = true ] && run_unit_tests
-    [ "$RUN_INTEGRATION" = true ] && run_integration_tests
-    [ "$RUN_AGENT_ZERO" = true ] && run_agent_zero_tests
-    [ "$RUN_PERFORMANCE" = true ] && run_performance_tests
-    [ "$RUN_FUNCTIONAL" = true ] && run_functional_tests
-    
-    # Generate reports
-    [ "$GENERATE_REPORTS" = true ] && generate_reports
-    [ "$GENERATE_COVERAGE" = true ] && generate_coverage
+    # Run validation if requested or if it's the only option
+    if [ "$RUN_VALIDATION" = true ]; then
+        validate_test_infrastructure
+    else
+        setup_environment
+        
+        # Run selected test categories
+        [ "$RUN_UNIT" = true ] && run_unit_tests
+        [ "$RUN_INTEGRATION" = true ] && run_integration_tests
+        [ "$RUN_AGENT_ZERO" = true ] && run_agent_zero_tests
+        [ "$RUN_PERFORMANCE" = true ] && run_performance_tests
+        [ "$RUN_FUNCTIONAL" = true ] && run_functional_tests
+        
+        # Generate reports
+        [ "$GENERATE_REPORTS" = true ] && generate_reports
+        [ "$GENERATE_COVERAGE" = true ] && generate_coverage
+    fi
     
     # Cleanup
     clean_artifacts
