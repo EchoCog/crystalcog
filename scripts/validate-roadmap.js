@@ -13,7 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROADMAP_FILE = 'DEVELOPMENT-ROADMAP.md';
+const ROADMAP_FILE = process.env.ROADMAP_FILE || 'DEVELOPMENT-ROADMAP.md';
 
 // Colors for console output
 const colors = {
@@ -33,24 +33,25 @@ function validateRoadmapStructure(content) {
   const issues = [];
   const warnings = [];
   
-  // Check for required sections
-  if (!content.includes('## Next Steps')) {
-    issues.push('Missing required "## Next Steps" section');
+  // Check for required sections (support both formats)
+  const hasNextSteps = content.includes('## Next Steps') || content.includes('## Next Development Steps');
+  if (!hasNextSteps) {
+    issues.push('Missing required "## Next Steps" or "## Next Development Steps" section');
   }
   
-  if (!content.includes('### Immediate Actions')) {
-    issues.push('Missing required "### Immediate Actions" subsection');
+  if (!content.includes('### Immediate Actions') && !content.includes('**Immediate (Week 1-2)**')) {
+    issues.push('Missing required "### Immediate Actions" subsection or immediate timeline section');
   }
   
   if (!content.includes('### Success Metrics')) {
     warnings.push('No "### Success Metrics" section found (optional but recommended)');
   }
   
-  // Check for proper section structure
-  const nextStepsMatch = content.match(/## Next Steps\n\n([\s\S]*?)(?=\n## |$)/);
+  // Check for proper section structure (support both formats)
+  const nextStepsMatch = content.match(/## Next (?:Development )?Steps\n\n([\s\S]*?)(?=\n## |$)/);
   if (nextStepsMatch) {
     const nextStepsContent = nextStepsMatch[1];
-    const subsections = nextStepsContent.match(/### [^#\n]+/g);
+    const subsections = nextStepsContent.match(/### [^#\n]+/g) || nextStepsContent.match(/\d+\.\s\*\*[^*]+\*\*/g);
     
     if (subsections && subsections.length > 0) {
       log(colors.green, `✓ Found ${subsections.length} subsections in Next Steps`);
@@ -60,6 +61,63 @@ function validateRoadmapStructure(content) {
   }
   
   return { issues, warnings };
+}
+
+function parseTasksFromText(tasksText, itemData, parseResults) {
+  const tasks = [];
+  
+  // Standard markdown checkboxes
+  const taskRegex = /\s*-\s\[([^\]]*)\]\s(.+)/g;
+  let taskMatch;
+  while ((taskMatch = taskRegex.exec(tasksText)) !== null) {
+    const [, status, description] = taskMatch;
+    tasks.push({
+      completed: status.trim() === 'x',
+      description: description.trim(),
+      format: 'checkbox'
+    });
+    parseResults.formatBreakdown.checkbox++;
+  }
+  
+  // Checkmark emojis
+  const checkmarkRegex = /\s*-\s✅\s(.+)/g;
+  let checkmarkMatch;
+  while ((checkmarkMatch = checkmarkRegex.exec(tasksText)) !== null) {
+    const [, description] = checkmarkMatch;
+    tasks.push({
+      completed: true,
+      description: description.trim(),
+      format: 'checkmark'
+    });
+    parseResults.formatBreakdown.checkmark++;
+  }
+  
+  // Plain bullet points (assumed incomplete)
+  const lines = tasksText.split('\n').filter(line => line.trim());
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    // Skip if already processed
+    if (trimmedLine.match(/^\s*-\s\[.*\]/) || trimmedLine.match(/^\s*-\s✅/)) {
+      continue;
+    }
+    const plainMatch = trimmedLine.match(/^\s*-\s(.+)/);
+    if (plainMatch) {
+      const [, description] = plainMatch;
+      if (!description.includes('✅') && !description.includes('[x]')) {
+        tasks.push({
+          completed: false,
+          description: description.trim(),
+          format: 'plain'
+        });
+        parseResults.formatBreakdown.plain++;
+      }
+    }
+  }
+  
+  itemData.tasks = tasks;
+  parseResults.totalTasks += tasks.length;
+  parseResults.completedTasks += tasks.filter(t => t.completed).length;
+  parseResults.incompleteTasks += tasks.filter(t => !t.completed).length;
 }
 
 function parseAndValidateItems(content) {
@@ -73,19 +131,21 @@ function parseAndValidateItems(content) {
     sections: []
   };
   
-  // Find "Next Steps" section
-  const nextStepsMatch = content.match(/## Next Steps\n\n([\s\S]*?)(?=\n## |$)/);
+  // Find "Next Steps" or "Next Development Steps" section
+  const nextStepsMatch = content.match(/## Next (?:Development )?Steps\n\n([\s\S]*?)(?=\n## |$)/);
   if (!nextStepsMatch) {
     return parseResults;
   }
   
   const nextStepsContent = nextStepsMatch[1];
   
-  // Parse subsections
-  const subsectionRegex = /### ([^#\n]+)\n\n([\s\S]*?)(?=\n### |\n## |$)/g;
+  // Parse subsections - handle both ### format and numbered format
+  let subsectionRegex = /### ([^#\n]+)\n\n([\s\S]*?)(?=\n### |\n## |$)/g;
   let subsectionMatch;
+  let foundSubsections = false;
   
   while ((subsectionMatch = subsectionRegex.exec(nextStepsContent)) !== null) {
+    foundSubsections = true;
     const [, sectionTitle, sectionContent] = subsectionMatch;
     
     // Skip non-actionable sections
@@ -115,65 +175,36 @@ function parseAndValidateItems(content) {
       };
       
       // Parse different task formats
-      const tasks = [];
-      
-      // Standard markdown checkboxes
-      const taskRegex = /\s*-\s\[([^\]]*)\]\s(.+)/g;
-      let taskMatch;
-      while ((taskMatch = taskRegex.exec(tasksText)) !== null) {
-        const [, status, description] = taskMatch;
-        tasks.push({
-          completed: status.trim() === 'x',
-          description: description.trim(),
-          format: 'checkbox'
-        });
-        parseResults.formatBreakdown.checkbox++;
-      }
-      
-      // Checkmark emojis
-      const checkmarkRegex = /\s*-\s✅\s(.+)/g;
-      let checkmarkMatch;
-      while ((checkmarkMatch = checkmarkRegex.exec(tasksText)) !== null) {
-        const [, description] = checkmarkMatch;
-        tasks.push({
-          completed: true,
-          description: description.trim(),
-          format: 'checkmark'
-        });
-        parseResults.formatBreakdown.checkmark++;
-      }
-      
-      // Plain bullet points (assumed incomplete)
-      const lines = tasksText.split('\n').filter(line => line.trim());
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        // Skip if already processed
-        if (trimmedLine.match(/^\s*-\s\[.*\]/) || trimmedLine.match(/^\s*-\s✅/)) {
-          continue;
-        }
-        const plainMatch = trimmedLine.match(/^\s*-\s(.+)/);
-        if (plainMatch) {
-          const [, description] = plainMatch;
-          if (!description.includes('✅') && !description.includes('[x]')) {
-            tasks.push({
-              completed: false,
-              description: description.trim(),
-              format: 'plain'
-            });
-            parseResults.formatBreakdown.plain++;
-          }
-        }
-      }
-      
-      itemData.tasks = tasks;
-      parseResults.totalTasks += tasks.length;
-      parseResults.completedTasks += tasks.filter(t => t.completed).length;
-      parseResults.incompleteTasks += tasks.filter(t => !t.completed).length;
-      
+      parseTasksFromText(tasksText, itemData, parseResults);
       sectionData.items.push(itemData);
     }
     
     parseResults.sections.push(sectionData);
+  }
+  
+  // If no ### subsections found, try direct numbered format (for AGENT-ZERO-GENESIS.md)
+  if (!foundSubsections) {
+    const directItemRegex = /(\d+)\.\s\*\*([^*:]+)[^:]*\*\*:\s*\n((?:\s*-\s[^\n]*\n?)*)/g;
+    let directItemMatch;
+    
+    while ((directItemMatch = directItemRegex.exec(nextStepsContent)) !== null) {
+      parseResults.totalSections++;
+      const [, itemNumber, sectionTitle, tasksText] = directItemMatch;
+      
+      const sectionData = {
+        title: sectionTitle.trim(),
+        items: [{
+          number: parseInt(itemNumber),
+          title: sectionTitle.trim(),
+          tasks: []
+        }]
+      };
+      
+      // Parse different task formats
+      parseTasksFromText(tasksText, sectionData.items[0], parseResults);
+      parseResults.sections.push(sectionData);
+      parseResults.totalItems++;
+    }
   }
   
   return parseResults;

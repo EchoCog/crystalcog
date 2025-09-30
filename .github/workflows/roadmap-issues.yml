@@ -13,6 +13,14 @@ on:
         required: false
         default: ''
         type: string
+      roadmap_file:
+        description: 'Roadmap file to process'
+        required: false
+        default: 'DEVELOPMENT-ROADMAP.md'
+        type: choice
+        options:
+          - 'DEVELOPMENT-ROADMAP.md'
+          - 'AGENT-ZERO-GENESIS.md'
   schedule:
     # Run weekly on Mondays at 10 AM UTC to check for new roadmap tasks
     - cron: '0 10 * * 1'
@@ -21,9 +29,10 @@ on:
       - main
     paths:
       - 'DEVELOPMENT-ROADMAP.md'
+      - 'AGENT-ZERO-GENESIS.md'
 
 env:
-  ROADMAP_FILE: 'DEVELOPMENT-ROADMAP.md'
+  ROADMAP_FILE: ${{ github.event.inputs.roadmap_file || 'DEVELOPMENT-ROADMAP.md' }}
 
 jobs:
   verify-roadmap:
@@ -46,14 +55,14 @@ jobs:
 
     - name: Check roadmap structure
       run: |
-        # Verify essential sections exist
-        if ! grep -q "## Next Steps" "${{ env.ROADMAP_FILE }}"; then
-          echo "❌ 'Next Steps' section not found in roadmap"
+        # Verify essential sections exist (support both formats)
+        if ! grep -q "## Next Steps\|## Next Development Steps" "${{ env.ROADMAP_FILE }}"; then
+          echo "❌ 'Next Steps' or 'Next Development Steps' section not found in roadmap"
           exit 1
         fi
         
-        if ! grep -q "### Immediate Actions" "${{ env.ROADMAP_FILE }}"; then
-          echo "❌ 'Immediate Actions' section not found in roadmap"
+        if ! grep -q "### Immediate Actions\|\*\*Immediate (Week 1-2)\*\*" "${{ env.ROADMAP_FILE }}"; then
+          echo "❌ 'Immediate Actions' section or immediate timeline not found in roadmap"
           exit 1
         fi
         
@@ -119,10 +128,10 @@ jobs:
           const parseActionableItems = (content) => {
             const sections = [];
             
-            // Find "Next Steps" section
-            const nextStepsMatch = content.match(/## Next Steps\n\n([\s\S]*?)(?=\n## |$)/);
+            // Find "Next Steps" or "Next Development Steps" section
+            const nextStepsMatch = content.match(/## Next (?:Development )?Steps\n\n([\s\S]*?)(?=\n## |$)/);
             if (!nextStepsMatch) {
-              console.log('No "Next Steps" section found');
+              console.log('No "Next Steps" or "Next Development Steps" section found');
               return sections;
             }
             
@@ -132,8 +141,10 @@ jobs:
             // Parse subsections like "Immediate Actions", "Phase 2 Implementation", etc.
             const subsectionRegex = /### ([^#\n]+)\n\n([\s\S]*?)(?=\n### |\n## |$)/g;
             let subsectionMatch;
+            let foundSubsections = false;
             
             while ((subsectionMatch = subsectionRegex.exec(nextStepsContent)) !== null) {
+              foundSubsections = true;
               const [, sectionTitle, sectionContent] = subsectionMatch;
               console.log(`Processing section: "${sectionTitle.trim()}"`);
               
@@ -151,6 +162,77 @@ jobs:
               while ((itemMatch = itemRegex.exec(sectionContent)) !== null) {
                 const [, itemNumber, itemTitle, tasksText] = itemMatch;
                 console.log(`  Found item ${itemNumber}: "${itemTitle.trim()}"`);
+                const tasks = [];
+                
+                // Parse individual tasks with standard markdown checkboxes
+                const taskRegex = /\s*-\s\[([^\]]*)\]\s(.+)/g;
+                let taskMatch;
+                while ((taskMatch = taskRegex.exec(tasksText)) !== null) {
+                  const [, status, description] = taskMatch;
+                  tasks.push({
+                    completed: status.trim() === 'x',
+                    description: description.trim(),
+                    format: 'checkbox'
+                  });
+                }
+                
+                // NEW: Parse tasks with checkmark emojis (completed items)
+                const checkmarkRegex = /\s*-\s✅\s(.+)/g;
+                let checkmarkMatch;
+                while ((checkmarkMatch = checkmarkRegex.exec(tasksText)) !== null) {
+                  const [, description] = checkmarkMatch;
+                  tasks.push({
+                    completed: true,
+                    description: description.trim(),
+                    format: 'checkmark'
+                  });
+                }
+                
+                // NEW: Parse tasks without checkmarks or checkboxes (assume incomplete)
+                const lines = tasksText.split('\n').filter(line => line.trim());
+                for (const line of lines) {
+                  const trimmedLine = line.trim();
+                  // Skip if already processed as checkbox or checkmark
+                  if (trimmedLine.match(/^\s*-\s\[.*\]/) || trimmedLine.match(/^\s*-\s✅/)) {
+                    continue;
+                  }
+                  // Match plain bullet points
+                  const plainMatch = trimmedLine.match(/^\s*-\s(.+)/);
+                  if (plainMatch) {
+                    const [, description] = plainMatch;
+                    // Only add if it doesn't contain completed indicators
+                    if (!description.includes('✅') && !description.includes('[x]')) {
+                      tasks.push({
+                        completed: false,
+                        description: description.trim(),
+                        format: 'plain'
+                      });
+                    }
+                  }
+                }
+                
+                console.log(`    Found ${tasks.length} tasks (${tasks.filter(t => !t.completed).length} incomplete)`);
+                
+                if (tasks.length > 0) {
+                  sections.push({
+                    section: sectionTitle.trim(),
+                    itemNumber: parseInt(itemNumber),
+                    itemTitle: itemTitle.trim(),
+                    tasks: tasks
+                  });
+                }
+              }
+            }
+            
+            // If no ### subsections found, try direct numbered format (for AGENT-ZERO-GENESIS.md)
+            if (!foundSubsections) {
+              console.log('No ### subsections found, trying direct numbered format');
+              const directItemRegex = /(\d+)\.\s\*\*([^*:]+)[^:]*\*\*:\s*\n((?:\s*-\s[^\n]*\n?)*)/g;
+              let directItemMatch;
+              
+              while ((directItemMatch = directItemRegex.exec(nextStepsContent)) !== null) {
+                const [, itemNumber, sectionTitle, tasksText] = directItemMatch;
+                console.log(`Processing direct section: "${sectionTitle.trim()}"`);
                 const tasks = [];
                 
                 // Parse individual tasks with standard markdown checkboxes
