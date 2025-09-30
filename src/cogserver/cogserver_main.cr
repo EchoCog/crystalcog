@@ -71,13 +71,13 @@ module CogServer
   private def self.print_usage
     puts <<-USAGE
     Usage: cogserver [options]
-    
+
     Options:
       --host, -h HOST      Server host (default: #{DEFAULT_HOST})
       --port, -p PORT      Telnet port (default: #{DEFAULT_PORT})
       --ws-port, -w PORT   WebSocket/HTTP port (default: #{DEFAULT_WS_PORT})
       --help               Show this help message
-    
+
     Examples:
       cogserver                           # Start with default settings
       cogserver --host 0.0.0.0 --port 17001

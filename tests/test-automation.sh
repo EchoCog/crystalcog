@@ -11,17 +11,17 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# Source environment adapter
+source "${SCRIPT_DIR}/environment-adapter.sh"
+
 # Configuration
-WATCH_MODE=false
 AUTO_FIX=false
-VERBOSE=false
 PARALLEL=false
 MAX_PARALLEL=4
 
@@ -62,7 +62,6 @@ COMMANDS:
     validate        Validate test infrastructure
 
 OPTIONS:
-    -v, --verbose   Verbose output
     -p, --parallel  Run tests in parallel
     -f, --fix       Auto-fix issues where possible
     -h, --help      Show this help
@@ -71,7 +70,7 @@ EXAMPLES:
     $0 watch                    # Watch mode for development
     $0 pre-commit --fix         # Pre-commit with auto-fix
     $0 ci-local --parallel      # Simulate CI with parallel tests
-    $0 regression --verbose     # Verbose regression testing
+    $0 regression               # Regression testing
 
 EOF
 }
@@ -136,17 +135,18 @@ watch_with_polling() {
 # Quick tests for development
 run_quick_tests() {
     # Run linting first (fast)
-    crystal tool format --check src/ spec/ 2>/dev/null || {
+    handle_crystal_command tool format --check src/ spec/ 2>/dev/null || {
         if [ "$AUTO_FIX" = true ]; then
             print_status "Auto-fixing code formatting..."
-            crystal tool format src/ spec/ 2>/dev/null
+            handle_crystal_command tool format src/ spec/ 2>/dev/null
         else
             print_warning "Code formatting issues found"
         fi
     }
     
     # Run unit tests for recently changed components
-    local changed_components=$(get_changed_components)
+    local changed_components
+    changed_components=$(get_changed_components)
     
     if [ -n "$changed_components" ]; then
         for component in $changed_components; do
@@ -187,12 +187,12 @@ run_pre_commit() {
     
     # 1. Code formatting
     print_status "Checking code formatting..."
-    if crystal tool format --check src/ spec/ 2>/dev/null; then
+    if handle_crystal_command tool format --check src/ spec/ 2>/dev/null; then
         print_success "Code formatting OK"
     else
         if [ "$AUTO_FIX" = true ]; then
             print_status "Auto-fixing code formatting..."
-            crystal tool format src/ spec/
+            handle_crystal_command tool format src/ spec/
             print_success "Code formatting fixed"
         else
             print_error "Code formatting issues found. Run: crystal tool format src/ spec/"
@@ -202,7 +202,7 @@ run_pre_commit() {
     
     # 2. Static analysis
     print_status "Running static analysis..."
-    if crystal build --no-codegen --warnings-as-errors src/crystalcog.cr 2>/dev/null; then
+    if handle_crystal_command build --no-codegen --warnings-as-errors src/crystalcog.cr 2>/dev/null; then
         print_success "Static analysis OK"
     else
         print_warning "Static analysis found issues"
@@ -263,7 +263,7 @@ run_auto_fix() {
     
     # 1. Format code
     print_status "Fixing code formatting..."
-    crystal tool format src/ spec/
+    handle_crystal_command tool format src/ spec/
     print_success "Code formatting fixed"
     
     # 2. Fix common patterns (if we had ameba or similar)
@@ -295,7 +295,7 @@ run_ci_local() {
     
     # Install dependencies fresh
     print_status "Installing dependencies..."
-    shards install --skip-postinstall
+    handle_shards_command install --skip-postinstall
     
     # Run full test suite
     print_status "Running full test suite..."
@@ -338,7 +338,7 @@ run_tests_parallel() {
     
     # Wait for remaining jobs
     for pid in "${pids[@]}"; do
-        wait $pid
+        wait "$pid"
     done
     
     print_success "Parallel tests completed"
@@ -346,17 +346,15 @@ run_tests_parallel() {
 
 wait_for_job() {
     local -n pids_ref=$1
-    local completed_pid
     
     # Wait for any job to complete
     wait -n
-    completed_pid=$?
     
     # Remove completed PID from array
     local new_pids=()
     for pid in "${pids_ref[@]}"; do
-        if kill -0 $pid 2>/dev/null; then
-            new_pids+=($pid)
+        if kill -0 "$pid" 2>/dev/null; then
+            new_pids+=("$pid")
         fi
     done
     pids_ref=("${new_pids[@]}")
@@ -423,7 +421,7 @@ raise "Core validation failed" unless atomspace.contains?(node)
 puts "Core functionality validation passed"
 EOF
 
-    if crystal run --error-trace "$test_script" >/dev/null 2>&1; then
+    if handle_crystal_command run --error-trace "$test_script" >/dev/null 2>&1; then
         print_success "Core functionality OK"
         return 0
     else
@@ -444,11 +442,14 @@ run_profiling() {
     for category in "${categories[@]}"; do
         print_status "Profiling $category tests..."
         
-        local start_time=$(date +%s.%N)
-        "${SCRIPT_DIR}/comprehensive-test-suite.sh" --$category >/dev/null 2>&1 || true
-        local end_time=$(date +%s.%N)
+        local start_time
+        start_time=$(date +%s.%N)
+        "${SCRIPT_DIR}/comprehensive-test-suite.sh" --"$category" >/dev/null 2>&1 || true
+        local end_time
+        end_time=$(date +%s.%N)
         
-        local duration=$(echo "$end_time - $start_time" | bc -l)
+        local duration
+        duration=$(echo "$end_time - $start_time" | bc -l)
         echo "$category: ${duration}s"
     done
 }
@@ -456,17 +457,33 @@ run_profiling() {
 # Run security checks
 run_security_checks() {
     # Check for hardcoded secrets (basic patterns)
-    local secret_patterns=("password\s*=" "api_key\s*=" "secret\s*=" "token\s*=")
+    local secret_patterns=("password\s*=\s*[\"'][^\"']+[\"']" "api_key\s*=\s*[\"'][^\"']+[\"']" "secret\s*=\s*[\"'][^\"']+[\"']" "token\s*=\s*[\"'][^\"']+[\"']")
     
+    local secrets_found=false
     for pattern in "${secret_patterns[@]}"; do
-        if grep -r -i "$pattern" src/ spec/ 2>/dev/null; then
-            print_warning "Potential hardcoded secret found"
+        if grep -r -E "$pattern" src/ spec/ 2>/dev/null; then
+            print_warning "Potential hardcoded secret found: $pattern"
+            secrets_found=true
         fi
     done
     
-    # Check for unsafe operations
-    if grep -r "system\|exec\|\`" src/ 2>/dev/null; then
-        print_warning "Potentially unsafe system calls found"
+    if [ "$secrets_found" = false ]; then
+        print_status "No hardcoded secrets detected"
+    fi
+    
+    # Check for potentially unsafe operations (be more specific)
+    local unsafe_calls=()
+    while IFS= read -r line; do
+        unsafe_calls+=("$line")
+    done < <(grep -r -E '`[^`]*`|\bsystem\s*\(' src/ 2>/dev/null | head -5)
+    
+    if [ ${#unsafe_calls[@]} -gt 0 ]; then
+        print_warning "Found ${#unsafe_calls[@]} potentially unsafe system calls (showing first 5):"
+        for call in "${unsafe_calls[@]}"; do
+            echo "  $call"
+        done
+    else
+        print_status "No unsafe system calls detected"
     fi
 }
 
@@ -525,10 +542,6 @@ validate_infrastructure() {
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -v|--verbose)
-                VERBOSE=true
-                shift
-                ;;
             -p|--parallel)
                 PARALLEL=true
                 shift
