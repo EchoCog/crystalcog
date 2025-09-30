@@ -9,7 +9,6 @@ require "../src/opencog/opencog"
 describe "CrystalCog Performance Tests" do
   describe "AtomSpace performance" do
     before_each do
-      @atomspace = AtomSpace::AtomSpace.new
     end
 
     it "benchmarks atom creation" do
@@ -18,7 +17,7 @@ describe "CrystalCog Performance Tests" do
       start_time = Time.monotonic
 
       atoms = num_atoms.times.map { |i|
-        @atomspace.add_concept_node("concept_#{i}")
+        atomspace.add_concept_node("concept_#{i}")
       }.to_a
 
       end_time = Time.monotonic
@@ -28,7 +27,7 @@ describe "CrystalCog Performance Tests" do
       duration.should be < 1.second
 
       # Should have created all atoms
-      @atomspace.size.should eq(num_atoms)
+      atomspace.size.should eq(num_atoms)
 
       # Rate should be reasonable (>500 atoms/second)
       rate = num_atoms / duration.total_seconds
@@ -43,7 +42,7 @@ describe "CrystalCog Performance Tests" do
       # Pre-populate atomspace
       num_atoms = 500
       atoms = num_atoms.times.map { |i|
-        @atomspace.add_concept_node("concept_#{i}")
+        atomspace.add_concept_node("concept_#{i}")
       }.to_a
 
       # Benchmark retrieval
@@ -53,7 +52,7 @@ describe "CrystalCog Performance Tests" do
 
       num_retrievals.times do
         random_atom = atoms.sample
-        retrieved = @atomspace.get_atom(random_atom.handle)
+        retrieved = atomspace.get_atom(random_atom.handle)
         retrieved.should eq(random_atom)
       end
 

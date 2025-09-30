@@ -101,7 +101,6 @@ describe OpenCog do
 
     it "integrates with AtomSpace" do
       # Test that OpenCog can use AtomSpace
-      atomspace = AtomSpace::AtomSpace.new
       concept = atomspace.add_concept_node("test_concept")
 
       concept.should be_a(AtomSpace::Atom)
@@ -124,22 +123,21 @@ end
 describe "OpenCog Full Integration" do
   before_each do
     OpenCog.initialize
-    @atomspace = AtomSpace::AtomSpace.new
   end
 
   describe "with PLN integration" do
     it "can use PLN reasoning engine" do
       PLN.initialize
-      pln_engine = PLN.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
 
       pln_engine.should be_a(PLN::PLNEngine)
 
       # Add some knowledge for reasoning
-      dog = @atomspace.add_concept_node("dog")
-      mammal = @atomspace.add_concept_node("mammal")
+      dog = atomspace.add_concept_node("dog")
+      mammal = atomspace.add_concept_node("mammal")
 
       tv = AtomSpace::SimpleTruthValue.new(0.9, 0.8)
-      @atomspace.add_inheritance_link(dog, mammal, tv)
+      atomspace.add_inheritance_link(dog, mammal, tv)
 
       # Run PLN reasoning
       new_atoms = pln_engine.reason(3)
@@ -150,7 +148,7 @@ describe "OpenCog Full Integration" do
 
     it "handles PLN exceptions properly" do
       PLN.initialize
-      pln_engine = PLN.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
 
       begin
         # This should complete without raising exceptions
@@ -164,34 +162,34 @@ describe "OpenCog Full Integration" do
 
     it "combines PLN with AtomSpace operations" do
       PLN.initialize
-      pln_engine = PLN.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
 
       # Build knowledge graph
       animals = ["dog", "cat", "bird", "fish"].map { |name|
-        @atomspace.add_concept_node(name)
+        atomspace.add_concept_node(name)
       }
 
       categories = ["mammal", "animal", "living_thing"].map { |name|
-        @atomspace.add_concept_node(name)
+        atomspace.add_concept_node(name)
       }
 
       # Add inheritance relationships
       tv = AtomSpace::SimpleTruthValue.new(0.9, 0.8)
-      @atomspace.add_inheritance_link(animals[0], categories[0], tv)    # dog -> mammal
-      @atomspace.add_inheritance_link(animals[1], categories[0], tv)    # cat -> mammal
-      @atomspace.add_inheritance_link(categories[0], categories[1], tv) # mammal -> animal
-      @atomspace.add_inheritance_link(categories[1], categories[2], tv) # animal -> living_thing
+      atomspace.add_inheritance_link(animals[0], categories[0], tv)    # dog -> mammal
+      atomspace.add_inheritance_link(animals[1], categories[0], tv)    # cat -> mammal
+      atomspace.add_inheritance_link(categories[0], categories[1], tv) # mammal -> animal
+      atomspace.add_inheritance_link(categories[1], categories[2], tv) # animal -> living_thing
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       # Run PLN reasoning
       new_atoms = pln_engine.reason(5)
 
       # Should have derived new knowledge
-      @atomspace.size.should be >= initial_size
+      atomspace.size.should be >= initial_size
 
       # Should be able to find derived relationships
-      inheritance_links = @atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK)
+      inheritance_links = atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK)
       inheritance_links.size.should be > 4 # More than initial 4
     end
   end
@@ -199,18 +197,18 @@ describe "OpenCog Full Integration" do
   describe "with URE integration" do
     it "can use URE reasoning engine" do
       URE.initialize
-      ure_engine = URE.create_engine(@atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       ure_engine.should be_a(URE::UREEngine)
 
       # Add some facts for reasoning
-      likes = @atomspace.add_predicate_node("likes")
-      john = @atomspace.add_concept_node("John")
-      mary = @atomspace.add_concept_node("Mary")
+      likes = atomspace.add_predicate_node("likes")
+      john = atomspace.add_concept_node("John")
+      mary = atomspace.add_concept_node("Mary")
 
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
-      eval1 = @atomspace.add_evaluation_link(likes, @atomspace.add_list_link([john, mary]), tv)
-      eval2 = @atomspace.add_evaluation_link(likes, @atomspace.add_list_link([mary, john]), tv)
+      eval1 = atomspace.add_evaluation_link(likes, atomspace.add_list_link([john, mary]), tv)
+      eval2 = atomspace.add_evaluation_link(likes, atomspace.add_list_link([mary, john]), tv)
 
       # Run URE forward chaining
       new_atoms = ure_engine.forward_chain(3)
@@ -221,7 +219,7 @@ describe "OpenCog Full Integration" do
 
     it "handles URE exceptions properly" do
       URE.initialize
-      ure_engine = URE.create_engine(@atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       begin
         # This should complete without raising exceptions
@@ -235,37 +233,37 @@ describe "OpenCog Full Integration" do
 
     it "uses URE for complex reasoning scenarios" do
       URE.initialize
-      ure_engine = URE.create_engine(@atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       # Create logical scenario: If P then Q, P is true, derive Q
-      p = @atomspace.add_concept_node("P")
-      q = @atomspace.add_concept_node("Q")
+      p = atomspace.add_concept_node("P")
+      q = atomspace.add_concept_node("Q")
 
       tv_high = AtomSpace::SimpleTruthValue.new(0.9, 0.9)
       tv_med = AtomSpace::SimpleTruthValue.new(0.8, 0.8)
 
       # P is true
-      p_true = @atomspace.add_evaluation_link(
-        @atomspace.add_predicate_node("true"),
-        @atomspace.add_list_link([p]),
+      p_true = atomspace.add_evaluation_link(
+        atomspace.add_predicate_node("true"),
+        atomspace.add_list_link([p]),
         tv_high
       )
 
       # Q evaluation (conclusion)
-      q_true = @atomspace.add_evaluation_link(
-        @atomspace.add_predicate_node("true"),
-        @atomspace.add_list_link([q])
+      q_true = atomspace.add_evaluation_link(
+        atomspace.add_predicate_node("true"),
+        atomspace.add_list_link([q])
       )
 
       # If P then Q
-      implication = @atomspace.add_implication_link(p_true, q_true, tv_med)
+      implication = atomspace.add_implication_link(p_true, q_true, tv_med)
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       # Run forward chaining - should derive Q is true via modus ponens
       new_atoms = ure_engine.forward_chain(5)
 
-      @atomspace.size.should be >= initial_size
+      atomspace.size.should be >= initial_size
 
       # Check if Q was derived (implementation dependent)
       if new_atoms.size > 0
@@ -282,26 +280,26 @@ describe "OpenCog Full Integration" do
       PLN.initialize
       URE.initialize
 
-      pln_engine = PLN.create_engine(@atomspace)
-      ure_engine = URE.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       # Create knowledge that both engines can work with
-      dog = @atomspace.add_concept_node("dog")
-      mammal = @atomspace.add_concept_node("mammal")
-      animal = @atomspace.add_concept_node("animal")
+      dog = atomspace.add_concept_node("dog")
+      mammal = atomspace.add_concept_node("mammal")
+      animal = atomspace.add_concept_node("animal")
 
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
 
       # PLN-style inheritance
-      @atomspace.add_inheritance_link(dog, mammal, tv)
-      @atomspace.add_inheritance_link(mammal, animal, tv)
+      atomspace.add_inheritance_link(dog, mammal, tv)
+      atomspace.add_inheritance_link(mammal, animal, tv)
 
       # URE-style evaluations
-      is_pred = @atomspace.add_predicate_node("is_a")
-      @atomspace.add_evaluation_link(is_pred, @atomspace.add_list_link([dog, mammal]), tv)
-      @atomspace.add_evaluation_link(is_pred, @atomspace.add_list_link([mammal, animal]), tv)
+      is_pred = atomspace.add_predicate_node("is_a")
+      atomspace.add_evaluation_link(is_pred, atomspace.add_list_link([dog, mammal]), tv)
+      atomspace.add_evaluation_link(is_pred, atomspace.add_list_link([mammal, animal]), tv)
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       # Run both reasoning engines
       pln_atoms = pln_engine.reason(3)
@@ -311,26 +309,26 @@ describe "OpenCog Full Integration" do
       total_new_atoms = pln_atoms.size + ure_atoms.size
       total_new_atoms.should be >= 0
 
-      @atomspace.size.should be >= initial_size
+      atomspace.size.should be >= initial_size
     end
 
     it "handles interaction between reasoning engines" do
       PLN.initialize
       URE.initialize
 
-      pln_engine = PLN.create_engine(@atomspace)
-      ure_engine = URE.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       # Create initial knowledge
-      a = @atomspace.add_concept_node("A")
-      b = @atomspace.add_concept_node("B")
-      c = @atomspace.add_concept_node("C")
+      a = atomspace.add_concept_node("A")
+      b = atomspace.add_concept_node("B")
+      c = atomspace.add_concept_node("C")
 
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
 
-      @atomspace.add_inheritance_link(a, b, tv)
-      pred = @atomspace.add_predicate_node("related")
-      @atomspace.add_evaluation_link(pred, @atomspace.add_list_link([b, c]), tv)
+      atomspace.add_inheritance_link(a, b, tv)
+      pred = atomspace.add_predicate_node("related")
+      atomspace.add_evaluation_link(pred, atomspace.add_list_link([b, c]), tv)
 
       # Run PLN first
       pln_atoms = pln_engine.reason(2)
@@ -346,8 +344,8 @@ describe "OpenCog Full Integration" do
       PLN.initialize
       URE.initialize
 
-      pln_engine = PLN.create_engine(@atomspace)
-      ure_engine = URE.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       begin
         # Run both engines
@@ -371,33 +369,33 @@ describe "OpenCog Full Integration" do
       PLN.initialize
       URE.initialize
 
-      pln_engine = PLN.create_engine(@atomspace)
-      ure_engine = URE.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       # Create moderate-sized knowledge base
       concepts = 15.times.map { |i|
-        @atomspace.add_concept_node("concept_#{i}")
+        atomspace.add_concept_node("concept_#{i}")
       }.to_a
 
       predicates = 3.times.map { |i|
-        @atomspace.add_predicate_node("pred_#{i}")
+        atomspace.add_predicate_node("pred_#{i}")
       }.to_a
 
       tv = AtomSpace::SimpleTruthValue.new(0.7, 0.8)
 
       # Add inheritance relationships
       (0...concepts.size - 1).each do |i|
-        @atomspace.add_inheritance_link(concepts[i], concepts[i + 1], tv)
+        atomspace.add_inheritance_link(concepts[i], concepts[i + 1], tv)
       end
 
       # Add evaluations
       concepts.each_with_index do |concept, i|
         predicates.each do |pred|
-          @atomspace.add_evaluation_link(pred, concept, tv)
+          atomspace.add_evaluation_link(pred, concept, tv)
         end
       end
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       start_time = Time.monotonic
 
@@ -412,7 +410,7 @@ describe "OpenCog Full Integration" do
       duration.should be < 15.seconds
 
       # Should have generated some new knowledge
-      @atomspace.size.should be >= initial_size
+      atomspace.size.should be >= initial_size
       (pln_atoms + ure_atoms).size.should be >= 0
     end
 
@@ -420,32 +418,32 @@ describe "OpenCog Full Integration" do
       PLN.initialize
       URE.initialize
 
-      pln_engine = PLN.create_engine(@atomspace)
-      ure_engine = URE.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       # Create consistent knowledge base
-      human = @atomspace.add_concept_node("human")
-      mortal = @atomspace.add_concept_node("mortal")
-      socrates = @atomspace.add_concept_node("socrates")
+      human = atomspace.add_concept_node("human")
+      mortal = atomspace.add_concept_node("mortal")
+      socrates = atomspace.add_concept_node("socrates")
 
       tv_high = AtomSpace::SimpleTruthValue.new(0.95, 0.9)
 
       # Socrates is human (inheritance)
-      @atomspace.add_inheritance_link(socrates, human, tv_high)
+      atomspace.add_inheritance_link(socrates, human, tv_high)
 
       # Humans are mortal (inheritance)
-      @atomspace.add_inheritance_link(human, mortal, tv_high)
+      atomspace.add_inheritance_link(human, mortal, tv_high)
 
       # Socrates is human (evaluation)
-      is_pred = @atomspace.add_predicate_node("is")
-      @atomspace.add_evaluation_link(is_pred, @atomspace.add_list_link([socrates, human]), tv_high)
+      is_pred = atomspace.add_predicate_node("is")
+      atomspace.add_evaluation_link(is_pred, atomspace.add_list_link([socrates, human]), tv_high)
 
       # Run reasoning engines
       pln_atoms = pln_engine.reason(3)
       ure_atoms = ure_engine.forward_chain(2)
 
       # Check for consistency - no contradictory knowledge should be generated
-      all_atoms = @atomspace.get_all_atoms
+      all_atoms = atomspace.get_all_atoms
 
       # All atoms should have valid truth values
       all_atoms.each do |atom|
@@ -457,7 +455,7 @@ describe "OpenCog Full Integration" do
       end
 
       # Should have derived that Socrates is mortal through both systems
-      inheritance_links = @atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK)
+      inheritance_links = atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK)
 
       # Should have more inheritance relationships than we started with
       inheritance_links.size.should be >= 2
@@ -469,16 +467,16 @@ describe "OpenCog Full Integration" do
       PLN.initialize
       URE.initialize
 
-      pln_engine = PLN.create_engine(@atomspace)
-      ure_engine = URE.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       begin
         # Create scenario that might cause issues
-        circular_a = @atomspace.add_concept_node("circular_A")
-        circular_b = @atomspace.add_concept_node("circular_B")
+        circular_a = atomspace.add_concept_node("circular_A")
+        circular_b = atomspace.add_concept_node("circular_B")
 
-        @atomspace.add_inheritance_link(circular_a, circular_b)
-        @atomspace.add_inheritance_link(circular_b, circular_a)
+        atomspace.add_inheritance_link(circular_a, circular_b)
+        atomspace.add_inheritance_link(circular_b, circular_a)
 
         # Run reasoning - should handle circular references
         pln_atoms = pln_engine.reason(5)
@@ -496,31 +494,31 @@ describe "OpenCog Full Integration" do
       PLN.initialize
       URE.initialize
 
-      pln_engine = PLN.create_engine(@atomspace)
-      ure_engine = URE.create_engine(@atomspace)
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
 
       # Track atomspace state
-      initial_atoms = @atomspace.get_all_atoms.dup
-      initial_size = @atomspace.size
+      initial_atoms = atomspace.get_all_atoms.dup
+      initial_size = atomspace.size
 
       # Add test knowledge
-      test_concept = @atomspace.add_concept_node("test")
-      test_size = @atomspace.size
+      test_concept = atomspace.add_concept_node("test")
+      test_size = atomspace.size
 
       # Run reasoning
       pln_atoms = pln_engine.reason(2)
       ure_atoms = ure_engine.forward_chain(2)
 
       # Atomspace should still be valid
-      @atomspace.size.should be >= test_size
+      atomspace.size.should be >= test_size
 
       # Original atoms should still exist
       initial_atoms.each do |original_atom|
-        @atomspace.contains?(original_atom).should be_true
+        atomspace.contains?(original_atom).should be_true
       end
 
       # Test concept should still exist
-      @atomspace.contains?(test_concept).should be_true
+      atomspace.contains?(test_concept).should be_true
     end
   end
 end

@@ -9,7 +9,6 @@ require "../../src/opencog/opencog"
 describe "CrystalCog Memory Usage Comparison Tests" do
   describe "AtomSpace memory efficiency compared to C++" do
     before_each do
-      @atomspace = AtomSpace::AtomSpace.new
     end
 
     it "benchmarks basic atom creation memory efficiency" do
@@ -19,7 +18,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
 
       result = CogUtil::MemoryProfiler.benchmark_memory("concept_node_creation") do
         atoms = num_atoms.times.map { |i|
-          @atomspace.add_concept_node("concept_#{i}")
+          atomspace.add_concept_node("concept_#{i}")
         }.to_a
         atoms.size
       end
@@ -41,7 +40,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
     it "benchmarks link creation memory vs C++ implementation" do
       # Pre-create nodes like C++ benchmark
       concepts = 100.times.map { |i|
-        @atomspace.add_concept_node("concept_#{i}")
+        atomspace.add_concept_node("concept_#{i}")
       }.to_a
 
       num_links = 200
@@ -50,7 +49,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
         links = num_links.times.map { |i|
           source = concepts.sample
           target = concepts.sample
-          @atomspace.add_inheritance_link(source, target)
+          atomspace.add_inheritance_link(source, target)
         }.to_a
         links.size
       end
@@ -72,7 +71,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
       # Based on C++ benchmark parameters
       scale_factors = [100, 500, 1000]
 
-      results = CogUtil::MemoryProfiler.benchmark_atomspace_scaling(@atomspace, scale_factors)
+      results = CogUtil::MemoryProfiler.benchmark_atomspace_scaling(atomspace, scale_factors)
 
       puts "AtomSpace Memory Scaling Test:"
       results.each do |result|
@@ -102,17 +101,17 @@ describe "CrystalCog Memory Usage Comparison Tests" do
       # Create atoms without truth values
       result_base = CogUtil::MemoryProfiler.benchmark_memory("atoms_without_tv") do
         atoms = base_atoms.times.map { |i|
-          @atomspace.add_concept_node("base_#{i}")
+          atomspace.add_concept_node("base_#{i}")
         }.to_a
         atoms.size
       end
 
-      @atomspace.clear
+      atomspace.clear
 
       # Create atoms with truth values
       result_with_tv = CogUtil::MemoryProfiler.benchmark_memory("atoms_with_tv") do
         atoms = base_atoms.times.map { |i|
-          atom = @atomspace.add_concept_node("tv_#{i}")
+          atom = atomspace.add_concept_node("tv_#{i}")
           tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
           atom.truth_value = tv
           atom
@@ -139,7 +138,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
       has_leak = CogUtil::MemoryProfiler.detect_memory_leaks(50) do
         # Create and destroy atoms repeatedly
         10.times do |i|
-          atom = @atomspace.add_concept_node("temp_#{i}")
+          atom = atomspace.add_concept_node("temp_#{i}")
           # AtomSpace should manage memory automatically
         end
       end
@@ -154,15 +153,15 @@ describe "CrystalCog Memory Usage Comparison Tests" do
 
       # Basic node creation
       results << CogUtil::MemoryProfiler.benchmark_memory("node_creation_1000") do
-        1000.times { |i| @atomspace.add_concept_node("report_node_#{i}") }
+        1000.times { |i| atomspace.add_concept_node("report_node_#{i}") }
         1000
       end
 
       # Link creation
-      concepts = 100.times.map { |i| @atomspace.add_concept_node("link_concept_#{i}") }.to_a
+      concepts = 100.times.map { |i| atomspace.add_concept_node("link_concept_#{i}") }.to_a
       results << CogUtil::MemoryProfiler.benchmark_memory("link_creation_500") do
         500.times do |i|
-          @atomspace.add_inheritance_link(concepts.sample, concepts.sample)
+          atomspace.add_inheritance_link(concepts.sample, concepts.sample)
         end
         500
       end
@@ -170,11 +169,11 @@ describe "CrystalCog Memory Usage Comparison Tests" do
       # Complex structures
       results << CogUtil::MemoryProfiler.benchmark_memory("complex_structures_100") do
         100.times do |i|
-          pred = @atomspace.add_predicate_node("pred_#{i}")
-          arg1 = @atomspace.add_concept_node("arg1_#{i}")
-          arg2 = @atomspace.add_concept_node("arg2_#{i}")
-          list = @atomspace.add_list_link([arg1, arg2])
-          @atomspace.add_evaluation_link(pred, list)
+          pred = atomspace.add_predicate_node("pred_#{i}")
+          arg1 = atomspace.add_concept_node("arg1_#{i}")
+          arg2 = atomspace.add_concept_node("arg2_#{i}")
+          list = atomspace.add_list_link([arg1, arg2])
+          atomspace.add_evaluation_link(pred, list)
         end
         100
       end
@@ -195,8 +194,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
 
   describe "reasoning memory efficiency" do
     before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-      @pln_engine = PLN::PLNEngine.new(@atomspace)
+      @pln_engine = PLN::PLNEngine.new(atomspace)
     end
 
     it "benchmarks PLN reasoning memory efficiency" do
@@ -205,15 +203,15 @@ describe "CrystalCog Memory Usage Comparison Tests" do
 
       # Create reasoning chain
       concepts = 10.times.map { |i|
-        @atomspace.add_concept_node("pln_concept_#{i}")
+        atomspace.add_concept_node("pln_concept_#{i}")
       }.to_a
 
       # Add inheritance relationships
       9.times do |i|
-        @atomspace.add_inheritance_link(concepts[i], concepts[i + 1], tv)
+        atomspace.add_inheritance_link(concepts[i], concepts[i + 1], tv)
       end
 
-      initial_atoms = @atomspace.size
+      initial_atoms = atomspace.size
 
       result = CogUtil::MemoryProfiler.benchmark_memory("pln_reasoning") do
         new_atoms = @pln_engine.reason(5)
@@ -234,15 +232,15 @@ describe "CrystalCog Memory Usage Comparison Tests" do
     end
 
     it "tests URE memory efficiency vs C++ implementation" do
-      @ure_engine = URE::UREEngine.new(@atomspace)
+      @ure_engine = URE::UREEngine.new(atomspace)
 
       # Create knowledge base
       predicates = 3.times.map { |i|
-        @atomspace.add_predicate_node("ure_pred_#{i}")
+        atomspace.add_predicate_node("ure_pred_#{i}")
       }.to_a
 
       concepts = 20.times.map { |i|
-        @atomspace.add_concept_node("ure_concept_#{i}")
+        atomspace.add_concept_node("ure_concept_#{i}")
       }.to_a
 
       tv = AtomSpace::SimpleTruthValue.new(0.7, 0.8)
@@ -251,7 +249,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
       20.times do
         pred = predicates.sample
         arg1, arg2 = concepts.sample(2)
-        @atomspace.add_evaluation_link(pred, @atomspace.add_list_link([arg1, arg2]), tv)
+        atomspace.add_evaluation_link(pred, atomspace.add_list_link([arg1, arg2]), tv)
       end
 
       result = CogUtil::MemoryProfiler.benchmark_memory("ure_forward_chaining") do
@@ -275,7 +273,6 @@ describe "CrystalCog Memory Usage Comparison Tests" do
   describe "comprehensive system memory comparison" do
     it "performs full system memory benchmark comparable to C++" do
       OpenCog.initialize
-      atomspace = AtomSpace::AtomSpace.new
 
       # This test simulates the C++ AtomSpaceBenchmark comprehensive test
       results = [] of CogUtil::MemoryProfiler::MemoryBenchmarkResult
