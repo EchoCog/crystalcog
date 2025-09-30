@@ -28,7 +28,7 @@ module PatternMatching
       end
 
       # Register a base pattern that can be reused in compositions
-      def register_pattern(name : String, template : AtomSpace::Atom, 
+      def register_pattern(name : String, template : AtomSpace::Atom,
                            constraints : Array(Constraint) = [] of Constraint)
         pattern = Pattern.new(template)
         constraints.each { |constraint| pattern.add_constraint(constraint) }
@@ -43,7 +43,7 @@ module PatternMatching
         all_results = pattern_names.map do |name|
           pattern = @base_patterns[name]?
           raise PatternCompositionException.new("Pattern '#{name}' not found") unless pattern
-          
+
           matcher = PatternMatcher.new(@atomspace)
           matcher.match(pattern)
         end
@@ -81,7 +81,7 @@ module PatternMatching
 
         base_pattern_obj = @base_patterns[base_pattern]?
         exclude_pattern_obj = @base_patterns[exclude_pattern]?
-        
+
         raise PatternCompositionException.new("Base pattern '#{base_pattern}' not found") unless base_pattern_obj
         raise PatternCompositionException.new("Exclude pattern '#{exclude_pattern}' not found") unless exclude_pattern_obj
 
@@ -114,7 +114,7 @@ module PatternMatching
           break if current_results.empty?
 
           accumulated_results.concat(current_results)
-          
+
           # Update atomspace with new facts derived from current matches for next iteration
           # This would typically involve asserting new atoms based on the pattern results
           current_results.each do |result|
@@ -132,9 +132,9 @@ module PatternMatching
 
         # Find compatible bindings across all result sets
         intersected = [] of MatchResult
-        
+
         all_results[0].each do |first_result|
-          if all_results[1..].all? { |other_results| 
+          if all_results[1..].all? { |other_results|
                other_results.any? { |other_result| compatible_bindings?(first_result, other_result) } }
             intersected << first_result
           end
@@ -208,12 +208,12 @@ module PatternMatching
         patterns.each_with_index do |pattern, index|
           matcher = PatternMatcher.new(@atomspace)
           results = matcher.match(pattern)
-          
+
           unless results.empty?
             # Simulate temporal progression
             timestamp = current_time + (index * 100)
             sequence_id = "#{sequence_name}_#{index}_#{timestamp}"
-            
+
             temporal_match = TemporalMatch.new(results, [timestamp], sequence_id)
             temporal_matches << temporal_match
           end
@@ -244,16 +244,16 @@ module PatternMatching
       # Detect repeating temporal patterns
       def detect_repeating_patterns(pattern : Pattern, min_occurrences : Int32 = 3) : Array(TemporalMatch)
         repeating_matches = [] of TemporalMatch
-        
+
         # Simulate pattern detection across multiple time points
         matcher = PatternMatcher.new(@atomspace)
         base_results = matcher.match(pattern)
-        
+
         if base_results.size >= min_occurrences
           current_time = Time.utc.to_unix_ms
           timestamps = (0...min_occurrences).map { |i| current_time + (i * 1000) }
           sequence_id = "repeating_#{current_time}"
-          
+
           temporal_match = TemporalMatch.new(base_results, timestamps, sequence_id)
           repeating_matches << temporal_match
         end
@@ -269,8 +269,8 @@ module PatternMatching
       getter frequency_threshold : Float64
       getter confidence_threshold : Float64
 
-      def initialize(@atomspace : AtomSpace::AtomSpace, 
-                     @frequency_threshold : Float64 = 0.1, 
+      def initialize(@atomspace : AtomSpace::AtomSpace,
+                     @frequency_threshold : Float64 = 0.1,
                      @confidence_threshold : Float64 = 0.8)
         @learned_patterns = Hash(String, LearnedPattern).new
       end
@@ -282,7 +282,7 @@ module PatternMatching
         getter examples : Array(MatchResult)
         getter creation_time : Time
 
-        def initialize(@template : AtomSpace::Atom, @frequency : Float64, 
+        def initialize(@template : AtomSpace::Atom, @frequency : Float64,
                        @confidence : Float64, @examples : Array(MatchResult))
           @creation_time = Time.utc
         end
@@ -333,7 +333,7 @@ module PatternMatching
           pattern = Pattern.new(learned_pattern.template)
           matcher = PatternMatcher.new(@atomspace)
           results = matcher.match(pattern)
-          
+
           all_results.concat(results)
         end
 
@@ -343,7 +343,7 @@ module PatternMatching
       # Get pattern statistics
       def pattern_statistics : Hash(String, Float64)
         stats = Hash(String, Float64).new
-        
+
         if @learned_patterns.empty?
           stats["total_patterns"] = 0.0
           stats["average_frequency"] = 0.0
@@ -354,7 +354,7 @@ module PatternMatching
 
         stats["total_patterns"] = @learned_patterns.size.to_f64
         stats["average_frequency"] = @learned_patterns.values.map(&.frequency).sum / @learned_patterns.size
-        stats["average_confidence"] = @learned_patterns.values.map(&.confidence).sum / @learned_patterns.size  
+        stats["average_confidence"] = @learned_patterns.values.map(&.confidence).sum / @learned_patterns.size
         stats["average_strength"] = @learned_patterns.values.map(&.strength).sum / @learned_patterns.size
 
         stats
@@ -362,16 +362,16 @@ module PatternMatching
 
       private def discover_inheritance_patterns : Array(LearnedPattern)
         patterns = [] of LearnedPattern
-        
+
         # Find common inheritance structures
         inheritance_links = @atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK)
         total_links = inheritance_links.size.to_f64
-        
+
         return patterns if total_links == 0
 
         # Group by parent concepts to find frequent inheritance targets
         parent_frequency = Hash(AtomSpace::Atom, Int32).new(0)
-        
+
         inheritance_links.each do |link|
           next unless link.responds_to?(:outgoing) && link.outgoing.size == 2
           parent = link.outgoing[1]
@@ -386,7 +386,7 @@ module PatternMatching
           # Create a pattern template: X inherits from parent
           var_x = AtomSpace::VariableNode.new("$X")
           template = AtomSpace::InheritanceLink.new(var_x, parent)
-          
+
           # Calculate confidence based on how well this predicts inheritance
           confidence = calculate_inheritance_confidence(parent, inheritance_links)
           next unless confidence >= @confidence_threshold
@@ -405,15 +405,15 @@ module PatternMatching
 
       private def discover_evaluation_patterns : Array(LearnedPattern)
         patterns = [] of LearnedPattern
-        
+
         evaluation_links = @atomspace.get_atoms_by_type(AtomSpace::AtomType::EVALUATION_LINK)
         total_evaluations = evaluation_links.size.to_f64
-        
+
         return patterns if total_evaluations == 0
 
         # Group by predicate to find frequent evaluation patterns
         predicate_frequency = Hash(AtomSpace::Atom, Int32).new(0)
-        
+
         evaluation_links.each do |link|
           next unless link.responds_to?(:outgoing) && link.outgoing.size == 2
           predicate = link.outgoing[0]
@@ -447,10 +447,10 @@ module PatternMatching
 
       private def discover_structural_patterns : Array(LearnedPattern)
         patterns = [] of LearnedPattern
-        
+
         # Discover common structural patterns (links with specific outgoing sizes)
         structure_frequency = Hash(Tuple(AtomSpace::AtomType, Int32), Int32).new(0)
-        
+
         @atomspace.get_all_atoms.each do |atom|
           next unless atom.responds_to?(:outgoing)
           key = {atom.type, atom.outgoing.size}
@@ -468,7 +468,7 @@ module PatternMatching
 
           # Create a structural pattern with variables
           variables = (0...outgoing_size).map { |i| AtomSpace::VariableNode.new("$VAR_#{i}") }
-          
+
           # We can't easily create arbitrary link types, so skip complex structures
           next unless outgoing_size <= 3
 
@@ -482,15 +482,15 @@ module PatternMatching
         patterns
       end
 
-      private def calculate_inheritance_confidence(parent : AtomSpace::Atom, 
+      private def calculate_inheritance_confidence(parent : AtomSpace::Atom,
                                                    all_links : Array(AtomSpace::Atom)) : Float64
         # Calculate how reliably this parent predicts inheritance relationships
         parent_links = all_links.select do |link|
           link.responds_to?(:outgoing) && link.outgoing.size == 2 && link.outgoing[1] == parent
         end
-        
+
         return 0.8 if parent_links.empty? # Default confidence
-        
+
         # Simple confidence based on frequency - could be more sophisticated
         [parent_links.size.to_f64 / all_links.size * 2, 1.0].min
       end
@@ -500,9 +500,9 @@ module PatternMatching
         predicate_evaluations = all_evaluations.select do |link|
           link.responds_to?(:outgoing) && link.outgoing.size == 2 && link.outgoing[0] == predicate
         end
-        
+
         return 0.7 if predicate_evaluations.empty?
-        
+
         [predicate_evaluations.size.to_f64 / all_evaluations.size * 2, 1.0].min
       end
 
@@ -539,7 +539,7 @@ module PatternMatching
           @statistical_measures["entropy"] = -@probability * Math.log(@probability) if @probability > 0
           @statistical_measures["certainty"] = @probability
           @statistical_measures["uncertainty"] = 1.0 - @probability
-          
+
           # Simple confidence intervals (would be more sophisticated in practice)
           margin = 0.1 * @probability
           @confidence_intervals["95%"] = {@probability - margin, @probability + margin}
@@ -589,13 +589,13 @@ module PatternMatching
       end
 
       # Bayesian inference for pattern prediction
-      def bayesian_inference(evidence_patterns : Array(Pattern), 
+      def bayesian_inference(evidence_patterns : Array(Pattern),
                              hypothesis_pattern : Pattern) : ProbabilisticMatch?
         # Calculate P(hypothesis | evidence) using Bayes' theorem
         # P(H|E) = P(E|H) * P(H) / P(E)
 
         matcher = PatternMatcher.new(@atomspace)
-        
+
         # Calculate prior probability P(H)
         hypothesis_results = matcher.match(hypothesis_pattern)
         total_atoms = @atomspace.size.to_f64
@@ -605,15 +605,15 @@ module PatternMatching
 
         # Calculate likelihood P(E|H) - how often evidence occurs when hypothesis is true
         likelihood = calculate_likelihood(evidence_patterns, hypothesis_pattern)
-        
+
         # Calculate evidence probability P(E)
         evidence_prob = calculate_evidence_probability(evidence_patterns)
-        
+
         return nil if evidence_prob == 0.0
 
         # Apply Bayes' theorem
         posterior_prob = (likelihood * prior_prob) / evidence_prob
-        
+
         # Create a synthetic match result for the inference
         if hypothesis_results.empty?
           return nil
@@ -625,7 +625,7 @@ module PatternMatching
       # Monte Carlo sampling for complex pattern spaces
       def monte_carlo_sampling(pattern : Pattern, num_samples : Int32 = 1000) : Array(ProbabilisticMatch)
         sampled_matches = [] of ProbabilisticMatch
-        
+
         (0...num_samples).each do |_|
           # Perform sampling by introducing random variations
           sample_result = sample_pattern_space(pattern)
@@ -671,7 +671,7 @@ module PatternMatching
 
         # Implement relaxed matching by creating variations of the pattern
         # This is a simplified version - full implementation would be more sophisticated
-        
+
         # Try matching with fewer constraints
         relaxed_pattern = Pattern.new(pattern.template)
         # Skip some constraints to create relaxed version
@@ -694,11 +694,11 @@ module PatternMatching
         relaxed_matches
       end
 
-      private def calculate_likelihood(evidence_patterns : Array(Pattern), 
+      private def calculate_likelihood(evidence_patterns : Array(Pattern),
                                        hypothesis_pattern : Pattern) : Float64
         # Simplified likelihood calculation
         matcher = PatternMatcher.new(@atomspace)
-        
+
         hypothesis_results = matcher.match(hypothesis_pattern)
         return 0.0 if hypothesis_results.empty?
 
@@ -721,7 +721,7 @@ module PatternMatching
       private def calculate_evidence_probability(evidence_patterns : Array(Pattern)) : Float64
         matcher = PatternMatcher.new(@atomspace)
         total_evidence_matches = 0
-        
+
         evidence_patterns.each do |pattern|
           results = matcher.match(pattern)
           total_evidence_matches += results.size
@@ -734,9 +734,9 @@ module PatternMatching
         # Simple sampling by running the pattern with slight modifications
         matcher = PatternMatcher.new(@atomspace)
         results = matcher.match(pattern)
-        
+
         return nil if results.empty?
-        
+
         # Return a random result (simplified sampling)
         results[Random.rand(results.size)]?
       end
@@ -744,7 +744,7 @@ module PatternMatching
       private def calculate_sample_probability(result : MatchResult, pattern : Pattern) : Float64
         # Simplified probability calculation for sampled results
         base_prob = calculate_match_probability(result, pattern)
-        
+
         # Add some randomness to simulate sampling uncertainty
         noise = (Random.rand - 0.5) * 0.2
         [0.0, [1.0, base_prob + noise].min].max
@@ -753,13 +753,13 @@ module PatternMatching
       private def calculate_pattern_similarity(result : MatchResult, pattern : Pattern) : Float64
         # Calculate how similar a result is to the original pattern
         # This is simplified - would involve more sophisticated similarity measures
-        
+
         satisfied_constraints = pattern.constraints.count do |constraint|
           constraint.satisfied?(result.bindings, @atomspace)
         end
 
         return 0.5 if pattern.constraints.empty?
-        
+
         satisfied_constraints.to_f64 / pattern.constraints.size
       end
 
@@ -785,14 +785,14 @@ module PatternMatching
     # Initialize advanced pattern matching subsystem
     def self.initialize
       CogUtil::Logger.info("Advanced Pattern Matching #{VERSION} initializing")
-      
+
       # Ensure base pattern matching is initialized
       PatternMatching.initialize unless @@pattern_matching_initialized
-      
+
       CogUtil::Logger.info("Advanced Pattern Matching #{VERSION} initialized")
       CogUtil::Logger.info("Available features:")
       CogUtil::Logger.info("  - Recursive query composition")
-      CogUtil::Logger.info("  - Temporal pattern matching") 
+      CogUtil::Logger.info("  - Temporal pattern matching")
       CogUtil::Logger.info("  - Pattern learning and optimization")
       CogUtil::Logger.info("  - Statistical/probabilistic matching")
     end

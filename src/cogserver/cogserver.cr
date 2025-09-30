@@ -156,7 +156,7 @@ module CogServer
         <<-HELP
         Available commands:
         help          - Show this help message
-        info          - Show server information  
+        info          - Show server information
         atomspace     - Show AtomSpace statistics
         list          - List atoms in AtomSpace
         stats         - Show session statistics
