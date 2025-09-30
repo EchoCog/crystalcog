@@ -194,6 +194,62 @@ hypergraph_encoding = kernel.hypergraph_tensor_encoding
 curl -X POST http://localhost:18080/storage/save
 ```
 
+## Production Deployment
+
+CrystalCog includes comprehensive production deployment scripts for enterprise-ready environments:
+
+### Automated Production Setup
+
+```bash
+# Run the production environment setup (requires root)
+sudo ./scripts/production/setup-production.sh
+
+# Or with custom configuration
+sudo ./scripts/production/setup-production.sh \
+  --install-dir /opt/crystalcog \
+  --service-user crystalcog \
+  --backup-dir /backup/crystalcog
+```
+
+The production setup script automatically configures:
+- **Docker & Docker Compose**: Containerized deployment
+- **System Security**: UFW firewall, fail2ban intrusion detection
+- **SSL Certificates**: Automated certificate management
+- **Service Management**: Systemd service for auto-start
+- **Monitoring Stack**: Prometheus, Grafana, and ELK stack
+- **Backup System**: Automated backup cron jobs
+- **Log Rotation**: Automatic log management
+
+### Deployment Features
+
+- **High Availability**: Multi-container architecture with health checks
+- **Security Hardened**: Minimal attack surface, non-root containers
+- **Monitoring Ready**: Complete observability stack included
+- **Backup & Recovery**: Automated data protection
+- **Scalable**: Resource limits and scaling configuration
+
+### Validation & Testing
+
+Validate your production setup:
+
+```bash
+# Comprehensive validation
+./validate-setup-production.sh
+
+# Docker Compose validation  
+docker-compose -f docker-compose.production.yml config
+
+# Health check
+./scripts/production/healthcheck.sh
+```
+
+### Deployment Options
+
+- **Container Deployment**: `docker-compose.production.yml`
+- **Kubernetes Deployment**: `deployments/k8s/`
+- **Guix System**: `guix environment -m guix.scm`
+- **Manual Installation**: Traditional system installation
+
 ## Set up (Legacy Python/Rust Environment)
 
 This repository also maintains compatibility with the original Python/Rust/Prolog environment:
