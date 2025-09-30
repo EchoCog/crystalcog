@@ -7,7 +7,24 @@
 # - Integration points with other components
 # - Guix environment compatibility
 
-echo "Testing NLP Module Structure..."
+set -e  # Exit on any error
+
+# Colors for output
+if [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m' # No Color
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    BLUE=''
+    NC=''
+fi
+
+echo -e "${BLUE}Testing NLP Module Structure...${NC}"
 
 # Check that all required files exist
 required_files=(
@@ -30,43 +47,43 @@ for file in "${required_files[@]}"; do
 done
 
 if [ ${#missing_files[@]} -eq 0 ]; then
-    echo "✅ All required files are present"
+    echo -e "${GREEN}✅ All required files are present${NC}"
 else
-    echo "❌ Missing files:"
+    echo -e "${RED}❌ Missing files:${NC}"
     for file in "${missing_files[@]}"; do
-        echo "   - $file"
+        echo -e "   ${RED}- $file${NC}"
     done
     exit 1
 fi
 
 # Check basic syntax patterns in the main NLP file
-echo "Checking NLP module structure..."
+echo -e "${BLUE}Checking NLP module structure...${NC}"
 
 if grep -q "module NLP" src/nlp/nlp.cr; then
-    echo "✅ NLP module is properly defined"
+    echo -e "${GREEN}✅ NLP module is properly defined${NC}"
 else
-    echo "❌ NLP module definition not found"
+    echo -e "${RED}❌ NLP module definition not found${NC}"
     exit 1
 fi
 
 if grep -q "class NLPException" src/nlp/nlp.cr; then
-    echo "✅ NLP exception classes are defined"
+    echo -e "${GREEN}✅ NLP exception classes are defined${NC}"
 else
-    echo "❌ NLP exception classes not found"
+    echo -e "${RED}❌ NLP exception classes not found${NC}"
     exit 1
 fi
 
 if grep -q "def self.initialize" src/nlp/nlp.cr; then
-    echo "✅ NLP initialization method is defined"
+    echo -e "${GREEN}✅ NLP initialization method is defined${NC}"
 else
-    echo "❌ NLP initialization method not found"
+    echo -e "${RED}❌ NLP initialization method not found${NC}"
     exit 1
 fi
 
 if grep -q "def self.process_text" src/nlp/nlp.cr; then
-    echo "✅ NLP text processing method is defined"
+    echo -e "${GREEN}✅ NLP text processing method is defined${NC}"
 else
-    echo "❌ NLP text processing method not found"
+    echo -e "${RED}❌ NLP text processing method not found${NC}"
     exit 1
 fi
 
@@ -304,34 +321,37 @@ else
 fi
 
 echo ""
-echo "🎉 All NLP module structure and dependency checks passed!"
+echo -e "${GREEN}🎉 All NLP module structure and dependency checks passed!${NC}"
 echo ""
-echo "NLP Module Validation Summary:"
-echo "=============================="
-echo "✅ Core files: 5"
-echo "✅ Test files: 4" 
-echo "✅ Dependencies: All required dependencies verified"
-echo "✅ Integration: Properly integrated with main system"
-echo "✅ Guix compatibility: Environment configuration validated"
+echo -e "${BLUE}NLP Module Validation Summary:${NC}"
+echo -e "${BLUE}==============================${NC}"
+echo -e "${GREEN}✅ Core files: 5${NC}"
+echo -e "${GREEN}✅ Test files: 4${NC}" 
+echo -e "${GREEN}✅ Dependencies: All required dependencies verified${NC}"
+echo -e "${GREEN}✅ Integration: Properly integrated with main system${NC}"
+echo -e "${GREEN}✅ Guix compatibility: Environment configuration validated${NC}"
 echo ""
-echo "Features validated:"
-echo "  ✅ Text tokenization and normalization"
-echo "  ✅ Basic text processing (stop words, stemming, n-grams)"
-echo "  ✅ AtomSpace integration for linguistic knowledge"
-echo "  ✅ Semantic relationship creation"
-echo "  ✅ Comprehensive test suite"
-echo "  ✅ Command-line interface"
-echo "  ✅ CogUtil and AtomSpace dependency compatibility"
-echo "  ✅ Internal module dependency validation"
-echo "  ✅ Guix environment configuration"
-echo "  ✅ Reasoning system integration (PLN/URE compatibility)"
+echo -e "${BLUE}Features validated:${NC}"
+echo -e "  ${GREEN}✅ Text tokenization and normalization${NC}"
+echo -e "  ${GREEN}✅ Basic text processing (stop words, stemming, n-grams)${NC}"
+echo -e "  ${GREEN}✅ AtomSpace integration for linguistic knowledge${NC}"
+echo -e "  ${GREEN}✅ Semantic relationship creation${NC}"
+echo -e "  ${GREEN}✅ Comprehensive test suite${NC}"
+echo -e "  ${GREEN}✅ Command-line interface${NC}"
+echo -e "  ${GREEN}✅ CogUtil and AtomSpace dependency compatibility${NC}"
+echo -e "  ${GREEN}✅ Internal module dependency validation${NC}"
+echo -e "  ${GREEN}✅ Guix environment configuration${NC}"
+echo -e "  ${GREEN}✅ Reasoning system integration (PLN/URE compatibility)${NC}"
 echo ""
-echo "The NLP module implementation is validated and ready for use!"
+echo -e "${GREEN}The NLP module implementation is validated and ready for use!${NC}"
 echo ""
-echo "Dependency Graph Validated:"
-echo "  NLP Module"
-echo "  ├── CogUtil (logging, configuration)"
-echo "  ├── AtomSpace (knowledge representation)"
-echo "  ├── Tokenizer (text tokenization)"
-echo "  ├── TextProcessor (text normalization)"
-echo "  └── LinguisticAtoms (linguistic knowledge)"
+echo -e "${BLUE}Dependency Graph Validated:${NC}"
+echo -e "  ${BLUE}NLP Module${NC}"
+echo -e "  ${BLUE}├── CogUtil (logging, configuration)${NC}"
+echo -e "  ${BLUE}├── AtomSpace (knowledge representation)${NC}"
+echo -e "  ${BLUE}├── Tokenizer (text tokenization)${NC}"
+echo -e "  ${BLUE}├── TextProcessor (text normalization)${NC}"
+echo -e "  ${BLUE}└── LinguisticAtoms (linguistic knowledge)${NC}"
+
+# Return success exit code
+exit 0
