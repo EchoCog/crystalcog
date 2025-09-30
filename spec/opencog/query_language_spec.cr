@@ -4,8 +4,7 @@ require "../../src/opencog/opencog"
 describe OpenCog::QueryLanguage do
   before_each do
     OpenCog.initialize
-    @atomspace = AtomSpace::AtomSpace.new
-    @query_interface = OpenCog::QueryLanguage.create_interface(@atomspace)
+    @query_interface = OpenCog::QueryLanguage.create_interface(atomspace)
   end
 
   describe "module initialization" do
@@ -19,9 +18,9 @@ describe OpenCog::QueryLanguage do
     end
 
     it "creates query interface" do
-      interface = OpenCog::QueryLanguage.create_interface(@atomspace)
+      interface = OpenCog::QueryLanguage.create_interface(atomspace)
       interface.should be_a(OpenCog::QueryLanguage::QueryLanguageInterface)
-      interface.atomspace.should eq(@atomspace)
+      interface.atomspace.should eq(atomspace)
     end
   end
 
@@ -129,14 +128,14 @@ describe OpenCog::QueryLanguage do
 
   describe "QueryExecutor" do
     it "creates executor with atomspace" do
-      executor = OpenCog::QueryLanguage::QueryExecutor.new(@atomspace)
-      executor.atomspace.should eq(@atomspace)
+      executor = OpenCog::QueryLanguage::QueryExecutor.new(atomspace)
+      executor.atomspace.should eq(atomspace)
       executor.pattern_matcher.should be_a(PatternMatching::PatternMatcher)
     end
 
     it "executes simple queries on empty atomspace" do
       query = OpenCog::QueryLanguage::QueryParser.parse("SELECT $x WHERE { $x ISA Animal }")
-      executor = OpenCog::QueryLanguage::QueryExecutor.new(@atomspace)
+      executor = OpenCog::QueryLanguage::QueryExecutor.new(atomspace)
 
       results = executor.execute(query)
       results.should be_a(Array(OpenCog::Query::QueryResult))
@@ -148,9 +147,9 @@ describe OpenCog::QueryLanguage do
   describe "QueryLanguageInterface" do
     it "executes string queries" do
       # Add some test data
-      dog = @atomspace.add_concept_node("Dog")
-      animal = @atomspace.add_concept_node("Animal")
-      @atomspace.add_inheritance_link(dog, animal)
+      dog = atomspace.add_concept_node("Dog")
+      animal = atomspace.add_concept_node("Animal")
+      atomspace.add_inheritance_link(dog, animal)
 
       results = @query_interface.query("SELECT $x WHERE { $x ISA Animal }")
       results.should be_a(Array(OpenCog::Query::QueryResult))
@@ -167,9 +166,9 @@ describe OpenCog::QueryLanguage do
 
     it "provides convenience methods" do
       # Add test data
-      dog = @atomspace.add_concept_node("Dog")
-      animal = @atomspace.add_concept_node("Animal")
-      @atomspace.add_inheritance_link(dog, animal)
+      dog = atomspace.add_concept_node("Dog")
+      animal = atomspace.add_concept_node("Animal")
+      atomspace.add_inheritance_link(dog, animal)
 
       results = @query_interface.find_all("Animal")
       results.should be_a(Array(OpenCog::Query::QueryResult))
@@ -179,15 +178,15 @@ describe OpenCog::QueryLanguage do
   describe "integration with OpenCog::Query" do
     it "integrates with existing Query module" do
       # Add test data
-      john = @atomspace.add_concept_node("John")
-      mary = @atomspace.add_concept_node("Mary")
-      likes = @atomspace.add_predicate_node("likes")
+      john = atomspace.add_concept_node("John")
+      mary = atomspace.add_concept_node("Mary")
+      likes = atomspace.add_predicate_node("likes")
 
-      list_link = @atomspace.add_list_link([john, mary])
-      eval_link = @atomspace.add_evaluation_link(likes, list_link)
+      list_link = atomspace.add_list_link([john, mary])
+      eval_link = atomspace.add_evaluation_link(likes, list_link)
 
       # Test string-based query execution
-      results = OpenCog::Query.execute_query(@atomspace, "SELECT $x WHERE { John likes $x }")
+      results = OpenCog::Query.execute_query(atomspace, "SELECT $x WHERE { John likes $x }")
       results.should be_a(Array(OpenCog::Query::QueryResult))
     end
 
@@ -198,7 +197,7 @@ describe OpenCog::QueryLanguage do
     end
 
     it "creates query interface through Query module" do
-      interface = OpenCog::Query.create_query_interface(@atomspace)
+      interface = OpenCog::Query.create_query_interface(atomspace)
       interface.should be_a(OpenCog::QueryLanguage::QueryLanguageInterface)
     end
   end
@@ -216,7 +215,7 @@ describe OpenCog::QueryLanguage do
         clause = OpenCog::QueryLanguage::TripleClause.new("John", "likes", "Mary")
         var_map = Hash(String, AtomSpace::Atom).new
 
-        atoms = clause.to_atoms(@atomspace, var_map)
+        atoms = clause.to_atoms(atomspace, var_map)
         atoms.size.should be >= 1
 
         # Should create evaluation link structure
@@ -237,7 +236,7 @@ describe OpenCog::QueryLanguage do
         clause = OpenCog::QueryLanguage::InheritanceClause.new("Dog", "Animal")
         var_map = Hash(String, AtomSpace::Atom).new
 
-        atoms = clause.to_atoms(@atomspace, var_map)
+        atoms = clause.to_atoms(atomspace, var_map)
         atoms.size.should eq(1)
 
         # Should create inheritance link
@@ -252,40 +251,40 @@ describe OpenCog::QueryLanguage do
       # Create rich knowledge base for testing
 
       # Concepts
-      @dog = @atomspace.add_concept_node("Dog")
-      @cat = @atomspace.add_concept_node("Cat")
-      @bird = @atomspace.add_concept_node("Bird")
-      @animal = @atomspace.add_concept_node("Animal")
-      @mammal = @atomspace.add_concept_node("Mammal")
+      @dog = atomspace.add_concept_node("Dog")
+      @cat = atomspace.add_concept_node("Cat")
+      @bird = atomspace.add_concept_node("Bird")
+      @animal = atomspace.add_concept_node("Animal")
+      @mammal = atomspace.add_concept_node("Mammal")
 
       # Individuals
-      @fido = @atomspace.add_concept_node("Fido")
-      @fluffy = @atomspace.add_concept_node("Fluffy")
-      @tweety = @atomspace.add_concept_node("Tweety")
+      @fido = atomspace.add_concept_node("Fido")
+      @fluffy = atomspace.add_concept_node("Fluffy")
+      @tweety = atomspace.add_concept_node("Tweety")
 
       # Predicates
-      @likes = @atomspace.add_predicate_node("likes")
-      @eats = @atomspace.add_predicate_node("eats")
+      @likes = atomspace.add_predicate_node("likes")
+      @eats = atomspace.add_predicate_node("eats")
 
       # Inheritance hierarchy
-      @atomspace.add_inheritance_link(@dog, @mammal)
-      @atomspace.add_inheritance_link(@cat, @mammal)
-      @atomspace.add_inheritance_link(@mammal, @animal)
-      @atomspace.add_inheritance_link(@bird, @animal)
+      atomspace.add_inheritance_link(@dog, @mammal)
+      atomspace.add_inheritance_link(@cat, @mammal)
+      atomspace.add_inheritance_link(@mammal, @animal)
+      atomspace.add_inheritance_link(@bird, @animal)
 
       # Individual classifications
-      @atomspace.add_inheritance_link(@fido, @dog)
-      @atomspace.add_inheritance_link(@fluffy, @cat)
-      @atomspace.add_inheritance_link(@tweety, @bird)
+      atomspace.add_inheritance_link(@fido, @dog)
+      atomspace.add_inheritance_link(@fluffy, @cat)
+      atomspace.add_inheritance_link(@tweety, @bird)
 
       # Relationships
-      food = @atomspace.add_concept_node("Food")
+      food = atomspace.add_concept_node("Food")
 
-      list1 = @atomspace.add_list_link([@fido, food])
-      @atomspace.add_evaluation_link(@likes, list1)
+      list1 = atomspace.add_list_link([@fido, food])
+      atomspace.add_evaluation_link(@likes, list1)
 
-      list2 = @atomspace.add_list_link([@fluffy, food])
-      @atomspace.add_evaluation_link(@likes, list2)
+      list2 = atomspace.add_list_link([@fluffy, food])
+      atomspace.add_evaluation_link(@likes, list2)
     end
 
     it "finds all animals" do
@@ -374,8 +373,8 @@ describe OpenCog::QueryLanguage do
     it "handles moderate query loads" do
       # Add more data for performance testing
       100.times do |i|
-        concept = @atomspace.add_concept_node("Concept#{i}")
-        @atomspace.add_inheritance_link(concept, @animal)
+        concept = atomspace.add_concept_node("Concept#{i}")
+        atomspace.add_inheritance_link(concept, @animal)
       end
 
       start_time = Time.monotonic
@@ -395,11 +394,11 @@ describe OpenCog::QueryLanguage do
     it "handles complex queries efficiently" do
       # Add interconnected data
       10.times do |i|
-        entity = @atomspace.add_concept_node("Entity#{i}")
-        property = @atomspace.add_predicate_node("Property#{i}")
+        entity = atomspace.add_concept_node("Entity#{i}")
+        property = atomspace.add_predicate_node("Property#{i}")
 
-        list_link = @atomspace.add_list_link([entity, @animal])
-        @atomspace.add_evaluation_link(property, list_link)
+        list_link = atomspace.add_list_link([entity, @animal])
+        atomspace.add_evaluation_link(property, list_link)
       end
 
       start_time = Time.monotonic
@@ -419,9 +418,9 @@ describe OpenCog::QueryLanguage do
   describe "integration with pattern matching" do
     it "uses PatternMatching engine correctly" do
       # Add test data
-      dog = @atomspace.add_concept_node("Dog")
-      animal = @atomspace.add_concept_node("Animal")
-      inheritance = @atomspace.add_inheritance_link(dog, animal)
+      dog = atomspace.add_concept_node("Dog")
+      animal = atomspace.add_concept_node("Animal")
+      inheritance = atomspace.add_inheritance_link(dog, animal)
 
       # Query should use pattern matching internally
       results = @query_interface.query("SELECT $x WHERE { $x ISA Animal }")

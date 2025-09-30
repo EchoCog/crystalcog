@@ -9,7 +9,6 @@ require "../../src/opencog/opencog"
 describe "CrystalCog Performance Tests" do
   describe "AtomSpace performance" do
     before_each do
-      @atomspace = AtomSpace::AtomSpace.new
     end
 
     it "benchmarks atom creation" do
@@ -18,7 +17,7 @@ describe "CrystalCog Performance Tests" do
       start_time = Time.monotonic
 
       atoms = num_atoms.times.map { |i|
-        @atomspace.add_concept_node("concept_#{i}")
+        atomspace.add_concept_node("concept_#{i}")
       }.to_a
 
       end_time = Time.monotonic
@@ -28,7 +27,7 @@ describe "CrystalCog Performance Tests" do
       duration.should be < 1.second
 
       # Should have created all atoms
-      @atomspace.size.should eq(num_atoms)
+      atomspace.size.should eq(num_atoms)
 
       # Rate should be reasonable (>500 atoms/second)
       rate = num_atoms / duration.total_seconds
@@ -41,7 +40,7 @@ describe "CrystalCog Performance Tests" do
       # Pre-populate atomspace
       num_atoms = 500
       atoms = num_atoms.times.map { |i|
-        @atomspace.add_concept_node("concept_#{i}")
+        atomspace.add_concept_node("concept_#{i}")
       }.to_a
 
       # Benchmark retrieval
@@ -51,7 +50,7 @@ describe "CrystalCog Performance Tests" do
 
       num_retrievals.times do
         random_atom = atoms.sample
-        retrieved = @atomspace.get_atom(random_atom.handle)
+        retrieved = atomspace.get_atom(random_atom.handle)
         retrieved.should eq(random_atom)
       end
 
@@ -70,7 +69,7 @@ describe "CrystalCog Performance Tests" do
     it "benchmarks link creation" do
       # Create nodes first
       nodes = 100.times.map { |i|
-        @atomspace.add_concept_node("node_#{i}")
+        atomspace.add_concept_node("node_#{i}")
       }.to_a
 
       num_links = 200
@@ -80,7 +79,7 @@ describe "CrystalCog Performance Tests" do
       links = num_links.times.map { |i|
         node1 = nodes.sample
         node2 = nodes.sample
-        @atomspace.add_inheritance_link(node1, node2)
+        atomspace.add_inheritance_link(node1, node2)
       }.to_a
 
       end_time = Time.monotonic
@@ -97,13 +96,13 @@ describe "CrystalCog Performance Tests" do
 
     it "benchmarks atomspace search operations" do
       # Populate with mixed atom types
-      concepts = 100.times.map { |i| @atomspace.add_concept_node("concept_#{i}") }.to_a
-      predicates = 50.times.map { |i| @atomspace.add_predicate_node("pred_#{i}") }.to_a
+      concepts = 100.times.map { |i| atomspace.add_concept_node("concept_#{i}") }.to_a
+      predicates = 50.times.map { |i| atomspace.add_predicate_node("pred_#{i}") }.to_a
 
       # Create some links
       20.times do
         c1, c2 = concepts.sample(2)
-        @atomspace.add_inheritance_link(c1, c2)
+        atomspace.add_inheritance_link(c1, c2)
       end
 
       num_searches = 100
@@ -112,12 +111,12 @@ describe "CrystalCog Performance Tests" do
 
       num_searches.times do
         # Search by type
-        found_concepts = @atomspace.get_atoms_by_type(AtomSpace::AtomType::CONCEPT_NODE)
+        found_concepts = atomspace.get_atoms_by_type(AtomSpace::AtomType::CONCEPT_NODE)
         found_concepts.size.should eq(100)
 
         # Search by name
         random_name = "concept_#{rand(100)}"
-        found_by_name = @atomspace.get_nodes_by_name(random_name)
+        found_by_name = atomspace.get_nodes_by_name(random_name)
         found_by_name.size.should be <= 1
       end
 
@@ -139,7 +138,7 @@ describe "CrystalCog Performance Tests" do
 
       result = CogUtil::MemoryProfiler.benchmark_memory("comprehensive_memory_test") do
         atoms = large_num_atoms.times.map { |i|
-          @atomspace.add_concept_node("large_concept_#{i}")
+          atomspace.add_concept_node("large_concept_#{i}")
         }.to_a
 
         # Add some truth values
@@ -154,7 +153,7 @@ describe "CrystalCog Performance Tests" do
       evaluation = CogUtil::MemoryProfiler.evaluate_memory_efficiency(result)
 
       puts "Enhanced Memory Usage Test:"
-      puts "  Total atoms: #{@atomspace.size}"
+      puts "  Total atoms: #{atomspace.size}"
       puts "  Memory per atom: #{result.memory_per_atom.round(2)} bytes"
       puts "  Memory efficiency: #{result.memory_efficiency.round(1)}%"
       puts "  C++ compatibility: #{evaluation["meets_cpp_target"] ? "PASS" : "NEEDS_OPTIMIZATION"}"
@@ -167,8 +166,7 @@ describe "CrystalCog Performance Tests" do
 
   describe "PLN reasoning performance" do
     before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-      @pln_engine = PLN::PLNEngine.new(@atomspace)
+      @pln_engine = PLN::PLNEngine.new(atomspace)
     end
 
     it "benchmarks simple reasoning chains" do
@@ -179,17 +177,17 @@ describe "CrystalCog Performance Tests" do
 
       # Create multiple reasoning chains
       chains = num_chains.times.map { |i|
-        a = @atomspace.add_concept_node("A_#{i}")
-        b = @atomspace.add_concept_node("B_#{i}")
-        c = @atomspace.add_concept_node("C_#{i}")
+        a = atomspace.add_concept_node("A_#{i}")
+        b = atomspace.add_concept_node("B_#{i}")
+        c = atomspace.add_concept_node("C_#{i}")
 
-        @atomspace.add_inheritance_link(a, b, tv)
-        @atomspace.add_inheritance_link(b, c, tv)
+        atomspace.add_inheritance_link(a, b, tv)
+        atomspace.add_inheritance_link(b, c, tv)
 
         [a, b, c]
       }.to_a
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       start_time = Time.monotonic
 
@@ -202,7 +200,7 @@ describe "CrystalCog Performance Tests" do
       duration.should be < 3.seconds
 
       # Should have inferred new relationships
-      @atomspace.size.should be > initial_size
+      atomspace.size.should be > initial_size
 
       rate = new_atoms.size / duration.total_seconds if duration.total_seconds > 0
       puts "PLN inference rate: #{rate.round(2)} inferences/second"
@@ -223,7 +221,7 @@ describe "CrystalCog Performance Tests" do
       ]
 
       concepts = levels.map { |level|
-        level.map { |name| @atomspace.add_concept_node(name) }
+        level.map { |name| atomspace.add_concept_node(name) }
       }
 
       # Add inheritance relationships between levels
@@ -234,11 +232,11 @@ describe "CrystalCog Performance Tests" do
         next_level.each do |child|
           parent = current_level.sample # Random parent from previous level
           tv = level_idx == 0 ? tv_high : tv_med
-          @atomspace.add_inheritance_link(child, parent, tv)
+          atomspace.add_inheritance_link(child, parent, tv)
         end
       end
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       start_time = Time.monotonic
 
@@ -252,9 +250,9 @@ describe "CrystalCog Performance Tests" do
       duration.should be < 10.seconds
 
       # Should have inferred many transitive relationships
-      @atomspace.size.should be > initial_size
+      atomspace.size.should be > initial_size
 
-      inferred_count = @atomspace.size - initial_size
+      inferred_count = atomspace.size - initial_size
       puts "Complex PLN reasoning: #{inferred_count} new atoms in #{duration.total_seconds.round(2)}s"
     end
 
@@ -263,21 +261,21 @@ describe "CrystalCog Performance Tests" do
       tv_perfect = AtomSpace::SimpleTruthValue.new(1.0, 1.0)
 
       # Known facts
-      socrates = @atomspace.add_concept_node("socrates")
-      human = @atomspace.add_concept_node("human")
-      mortal = @atomspace.add_concept_node("mortal")
+      socrates = atomspace.add_concept_node("socrates")
+      human = atomspace.add_concept_node("human")
+      mortal = atomspace.add_concept_node("mortal")
 
       # Socrates is human (perfect confidence)
-      @atomspace.add_inheritance_link(socrates, human, tv_perfect)
+      atomspace.add_inheritance_link(socrates, human, tv_perfect)
 
       # All humans are mortal (perfect confidence)
-      @atomspace.add_inheritance_link(human, mortal, tv_perfect)
+      atomspace.add_inheritance_link(human, mortal, tv_perfect)
 
       # Run reasoning
       new_atoms = @pln_engine.reason(5)
 
       # Should derive that Socrates is mortal
-      socrates_mortal = @atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK)
+      socrates_mortal = atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK)
         .find { |link|
           link.is_a?(AtomSpace::Link) &&
             link.outgoing.size == 2 &&
@@ -300,22 +298,21 @@ describe "CrystalCog Performance Tests" do
 
   describe "URE reasoning performance" do
     before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-      @ure_engine = URE::UREEngine.new(@atomspace)
+      @ure_engine = URE::UREEngine.new(atomspace)
     end
 
     it "benchmarks forward chaining performance" do
       # Create facts for URE to work with
       predicates = ["likes", "knows", "lives_in"].map { |name|
-        @atomspace.add_predicate_node(name)
+        atomspace.add_predicate_node(name)
       }
 
       people = ["alice", "bob", "charlie", "diana"].map { |name|
-        @atomspace.add_concept_node(name)
+        atomspace.add_concept_node(name)
       }
 
       places = ["london", "paris", "tokyo"].map { |name|
-        @atomspace.add_concept_node(name)
+        atomspace.add_concept_node(name)
       }
 
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
@@ -327,14 +324,14 @@ describe "CrystalCog Performance Tests" do
         arg1 = people.sample
         arg2 = (people + places).sample
 
-        @atomspace.add_evaluation_link(
+        atomspace.add_evaluation_link(
           pred,
-          @atomspace.add_list_link([arg1, arg2]),
+          atomspace.add_list_link([arg1, arg2]),
           tv
         )
       }.to_a
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       start_time = Time.monotonic
 
@@ -352,9 +349,9 @@ describe "CrystalCog Performance Tests" do
 
     it "benchmarks backward chaining performance" do
       # Set up scenario for backward chaining
-      pred = @atomspace.add_predicate_node("can_derive")
+      pred = atomspace.add_predicate_node("can_derive")
       concepts = 20.times.map { |i|
-        @atomspace.add_concept_node("concept_#{i}")
+        atomspace.add_concept_node("concept_#{i}")
       }.to_a
 
       tv = AtomSpace::SimpleTruthValue.new(0.7, 0.8)
@@ -362,14 +359,14 @@ describe "CrystalCog Performance Tests" do
       # Add some facts
       10.times do
         c1, c2 = concepts.sample(2)
-        @atomspace.add_evaluation_link(pred, @atomspace.add_list_link([c1, c2]), tv)
+        atomspace.add_evaluation_link(pred, atomspace.add_list_link([c1, c2]), tv)
       end
 
       # Create goals to search for
       num_queries = 20
       goals = num_queries.times.map { |i|
         c1, c2 = concepts.sample(2)
-        @atomspace.add_evaluation_link(pred, @atomspace.add_list_link([c1, c2]))
+        atomspace.add_evaluation_link(pred, atomspace.add_list_link([c1, c2]))
       }.to_a
 
       start_time = Time.monotonic
@@ -395,9 +392,9 @@ describe "CrystalCog Performance Tests" do
       @ure_engine.forward_chainer.add_default_rules
 
       # Create optimal scenario for conjunction rule
-      pred = @atomspace.add_predicate_node("test_pred")
+      pred = atomspace.add_predicate_node("test_pred")
       concepts = 10.times.map { |i|
-        @atomspace.add_concept_node("test_#{i}")
+        atomspace.add_concept_node("test_#{i}")
       }.to_a
 
       tv = AtomSpace::SimpleTruthValue.new(0.9, 0.9)
@@ -406,12 +403,12 @@ describe "CrystalCog Performance Tests" do
       eval_pairs = 5.times.map { |i|
         c1, c2 = concepts.sample(2)
         [
-          @atomspace.add_evaluation_link(pred, c1, tv),
-          @atomspace.add_evaluation_link(pred, c2, tv),
+          atomspace.add_evaluation_link(pred, c1, tv),
+          atomspace.add_evaluation_link(pred, c2, tv),
         ]
       }.to_a
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       start_time = Time.monotonic
 
@@ -436,9 +433,8 @@ describe "CrystalCog Performance Tests" do
   describe "integrated system performance" do
     before_each do
       OpenCog.initialize
-      @atomspace = AtomSpace::AtomSpace.new
-      @pln_engine = PLN.create_engine(@atomspace)
-      @ure_engine = URE.create_engine(@atomspace)
+      @pln_engine = PLN.create_engine(atomspace)
+      @ure_engine = URE.create_engine(atomspace)
     end
 
     it "benchmarks full reasoning pipeline" do
@@ -448,36 +444,36 @@ describe "CrystalCog Performance Tests" do
 
       # Taxonomic knowledge
       categories = ["entity", "living", "animal", "mammal", "primate", "human"].map { |name|
-        @atomspace.add_concept_node(name)
+        atomspace.add_concept_node(name)
       }
 
       individuals = ["socrates", "plato", "aristotle"].map { |name|
-        @atomspace.add_concept_node(name)
+        atomspace.add_concept_node(name)
       }
 
       # Build taxonomy chain
       (0...categories.size - 1).each do |i|
-        @atomspace.add_inheritance_link(categories[i + 1], categories[i], tv_high)
+        atomspace.add_inheritance_link(categories[i + 1], categories[i], tv_high)
       end
 
       # Individuals are humans
       individuals.each do |individual|
-        @atomspace.add_inheritance_link(individual, categories.last, tv_med)
+        atomspace.add_inheritance_link(individual, categories.last, tv_med)
       end
 
       # Relational knowledge
       predicates = ["teaches", "student_of", "wrote"].map { |name|
-        @atomspace.add_predicate_node(name)
+        atomspace.add_predicate_node(name)
       }
 
       # Add some relationships
-      @atomspace.add_evaluation_link(
+      atomspace.add_evaluation_link(
         predicates[0],
-        @atomspace.add_list_link([individuals[0], individuals[1]]),
+        atomspace.add_list_link([individuals[0], individuals[1]]),
         tv_med
       )
 
-      initial_size = @atomspace.size
+      initial_size = atomspace.size
 
       start_time = Time.monotonic
 
@@ -492,7 +488,7 @@ describe "CrystalCog Performance Tests" do
       duration.should be < 10.seconds
 
       total_inferences = pln_atoms.size + ure_atoms.size
-      final_size = @atomspace.size
+      final_size = atomspace.size
 
       puts "Full pipeline performance:"
       puts "  Initial atoms: #{initial_size}"
@@ -512,13 +508,13 @@ describe "CrystalCog Performance Tests" do
       scale_factors = [1, 2, 4]
 
       results = scale_factors.map { |factor|
-        @atomspace.clear
+        atomspace.clear
 
         num_concepts = base_concepts * factor
 
         # Create knowledge proportional to scale factor
         concepts = num_concepts.times.map { |i|
-          @atomspace.add_concept_node("scale_concept_#{factor}_#{i}")
+          atomspace.add_concept_node("scale_concept_#{factor}_#{i}")
         }.to_a
 
         tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
@@ -526,17 +522,17 @@ describe "CrystalCog Performance Tests" do
         # Add inheritance relationships
         (num_concepts / 2).times do
           c1, c2 = concepts.sample(2)
-          @atomspace.add_inheritance_link(c1, c2, tv)
+          atomspace.add_inheritance_link(c1, c2, tv)
         end
 
         # Add evaluations
-        pred = @atomspace.add_predicate_node("scale_pred_#{factor}")
+        pred = atomspace.add_predicate_node("scale_pred_#{factor}")
         (num_concepts / 3).times do
           c1, c2 = concepts.sample(2)
-          @atomspace.add_evaluation_link(pred, @atomspace.add_list_link([c1, c2]), tv)
+          atomspace.add_evaluation_link(pred, atomspace.add_list_link([c1, c2]), tv)
         end
 
-        initial_atoms = @atomspace.size
+        initial_atoms = atomspace.size
 
         start_time = Time.monotonic
 
@@ -579,11 +575,11 @@ describe "CrystalCog Performance Tests" do
       # Create substantial knowledge base
       num_concepts = 1000
       concepts = num_concepts.times.map { |i|
-        @atomspace.add_concept_node("memory_test_#{i}")
+        atomspace.add_concept_node("memory_test_#{i}")
       }.to_a
 
       predicates = 10.times.map { |i|
-        @atomspace.add_predicate_node("pred_#{i}")
+        atomspace.add_predicate_node("pred_#{i}")
       }.to_a
 
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
@@ -591,17 +587,17 @@ describe "CrystalCog Performance Tests" do
       # Add many relationships
       2000.times do
         c1, c2 = concepts.sample(2)
-        @atomspace.add_inheritance_link(c1, c2, tv)
+        atomspace.add_inheritance_link(c1, c2, tv)
       end
 
       1000.times do
         pred = predicates.sample
         c1, c2 = concepts.sample(2)
-        @atomspace.add_evaluation_link(pred, @atomspace.add_list_link([c1, c2]), tv)
+        atomspace.add_evaluation_link(pred, atomspace.add_list_link([c1, c2]), tv)
       end
 
       before_reasoning_memory = GC.stats.heap_size
-      atoms_before = @atomspace.size
+      atoms_before = atomspace.size
 
       # Run reasoning
       pln_atoms = @pln_engine.reason(3)
@@ -610,7 +606,7 @@ describe "CrystalCog Performance Tests" do
       GC.collect # Force cleanup
 
       after_reasoning_memory = GC.stats.heap_size
-      atoms_after = @atomspace.size
+      atoms_after = atomspace.size
 
       # Calculate memory metrics
       memory_per_atom_before = (before_reasoning_memory - initial_memory) / atoms_before
@@ -634,17 +630,16 @@ describe "CrystalCog Performance Tests" do
 
   describe "comparative performance" do
     it "compares PLN vs URE reasoning speed" do
-      @atomspace = AtomSpace::AtomSpace.new
-      pln_engine = PLN::PLNEngine.new(@atomspace)
-      ure_engine = URE::UREEngine.new(@atomspace)
+      pln_engine = PLN::PLNEngine.new(atomspace)
+      ure_engine = URE::UREEngine.new(atomspace)
 
       # Create knowledge suitable for both engines
       concepts = 20.times.map { |i|
-        @atomspace.add_concept_node("comp_concept_#{i}")
+        atomspace.add_concept_node("comp_concept_#{i}")
       }.to_a
 
       predicates = 3.times.map { |i|
-        @atomspace.add_predicate_node("comp_pred_#{i}")
+        atomspace.add_predicate_node("comp_pred_#{i}")
       }.to_a
 
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
@@ -652,14 +647,14 @@ describe "CrystalCog Performance Tests" do
       # Add inheritance links (PLN-friendly)
       15.times do
         c1, c2 = concepts.sample(2)
-        @atomspace.add_inheritance_link(c1, c2, tv)
+        atomspace.add_inheritance_link(c1, c2, tv)
       end
 
       # Add evaluation links (URE-friendly)
       15.times do
         pred = predicates.sample
         c1, c2 = concepts.sample(2)
-        @atomspace.add_evaluation_link(pred, @atomspace.add_list_link([c1, c2]), tv)
+        atomspace.add_evaluation_link(pred, atomspace.add_list_link([c1, c2]), tv)
       end
 
       # Benchmark PLN
@@ -685,28 +680,27 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "measures reasoning quality vs speed tradeoff" do
-      @atomspace = AtomSpace::AtomSpace.new
-      pln_engine = PLN::PLNEngine.new(@atomspace)
+      pln_engine = PLN::PLNEngine.new(atomspace)
 
       # Create known inference scenario
       tv_high = AtomSpace::SimpleTruthValue.new(0.95, 0.9)
       tv_med = AtomSpace::SimpleTruthValue.new(0.8, 0.8)
 
-      a = @atomspace.add_concept_node("A")
-      b = @atomspace.add_concept_node("B")
-      c = @atomspace.add_concept_node("C")
-      d = @atomspace.add_concept_node("D")
+      a = atomspace.add_concept_node("A")
+      b = atomspace.add_concept_node("B")
+      c = atomspace.add_concept_node("C")
+      d = atomspace.add_concept_node("D")
 
       # Chain: A->B->C->D
-      @atomspace.add_inheritance_link(a, b, tv_high)
-      @atomspace.add_inheritance_link(b, c, tv_med)
-      @atomspace.add_inheritance_link(c, d, tv_med)
+      atomspace.add_inheritance_link(a, b, tv_high)
+      atomspace.add_inheritance_link(b, c, tv_med)
+      atomspace.add_inheritance_link(c, d, tv_med)
 
       # Test different iteration counts
       iteration_counts = [1, 3, 5, 10]
 
       results = iteration_counts.map { |iterations|
-        @atomspace_copy = @atomspace # Note: This is simplified - real copy would be complex
+        atomspace_copy = atomspace # Note: This is simplified - real copy would be complex
 
         start_time = Time.monotonic
         new_atoms = pln_engine.reason(iterations)

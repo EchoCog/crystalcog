@@ -67,7 +67,6 @@ describe Attention do
 
   describe "AttentionBank" do
     it "initializes with correct funds" do
-      atomspace = AtomSpace::AtomSpace.new
       bank = Attention::AttentionBank.new(atomspace)
 
       bank.sti_funds.should eq(Attention::ECANParams::TARGET_STI_FUNDS)
@@ -75,7 +74,6 @@ describe Attention do
     end
 
     it "sets and gets attention values" do
-      atomspace = AtomSpace::AtomSpace.new
       bank = Attention::AttentionBank.new(atomspace)
       dog = atomspace.add_concept_node("dog")
       av = AtomSpace::AttentionValue.new(100_i16, 50_i16, true)
@@ -91,7 +89,6 @@ describe Attention do
     end
 
     it "manages attentional focus" do
-      atomspace = AtomSpace::AtomSpace.new
       bank = Attention::AttentionBank.new(atomspace)
       dog = atomspace.add_concept_node("dog")
 
@@ -116,24 +113,23 @@ describe Attention do
 
   describe "module convenience functions" do
     before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-      @dog = @atomspace.add_concept_node("dog")
+      @dog = atomspace.add_concept_node("dog")
     end
 
     it "creates allocation engines" do
-      engine = Attention.create_engine(@atomspace)
+      engine = Attention.create_engine(atomspace)
       engine.should be_a(Attention::AllocationEngine)
     end
 
     it "performs quick attention allocation" do
-      results = Attention.allocate_attention(@atomspace, 1)
+      results = Attention.allocate_attention(atomspace, 1)
       results.should be_a(Hash(String, Float64))
     end
 
     it "sets and gets attention values" do
-      Attention.set_attention(@atomspace, @dog.handle, 100_i16, 50_i16, true)
+      Attention.set_attention(atomspace, @dog.handle, 100_i16, 50_i16, true)
 
-      av = Attention.get_attention(@atomspace, @dog.handle)
+      av = Attention.get_attention(atomspace, @dog.handle)
       av.should_not be_nil
       av.not_nil!.sti.should eq(100)
       av.not_nil!.lti.should eq(50)
@@ -141,15 +137,15 @@ describe Attention do
     end
 
     it "stimulates atoms" do
-      Attention.stimulate(@atomspace, @dog.handle, 75_i16)
+      Attention.stimulate(atomspace, @dog.handle, 75_i16)
 
-      av = Attention.get_attention(@atomspace, @dog.handle)
+      av = Attention.get_attention(atomspace, @dog.handle)
       av.should_not be_nil
       av.not_nil!.sti.should eq(75)
     end
 
     it "gets statistics" do
-      stats = Attention.get_statistics(@atomspace)
+      stats = Attention.get_statistics(atomspace)
       stats.should be_a(Hash(String, Float64))
       stats.should have_key("bank_sti_funds")
     end
