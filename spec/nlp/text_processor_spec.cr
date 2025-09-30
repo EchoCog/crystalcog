@@ -18,7 +18,7 @@ describe NLP::TextProcessor do
     end
 
     it "handles unicode characters" do
-      text = ""Hello" and 'world' with – dash"
+      text = "\"Hello\" and 'world' with – dash"
       normalized = NLP::TextProcessor.normalize_text(text)
 
       # Should normalize unicode quotes and dashes
