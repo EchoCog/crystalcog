@@ -93,8 +93,20 @@ echo "   • Starting CogServer for testing..."
 crystal run start_test_cogserver.cr &
 COGSERVER_PID=$!
 
-# Give server time to start
-sleep 3
+# Give server time to start and verify it's responding
+echo "   • Waiting for CogServer to be ready..."
+for i in {1..10}; do
+    if curl -s -f "http://localhost:18080/status" >/dev/null 2>&1; then
+        echo "   • CogServer is ready after ${i} seconds ✓"
+        break
+    fi
+    if [ $i -eq 10 ]; then
+        echo "   • CogServer failed to start after 10 seconds ❌"
+        kill $COGSERVER_PID 2>/dev/null || true
+        exit 1
+    fi
+    sleep 1
+done
 
 # Run the integration test
 echo "   • Executing integration test script..."
