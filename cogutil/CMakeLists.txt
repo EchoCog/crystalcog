@@ -20,6 +20,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
 PROJECT(cogutil)
 
+# Set CMake policies
+cmake_policy(SET CMP0167 NEW)
+
 # Uncomment to be in Release mode [default].
 # SET(CMAKE_BUILD_TYPE Release)
 
@@ -54,11 +57,17 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 #
 # TODO: Once CMAKE_MINIMUM_REQUIRED >= 3.0.2 check use of policy CMP0048.
 #
-FILE(READ "${CMAKE_SOURCE_DIR}/opencog/util/cogutil.h" _CU_H_CONTENTS)
+FILE(READ "${CMAKE_CURRENT_SOURCE_DIR}/opencog/util/cogutil.h" _CU_H_CONTENTS)
 STRING(REGEX MATCH
 	"#define COGUTIL_VERSION_STRING \"([0-9]+[.0-9]+[.0-9]+)\""
 	_ "${_CU_H_CONTENTS}")
 SET(SEMANTIC_VERSION ${CMAKE_MATCH_1})
+IF(NOT SEMANTIC_VERSION)
+	SET(SEMANTIC_VERSION "2.0.3")
+	MESSAGE(WARNING "Could not extract version from cogutil.h, using fallback: ${SEMANTIC_VERSION}")
+ELSE()
+	MESSAGE(STATUS "Found cogutil version: ${SEMANTIC_VERSION}")
+ENDIF()
 
 include(cmake/OpenCogGccOptions.cmake)
 

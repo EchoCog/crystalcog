@@ -75,7 +75,7 @@ list(APPEND CMAKE_MODULE_PATH  ${COGUTIL_DATA_DIR}/cmake)
 include(${COGUTIL_DATA_DIR}/cmake/OpenCogGccOptions.cmake)
 include(${COGUTIL_DATA_DIR}/cmake/OpenCogLibOptions.cmake)
 include(${COGUTIL_DATA_DIR}/cmake/OpenCogInstallOptions.cmake)
-include(${COGUTIL_DATA_DIR}/cmake/Summary.cmake)
+include(${CMAKE_SOURCE_DIR}/cogutil/cmake/Summary.cmake)
 
 # ===================================================================
 # Check for existance of various required, optional packages.

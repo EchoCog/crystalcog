@@ -129,7 +129,7 @@ IF(OCTOMAP_FOUND AND OCTOMAP_LIBRARY)
   INCLUDE_DIRECTORIES(${OCTOMAP_INCLUDE_DIR})
   SET(OCTOMAP_DIR_MESSAGE "Octomap was found.")
 ELSE (OCTOMAP_FOUND AND OCTOMAP_LIBRARY)
-  MESSAGE(FATAL_ERROR "Octomap missing: needed for the SpaceTime map.")
+  MESSAGE(STATUS "Octomap not found - SpaceTime module will not be built")
 ENDIF(OCTOMAP_FOUND AND OCTOMAP_LIBRARY)
 
 # ===================================================================

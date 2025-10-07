@@ -25,7 +25,7 @@ ENDIF (NOT DEFINED DATADIR)
 
 # The find_package below fails, unless the setup above is sourced,
 # first.  Oh well.
-find_package(catkin REQUIRED COMPONENTS
+find_package(catkin COMPONENTS
   dynamic_reconfigure
   geometry_msgs
   hr_msgs
@@ -33,9 +33,14 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
 )
+if(catkin_FOUND)
 
 # ===================================================================
 # global includes
 
 ADD_SUBDIRECTORY(movement)
 ADD_SUBDIRECTORY(webui)
+
+else()
+    message(STATUS "catkin not found - ROS behavior scripting will not be built")
+endif()

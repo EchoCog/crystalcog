@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(robots_config)
 
-find_package(catkin REQUIRED
+find_package(catkin
 #  rospy
 #  std_msgs
 #  message_generation
 )
+if(catkin_FOUND)
 
 catkin_package(
 #  INCLUDE_DIRS include
@@ -18,4 +19,8 @@ catkin_package(
 # catkin_add_nosetests(test)
 find_package(catkin COMPONENTS rostest)
 add_rostest(test/test_robot.test)
+
+else()
+    message(STATUS "catkin not found - Robots config will not be built")
+endif()
 

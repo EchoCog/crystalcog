@@ -4,12 +4,13 @@ project(pau2motors)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+find_package(catkin COMPONENTS
   rospy
   std_msgs
   geometry_msgs
   message_generation
 )
+if(catkin_FOUND)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -162,3 +163,7 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+else()
+    message(STATUS "catkin not found - PAU2Motors will not be built")
+endif()

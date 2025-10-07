@@ -24,6 +24,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
+# Set CMake policies
+cmake_policy(SET CMP0167 NEW)
+
 # Find required packages
 find_package(Boost 1.60 COMPONENTS filesystem program_options system thread REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
@@ -31,6 +34,13 @@ find_package(PkgConfig REQUIRED)
 
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR})
+
+# Add cogutil/cmake to module path for custom Find modules
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cogutil/cmake)
+
+# Add build directories to package search path
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/cogutil/lib)
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/atomspace/lib)
 
 # Add subdirectories in dependency order
 # 1. Core utilities (cogutil)
@@ -47,26 +57,26 @@ else()
     message(WARNING "atomspace not found - skipping")
 endif()
 
-# 3. Attention Bank (depends on atomspace)
-if(EXISTS "${CMAKE_SOURCE_DIR}/attention/CMakeLists.txt")
-    add_subdirectory(attention)
-else()
-    message(WARNING "attention not found - skipping")
-endif()
+# 3. Attention Bank (depends on atomspace) - temporarily disabled
+# if(EXISTS "${CMAKE_SOURCE_DIR}/attention/CMakeLists.txt")
+#     add_subdirectory(attention)
+# else()
+#     message(WARNING "attention not found - skipping")
+# endif()
 
-# 4. URE (depends on atomspace)
-if(EXISTS "${CMAKE_SOURCE_DIR}/ure/CMakeLists.txt")
-    add_subdirectory(ure)
-else()
-    message(WARNING "ure not found - skipping")
-endif()
+# 4. URE (depends on atomspace) - temporarily disabled
+# if(EXISTS "${CMAKE_SOURCE_DIR}/ure/CMakeLists.txt")
+#     add_subdirectory(ure)
+# else()
+#     message(WARNING "ure not found - skipping")
+# endif()
 
-# 5. PLN (depends on atomspace and ure)
-if(EXISTS "${CMAKE_SOURCE_DIR}/pln/CMakeLists.txt")
-    add_subdirectory(pln)
-else()
-    message(WARNING "pln not found - skipping")
-endif()
+# 5. PLN (depends on atomspace and ure) - temporarily disabled
+# if(EXISTS "${CMAKE_SOURCE_DIR}/pln/CMakeLists.txt")
+#     add_subdirectory(pln)
+# else()
+#     message(WARNING "pln not found - skipping")
+# endif()
 
 # Agent-Zero Genesis Integration (optional)
 option(ENABLE_AGENT_ZERO "Enable Agent-Zero Genesis cognitive orchestration" ON)
@@ -134,7 +144,7 @@ endfunction()
 # Add all remaining subdirectories conditionally
 add_subdirectory_if_exists(agents)
 add_subdirectory_if_exists(agi-bio)
-add_subdirectory_if_exists(asmoses)
+# add_subdirectory_if_exists(asmoses)  # Disabled - requires URE
 add_subdirectory_if_exists(atomspace-agents)
 add_subdirectory_if_exists(atomspace-bridge)
 add_subdirectory_if_exists(atomspace-cog)

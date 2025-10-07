@@ -4,12 +4,12 @@ project(blender_api_msgs)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+find_package(catkin COMPONENTS
   rospy std_msgs geometry_msgs message_generation
 )
-
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+if(catkin_FOUND)
+    ## System dependencies are found with CMake's conventions
+    # find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -180,3 +180,7 @@ include_directories(
 # catkin_add_nosetests(test)
 find_package(catkin COMPONENTS rostest)
 add_rostest(test/test_blender_api.test)
+
+else()
+    message(STATUS "catkin not found - Blender API messages will not be built")
+endif()
