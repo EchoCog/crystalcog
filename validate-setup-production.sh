@@ -260,12 +260,19 @@ if [ -f "README.md" ]; then
     fi
 fi
 
-# 14. Generate validation summary
+# 14. Check validation documentation exists
+if [ -f "docs/PRODUCTION_SETUP_VALIDATION.md" ]; then
+    track_result "success" "✓ Production setup validation documentation exists"
+else
+    track_result "warning" "⚠ Production setup validation documentation missing"
+fi
+
+# 15. Generate validation summary
 echo ""
 print_status "Generating validation summary..."
 
 # Count total validations
-total_validations=$((${#required_files[@]} + ${#required_dirs[@]} + ${#production_configs[@]} + ${#functions_expected[@]} + 10))
+total_validations=$((${#required_files[@]} + ${#required_dirs[@]} + ${#production_configs[@]} + ${#functions_expected[@]} + 11))
 
 # Calculate complexity metrics for hypergraph analysis
 script_complexity="LOW"

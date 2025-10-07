@@ -7,6 +7,11 @@ require "./logger"
 require "./config"
 require "./randgen"
 require "./memory_profiler"
+require "./performance_profiler"
+require "./performance_regression"
+require "./optimization_engine"
+require "./performance_monitor"
+require "./profiling_cli"
 
 module CogUtil
   VERSION = "0.1.0"

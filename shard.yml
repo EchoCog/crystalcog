@@ -17,6 +17,8 @@ dependencies:
   # Database and persistence
   sqlite3:
     github: crystal-lang/crystal-sqlite3
+  pg:
+    github: will/crystal-pg
 
 development_dependencies:
 

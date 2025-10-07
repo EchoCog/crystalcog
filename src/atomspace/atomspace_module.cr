@@ -6,6 +6,8 @@
 require "./truthvalue"
 require "./atom"
 require "./atomspace"
+require "./distributed_cluster"
+require "./distributed_storage"
 
 module AtomSpace
   VERSION = "0.1.0"
@@ -19,6 +21,25 @@ module AtomSpace
   # Create a new AtomSpace instance
   def self.create_atomspace : AtomSpace
     AtomSpace::AtomSpace.new
+  end
+
+  # Create a distributed AtomSpace cluster
+  def self.create_distributed_cluster(cluster_id : String, atomspace : AtomSpace? = nil,
+                                      host : String = "localhost", port : Int32 = 0,
+                                      sync_strategy : SyncStrategy = SyncStrategy::MergeUsingTruthValues) : DistributedAtomSpaceCluster
+    target_atomspace = atomspace || create_atomspace
+    DistributedAtomSpaceCluster.new(cluster_id, target_atomspace, host, port, sync_strategy)
+  end
+
+  # Create a distributed storage node
+  def self.create_distributed_storage(name : String, cluster : DistributedAtomSpaceCluster,
+                                      local_storage_backend : String = "file",
+                                      storage_path : String = "./distributed_storage",
+                                      partition_strategy : PartitionStrategy = PartitionStrategy::HashBased,
+                                      replication_strategy : ReplicationStrategy = ReplicationStrategy::PrimaryBackup,
+                                      replication_factor : Int32 = 2) : DistributedStorageNode
+    DistributedStorageNode.new(name, cluster, local_storage_backend, storage_path,
+                              partition_strategy, replication_strategy, replication_factor)
   end
 
   # Shutdown and cleanup

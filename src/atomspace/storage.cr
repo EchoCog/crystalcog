@@ -6,7 +6,9 @@
 require "./atom"
 require "./truthvalue"
 require "../cogutil/cogutil"
+require "../rocksdb"
 require "sqlite3"
+require "pg"
 require "db"
 require "json"
 require "http/client"
@@ -705,6 +707,564 @@ module AtomSpace
       end
 
       stats
+    end
+  end
+
+  # PostgreSQL-based storage implementation
+  class PostgresStorageNode < StorageNode
+    @connection_string : String
+    @db : DB::Database?
+    @connected : Bool = false
+
+    def initialize(name : String, @connection_string : String)
+      super(name)
+      log_info("PostgresStorageNode created for: #{@connection_string}")
+    end
+
+    def open : Bool
+      return true if @connected
+
+      begin
+        @db = DB.open("postgres://#{@connection_string}")
+        create_tables
+        @connected = true
+        log_info("Opened PostgreSQL storage: #{@connection_string}")
+        true
+      rescue ex
+        log_error("Failed to open PostgreSQL connection: #{ex.message}")
+        false
+      end
+    end
+
+    def close : Bool
+      return true unless @connected
+
+      begin
+        @db.try(&.close)
+        @db = nil
+        @connected = false
+        log_info("Closed PostgreSQL storage")
+        true
+      rescue ex
+        log_error("Failed to close PostgreSQL connection: #{ex.message}")
+        false
+      end
+    end
+
+    def connected? : Bool
+      @connected
+    end
+
+    def store_atom(atom : Atom) : Bool
+      return false unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+        
+        # Store the atom
+        tv = atom.truth_value
+        db.exec(
+          "INSERT INTO atoms (handle, type, name, truth_strength, truth_confidence) 
+           VALUES ($1, $2, $3, $4, $5) 
+           ON CONFLICT (handle) DO UPDATE SET 
+           type = EXCLUDED.type, name = EXCLUDED.name, 
+           truth_strength = EXCLUDED.truth_strength, 
+           truth_confidence = EXCLUDED.truth_confidence",
+          atom.handle.to_s, atom.type.to_s, 
+          atom.is_a?(Node) ? atom.name : "",
+          tv.strength, tv.confidence
+        )
+
+        # Store outgoing relationships for links
+        if atom.is_a?(Link)
+          # Remove existing outgoing relationships
+          db.exec("DELETE FROM outgoing WHERE link_handle = $1", atom.handle.to_s)
+          
+          # Add new outgoing relationships
+          atom.outgoing.each_with_index do |target, index|
+            db.exec(
+              "INSERT INTO outgoing (link_handle, target_handle, position) VALUES ($1, $2, $3)",
+              atom.handle.to_s, target.handle.to_s, index
+            )
+          end
+        end
+
+        log_debug("Stored atom in PostgreSQL: #{atom}")
+        true
+      rescue ex
+        log_error("Failed to store atom in PostgreSQL: #{ex.message}")
+        false
+      end
+    end
+
+    def fetch_atom(handle : Handle) : Atom?
+      return nil unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+        
+        # Fetch atom basic info
+        db.query(
+          "SELECT type, name, truth_strength, truth_confidence FROM atoms WHERE handle = $1",
+          handle.to_s
+        ) do |rs|
+          if rs.move_next
+            type = AtomType.parse(rs.read(String))
+            name = rs.read(String)
+            strength = rs.read(Float64)
+            confidence = rs.read(Float64)
+            tv = SimpleTruthValue.new(strength, confidence)
+
+            if type.node?
+              return Node.new(type, name, tv)
+            else
+              # Fetch outgoing atoms for links
+              outgoing = [] of Atom
+              db.query(
+                "SELECT target_handle FROM outgoing WHERE link_handle = $1 ORDER BY position",
+                handle.to_s
+              ) do |out_rs|
+                while out_rs.move_next
+                  target_handle = Handle.new(out_rs.read(String))
+                  target_atom = fetch_atom(target_handle)
+                  outgoing << target_atom if target_atom
+                end
+              end
+              return Link.new(type, outgoing, tv)
+            end
+          end
+        end
+
+        nil
+      rescue ex
+        log_error("Failed to fetch atom from PostgreSQL: #{ex.message}")
+        nil
+      end
+    end
+
+    def remove_atom(atom : Atom) : Bool
+      return false unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+
+        # Remove outgoing relationships if it's a link
+        db.exec("DELETE FROM outgoing WHERE link_handle = $1", atom.handle.to_s)
+
+        # Remove the atom
+        db.exec("DELETE FROM atoms WHERE handle = $1", atom.handle.to_s)
+
+        log_debug("Removed atom from PostgreSQL: #{atom}")
+        true
+      rescue ex
+        log_error("Failed to remove atom from PostgreSQL: #{ex.message}")
+        false
+      end
+    end
+
+    def store_atomspace(atomspace : AtomSpace) : Bool
+      return false unless @connected
+
+      begin
+        db = @db.not_nil!
+
+        # Clear existing data
+        db.exec("DELETE FROM outgoing")
+        db.exec("DELETE FROM atoms")
+
+        # Store all atoms
+        atomspace.get_all_atoms.each do |atom|
+          store_atom(atom)
+        end
+
+        log_info("Stored AtomSpace (#{atomspace.size} atoms) to PostgreSQL: #{@connection_string}")
+        true
+      rescue ex
+        log_error("Failed to store AtomSpace to PostgreSQL: #{ex.message}")
+        false
+      end
+    end
+
+    def load_atomspace(atomspace : AtomSpace) : Bool
+      return false unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+        count = 0
+
+        # Load all atoms (nodes first, then links)
+        db.query("SELECT handle FROM atoms ORDER BY CASE WHEN name = '' THEN 1 ELSE 0 END") do |rs|
+          while rs.move_next
+            handle = Handle.new(rs.read(String))
+            atom = fetch_atom(handle)
+            if atom
+              atomspace.add_atom(atom)
+              count += 1
+            end
+          end
+        end
+
+        log_info("Loaded #{count} atoms from PostgreSQL: #{@connection_string}")
+        true
+      rescue ex
+        log_error("Failed to load AtomSpace from PostgreSQL: #{ex.message}")
+        false
+      end
+    end
+
+    def get_stats : Hash(String, String | Int32 | Int64)
+      stats = Hash(String, String | Int32 | Int64).new
+      stats["type"] = "PostgreSQLStorage"
+      stats["connection_string"] = @connection_string
+      stats["connected"] = @connected ? "true" : "false"
+
+      if @connected && @db
+        begin
+          db = @db.not_nil!
+          db.query("SELECT COUNT(*) FROM atoms") do |rs|
+            stats["atom_count"] = rs.move_next ? rs.read(Int64) : 0_i64
+          end
+          db.query("SELECT COUNT(*) FROM outgoing") do |rs|
+            stats["outgoing_count"] = rs.move_next ? rs.read(Int64) : 0_i64
+          end
+        rescue ex
+          log_error("Failed to get PostgreSQL stats: #{ex.message}")
+        end
+      end
+
+      stats
+    end
+
+    private def create_tables
+      db = @db.not_nil!
+
+      # Create atoms table
+      db.exec <<-SQL
+        CREATE TABLE IF NOT EXISTS atoms (
+          handle TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          name TEXT,
+          truth_strength REAL DEFAULT 1.0,
+          truth_confidence REAL DEFAULT 1.0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      SQL
+
+      # Create outgoing relationships table
+      db.exec <<-SQL
+        CREATE TABLE IF NOT EXISTS outgoing (
+          link_handle TEXT NOT NULL,
+          target_handle TEXT NOT NULL,
+          position INTEGER NOT NULL,
+          PRIMARY KEY (link_handle, position),
+          FOREIGN KEY (link_handle) REFERENCES atoms(handle),
+          FOREIGN KEY (target_handle) REFERENCES atoms(handle)
+        )
+      SQL
+
+      # Create indexes for performance
+      db.exec "CREATE INDEX IF NOT EXISTS idx_atoms_type ON atoms(type)"
+      db.exec "CREATE INDEX IF NOT EXISTS idx_atoms_name ON atoms(name)"
+      db.exec "CREATE INDEX IF NOT EXISTS idx_outgoing_target ON outgoing(target_handle)"
+
+      log_debug("Created PostgreSQL tables and indexes")
+    end
+  end
+
+  # RocksDB-based storage implementation
+  class RocksDBStorageNode < StorageNode
+    @db_path : String
+    @db : RocksDB::Database?
+    @connected : Bool = false
+
+    def initialize(name : String, @db_path : String)
+      super(name)
+      log_info("RocksDBStorageNode created for: #{@db_path}")
+    end
+
+    def open : Bool
+      return true if @connected
+
+      begin
+        # Ensure directory exists
+        dir = File.dirname(@db_path)
+        Dir.mkdir_p(dir) unless Dir.exists?(dir)
+
+        @db = RocksDB::Database.new(@db_path)
+        @connected = true
+        log_info("Opened RocksDB storage: #{@db_path}")
+        true
+      rescue ex
+        log_error("Failed to open RocksDB: #{ex.message}")
+        false
+      end
+    end
+
+    def close : Bool
+      return true unless @connected
+
+      begin
+        @db.try(&.close)
+        @db = nil
+        @connected = false
+        log_info("Closed RocksDB storage")
+        true
+      rescue ex
+        log_error("Failed to close RocksDB: #{ex.message}")
+        false
+      end
+    end
+
+    def connected? : Bool
+      @connected
+    end
+
+    def store_atom(atom : Atom) : Bool
+      return false unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+        
+        # Serialize atom to JSON
+        atom_data = {
+          "handle" => atom.handle.to_s,
+          "type" => atom.type.to_s,
+          "name" => atom.is_a?(Node) ? atom.name : "",
+          "truth_strength" => atom.truth_value.strength,
+          "truth_confidence" => atom.truth_value.confidence,
+          "outgoing" => atom.is_a?(Link) ? atom.outgoing.map(&.handle.to_s) : [] of String
+        }
+        
+        # Store with handle as key
+        db.put("atom:#{atom.handle}", atom_data.to_json)
+        
+        # Create type index
+        db.put("type:#{atom.type}:#{atom.handle}", "1")
+        
+        # Create name index for nodes
+        if atom.is_a?(Node) && !atom.name.empty?
+          db.put("name:#{atom.name}:#{atom.handle}", "1")
+        end
+
+        log_debug("Stored atom in RocksDB: #{atom}")
+        true
+      rescue ex
+        log_error("Failed to store atom in RocksDB: #{ex.message}")
+        false
+      end
+    end
+
+    def fetch_atom(handle : Handle) : Atom?
+      return nil unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+        
+        # Fetch atom data
+        json_data = db.get("atom:#{handle}")
+        return nil unless json_data
+        
+        data = JSON.parse(json_data)
+        type = AtomType.parse(data["type"].as_s)
+        strength = data["truth_strength"].as_f
+        confidence = data["truth_confidence"].as_f
+        tv = SimpleTruthValue.new(strength, confidence)
+        
+        if type.node?
+          name = data["name"].as_s
+          return Node.new(type, name, tv)
+        else
+          # Reconstruct outgoing atoms for links
+          outgoing_handles = data["outgoing"].as_a.map { |h| Handle.new(h.as_s) }
+          outgoing = [] of Atom
+          outgoing_handles.each do |h| 
+            atom = fetch_atom(h)
+            outgoing << atom if atom
+          end
+          return Link.new(type, outgoing, tv)
+        end
+      rescue ex
+        log_error("Failed to fetch atom from RocksDB: #{ex.message}")
+        nil
+      end
+    end
+
+    def remove_atom(atom : Atom) : Bool
+      return false unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+
+        # Remove main atom entry
+        db.delete("atom:#{atom.handle}")
+        
+        # Remove type index
+        db.delete("type:#{atom.type}:#{atom.handle}")
+        
+        # Remove name index for nodes
+        if atom.is_a?(Node) && !atom.name.empty?
+          db.delete("name:#{atom.name}:#{atom.handle}")
+        end
+
+        log_debug("Removed atom from RocksDB: #{atom}")
+        true
+      rescue ex
+        log_error("Failed to remove atom from RocksDB: #{ex.message}")
+        false
+      end
+    end
+
+    def store_atomspace(atomspace : AtomSpace) : Bool
+      return false unless @connected
+
+      begin
+        # Clear existing data (we could implement a more efficient batch delete)
+        db = @db.not_nil!
+        db.each_key do |key|
+          db.delete(key) if key.starts_with?("atom:") || key.starts_with?("type:") || key.starts_with?("name:")
+        end
+
+        # Store all atoms
+        atomspace.get_all_atoms.each do |atom|
+          store_atom(atom)
+        end
+
+        log_info("Stored AtomSpace (#{atomspace.size} atoms) to RocksDB: #{@db_path}")
+        true
+      rescue ex
+        log_error("Failed to store AtomSpace to RocksDB: #{ex.message}")
+        false
+      end
+    end
+
+    def load_atomspace(atomspace : AtomSpace) : Bool
+      return false unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+        count = 0
+        handle_mapping = {} of Handle => Atom
+
+        # First pass: Load all nodes (no recursion risk)
+        node_handles = [] of Handle
+        link_data = {} of Handle => JSON::Any
+        
+        db.each_key do |key|
+          if key.starts_with?("atom:")
+            handle_str = key[5..]  # Remove "atom:" prefix
+            handle = Handle.new(handle_str)
+            
+            json_data = db.get(key)
+            next unless json_data
+            
+            data = JSON.parse(json_data)
+            type = AtomType.parse(data["type"].as_s)
+            
+            if type.node?
+              # Load nodes immediately and create handle mapping
+              strength = data["truth_strength"].as_f
+              confidence = data["truth_confidence"].as_f
+              tv = SimpleTruthValue.new(strength, confidence)
+              name = data["name"].as_s
+              
+              node = Node.new(type, name, tv)
+              new_atom = atomspace.add_atom(node)
+              handle_mapping[handle] = new_atom
+              count += 1
+            else
+              # Store link data for second pass
+              link_data[handle] = data
+            end
+          end
+        end
+        
+        # Second pass: Load all links using handle mapping
+        link_data.each do |original_handle, data|
+          type = AtomType.parse(data["type"].as_s)
+          strength = data["truth_strength"].as_f
+          confidence = data["truth_confidence"].as_f
+          tv = SimpleTruthValue.new(strength, confidence)
+          
+          # Build outgoing array using handle mapping
+          outgoing_handles = data["outgoing"].as_a.map { |h| Handle.new(h.as_s) }
+          outgoing = [] of Atom
+          
+          outgoing_handles.each do |old_handle|
+            # Use handle mapping to find the new atom
+            mapped_atom = handle_mapping[old_handle]?
+            outgoing << mapped_atom if mapped_atom
+          end
+          
+          link = Link.new(type, outgoing, tv)
+          new_link = atomspace.add_atom(link)
+          handle_mapping[original_handle] = new_link
+          count += 1
+        end
+
+        log_info("Loaded #{count} atoms from RocksDB: #{@db_path}")
+        true
+      rescue ex
+        log_error("Failed to load AtomSpace from RocksDB: #{ex.message}")
+        false
+      end
+    end
+
+    def get_stats : Hash(String, String | Int32 | Int64)
+      stats = Hash(String, String | Int32 | Int64).new
+      stats["type"] = "RocksDBStorage"
+      stats["path"] = @db_path
+      stats["connected"] = @connected ? "true" : "false"
+
+      if @connected && @db
+        begin
+          # Count atoms by iterating through keys
+          atom_count = 0_i64
+          type_count = 0_i64
+          name_count = 0_i64
+          
+          db = @db.not_nil!
+          db.each_key do |key|
+            if key.starts_with?("atom:")
+              atom_count += 1
+            elsif key.starts_with?("type:")
+              type_count += 1  
+            elsif key.starts_with?("name:")
+              name_count += 1
+            end
+          end
+          
+          stats["atom_count"] = atom_count
+          stats["type_index_count"] = type_count
+          stats["name_index_count"] = name_count
+        rescue ex
+          log_error("Failed to get RocksDB stats: #{ex.message}")
+        end
+      end
+
+      stats
+    end
+
+    def fetch_atoms_by_type(type : AtomType) : Array(Atom)
+      atoms = [] of Atom
+      return atoms unless @connected || !@db
+
+      begin
+        db = @db.not_nil!
+        
+        # Use type index to find atoms efficiently
+        db.each_key do |key|
+          if key.starts_with?("type:#{type}:")
+            handle_str = key.split(":")[2]
+            handle = Handle.new(handle_str)
+            atom = fetch_atom(handle)
+            atoms << atom if atom
+          end
+        end
+      rescue ex
+        log_error("Failed to fetch atoms by type from RocksDB: #{ex.message}")
+      end
+
+      atoms
     end
   end
 
