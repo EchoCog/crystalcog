@@ -50,15 +50,19 @@ IF(ATOMSPACE_FOUND)
 ENDIF()
 
 # CogServer
-FIND_PACKAGE(CogServer 1.0.0 CONFIG REQUIRED)
+FIND_PACKAGE(CogServer 1.0.0 CONFIG)
 IF (COGSERVER_FOUND)
 	SET(HAVE_COGSERVER 1)
+ELSE()
+	message(STATUS "CogServer not found - Learn module will not be built")
 ENDIF (COGSERVER_FOUND)
 
 # RocksDB
-FIND_PACKAGE(AtomSpaceRocks 1.3.0 CONFIG REQUIRED)
+FIND_PACKAGE(AtomSpaceRocks 1.3.0 CONFIG)
 IF (ATOMSPACE_ROCKS_FOUND)
 	SET(HAVE_ATOMSPACE_ROCKS 1)
+ELSE()
+	message(STATUS "AtomSpaceRocks not found - Learn module will not be built")
 ENDIF (ATOMSPACE_ROCKS_FOUND)
 
 # ----------------------------------------------------------

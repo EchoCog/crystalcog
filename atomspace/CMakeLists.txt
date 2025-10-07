@@ -15,6 +15,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
 PROJECT(atomspace)
 
+# Set CMake policies
+cmake_policy(SET CMP0167 NEW)
+
 # ----------------------------------------------------------
 # User-modifiable options. Feel free to change these!
 #
@@ -168,13 +171,13 @@ ENDIF (FOLLY_FOUND)
 
 # ----------------------------------------------------------
 # Find Guile
-include(OpenCogFindGuile)
+include(${CMAKE_SOURCE_DIR}/cogutil/cmake/OpenCogFindGuile.cmake)
 
 # ----------------------------------------------------------
 # By default, this uses Python3.
 # To use Python2 only, run the following in the build directory:
 # rm CMakeCache.txt && cmake -DCMAKE_DISABLE_FIND_PACKAGE_Python3Interp=TRUE ..
-include(OpenCogFindPython)
+include(${CMAKE_SOURCE_DIR}/cogutil/cmake/OpenCogFindPython.cmake)
 
 # ----------------------------------------------------------
 # OCaml (optional; needed for the OCaml bindings.)
@@ -260,7 +263,7 @@ ENDIF (VALGRIND_FOUND)
 # TODO: Once CMAKE_MINIMUM_REQUIRED >= 3.0.2 check use of policy
 # CMP0048.
 #
-FILE(READ "${CMAKE_SOURCE_DIR}/opencog/atomspace/version.h" _ATOMSPACE_H_CONTENTS)
+FILE(READ "${CMAKE_CURRENT_SOURCE_DIR}/opencog/atomspace/version.h" _ATOMSPACE_H_CONTENTS)
 STRING(REGEX MATCH
 	"#define ATOMSPACE_VERSION_STRING \"([0-9]+[.0-9]+[.0-9]+)\""
         _ "${_ATOMSPACE_H_CONTENTS}")
@@ -274,12 +277,12 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR}
 	${Boost_INCLUDE_DIRS} ${COGUTIL_INCLUDE_DIR})
 
 # Macros that define how atom types get declared.
-INCLUDE("${CMAKE_SOURCE_DIR}/cmake/OpenCogAtomTypes.cmake")
+INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/OpenCogAtomTypes.cmake")
 
 # Macros for building language-specific objects.
-INCLUDE("${CMAKE_SOURCE_DIR}/cmake/OpenCogCython.cmake")
-INCLUDE("${CMAKE_SOURCE_DIR}/cmake/OpenCogGuile.cmake")
-INCLUDE("${CMAKE_SOURCE_DIR}/cmake/OpenCogOCaml.cmake")
+INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/OpenCogCython.cmake")
+INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/OpenCogGuile.cmake")
+INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/OpenCogOCaml.cmake")
 
 # ==========================================================
 # Decide what to build, based on the packages found.
@@ -387,7 +390,7 @@ ADD_CUSTOM_TARGET (examples
 	COMMENT "Building examples"
 )
 
-ADD_CUSTOM_TARGET(cscope
+ADD_CUSTOM_TARGET(atomspace-cscope
 	COMMAND find opencog examples tests -name '*.cc' -o -name '*.h' -o -name '*.cxxtest' -o -name '*.scm' > ${CMAKE_SOURCE_DIR}/cscope.files
 	COMMAND cscope -b
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}

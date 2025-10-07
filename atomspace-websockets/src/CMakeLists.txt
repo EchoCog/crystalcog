@@ -11,7 +11,10 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 #zlib
 FIND_PACKAGE(ZLIB REQUIRED)
 
-FIND_PACKAGE(nlohmann_json 3.2.0 REQUIRED)
+FIND_PACKAGE(nlohmann_json 3.2.0)
+if(NOT nlohmann_json_FOUND)
+    message(STATUS "nlohmann_json not found - WebSocket functionality will be disabled")
+endif()
 
 FIND_LIBRARY(BIOSCIENCE_LIB
         NAME libbioscience-types.dylib libbioscience-types.so

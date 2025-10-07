@@ -7,13 +7,21 @@ find_library(BIOSCIENCE_LIB
 
 #Protobuff
 set(protobuf_MODULE_COMPATIBLE ON CACHE BOOL "")
-find_package(ProtoBuf REQUIRED)
-include_directories(${PROTOBUF_INCLUDE_DIR})
-message(STATUS "Using protobuf ${Protobuf_VERSION}")
+find_package(ProtoBuf)
+if(ProtoBuf_FOUND)
+    include_directories(${PROTOBUF_INCLUDE_DIR})
+    message(STATUS "Using protobuf ${Protobuf_VERSION}")
+else()
+    message(STATUS "ProtoBuf not found - RPC functionality will be disabled")
+endif()
 
 # gRPC
-find_package(gRPC CONFIG REQUIRED)
-message(STATUS "Using gRPC ${gRPC_VERSION}")
+find_package(gRPC CONFIG)
+if(gRPC_FOUND)
+    message(STATUS "Using gRPC ${gRPC_VERSION}")
+else()
+    message(STATUS "gRPC not found - RPC functionality will be disabled")
+endif()
 
 #gRPC C++ plugin
 find_program(gRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
@@ -22,20 +30,29 @@ find_program(gRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
 get_filename_component(atom_proto "${PROJECT_SOURCE_DIR}/specs/atom_server.proto" ABSOLUTE)
 get_filename_component(atom_proto_path "${atom_proto}" DIRECTORY)
 #Generated sources
-PROTOBUF_GENERATE_CPP(atom_proto_srcs  atom_proto_hdrs "${PROJECT_SOURCE_DIR}/specs/atom_server.proto")
-#protobuf_generate_cpp(atom_proto_srcs atom_proto_hdrs "${atom_proto}")
-set(atom_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/atom_server.grpc.pb.cc")
-set(atom_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/atom_server.grpc.pb.h")
+if(ProtoBuf_FOUND)
+    PROTOBUF_GENERATE_CPP(atom_proto_srcs  atom_proto_hdrs "${PROJECT_SOURCE_DIR}/specs/atom_server.proto")
+    #protobuf_generate_cpp(atom_proto_srcs atom_proto_hdrs "${atom_proto}")
+    set(atom_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/atom_server.grpc.pb.cc")
+    set(atom_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/atom_server.grpc.pb.h")
+else()
+    set(atom_proto_srcs "")
+    set(atom_proto_hdrs "")
+    set(atom_grpc_srcs "")
+    set(atom_grpc_hdrs "")
+endif()
 
-add_custom_command(
-        OUTPUT "${atom_grpc_srcs}" "${atom_grpc_hdrs}"
-        COMMAND protobuf::protoc
-        ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}" -I "${atom_proto_path}"
-        --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
-        --plugin=protoc-gen-grpc="${gRPC_CPP_PLUGIN_EXECUTABLE}"
-        "${atom_proto}"
-        DEPENDS "${atom_proto}"
-)
+if(ProtoBuf_FOUND AND gRPC_FOUND)
+    add_custom_command(
+            OUTPUT "${atom_grpc_srcs}" "${atom_grpc_hdrs}"
+            COMMAND protobuf::protoc
+            ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}" -I "${atom_proto_path}"
+            --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+            --plugin=protoc-gen-grpc="${gRPC_CPP_PLUGIN_EXECUTABLE}"
+            "${atom_proto}"
+            DEPENDS "${atom_proto}"
+    )
+endif()
 
 #Generated include directory
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")

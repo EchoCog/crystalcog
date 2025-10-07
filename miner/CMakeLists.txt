@@ -79,23 +79,23 @@ ELSE (ATOMSPACE_FOUND)
 ENDIF (ATOMSPACE_FOUND)
 
 # Unify
-FIND_PACKAGE(Unify 1.0.0 CONFIG REQUIRED)
+FIND_PACKAGE(Unify 1.0.0 CONFIG)
 IF (UNIFY_FOUND)
 	MESSAGE(STATUS "Unify found.")
 	ADD_DEFINITIONS(-DHAVE_UNIFY)
 	SET(HAVE_UNIFY 1)
 ELSE (UNIFY_FOUND)
-	MESSAGE(STATUS "Unify missing: it is needed!")
+	MESSAGE(STATUS "Unify not found - Miner module will not be built")
 ENDIF (UNIFY_FOUND)
 
 # URE
-FIND_PACKAGE(URE 1.0.0 CONFIG REQUIRED)
+FIND_PACKAGE(URE 1.0.0 CONFIG)
 IF (URE_FOUND)
 	MESSAGE(STATUS "URE found.")
 	ADD_DEFINITIONS(-DHAVE_URE)
 	SET(HAVE_URE 1)
 ELSE (URE_FOUND)
-	MESSAGE(STATUS "URE missing: it is needed!")
+	MESSAGE(STATUS "URE not found - Miner module will not be built")
 ENDIF (URE_FOUND)
 
 # add the 'cmake' directory from cogutil to search path
