@@ -57,6 +57,11 @@ module CogUtil
       initialize_optimization_rules
     end
     
+    # Set the profiler session for optimization analysis
+    def profiler_session=(session : PerformanceProfiler::Session?)
+      @profiler_session = session
+    end
+    
     # Analyze performance data and generate optimization recommendations
     def analyze_and_recommend(session : PerformanceProfiler::Session) : Array(Recommendation)
       @profiler_session = session

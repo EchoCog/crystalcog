@@ -372,13 +372,18 @@ module CogUtil
       
       # Run built-in benchmarks
       case suite
-      when "all", "atomspace"
+      when "all"
         run_atomspace_benchmarks(iterations)
-      when "all", "pln"
         run_pln_benchmarks(iterations)
-      when "all", "memory"
         run_memory_benchmarks(iterations)
-      when "all", "concurrent"
+        run_concurrency_benchmarks(iterations)
+      when "atomspace"
+        run_atomspace_benchmarks(iterations)
+      when "pln"
+        run_pln_benchmarks(iterations)
+      when "memory"
+        run_memory_benchmarks(iterations)
+      when "concurrent"
         run_concurrency_benchmarks(iterations)
       else
         puts "Unknown benchmark suite: #{suite}".colorize(:red)

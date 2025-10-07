@@ -119,6 +119,11 @@ module CogUtil
       session
     end
     
+    # Get current profiling session (for monitoring purposes)
+    def self.current_session : Session?
+      @@current_session
+    end
+    
     # Profile a code block with automatic timing and metrics collection
     def self.profile(name : String, &block)
       ensure_session

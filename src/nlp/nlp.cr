@@ -104,7 +104,7 @@ module NLP
     {
       "word_atoms"     => word_count,
       "sentence_atoms" => sentence_count,
-      "total_atoms"    => atomspace.size,
+      "total_atoms"    => atomspace.size.to_i32,
     }
   end
 end

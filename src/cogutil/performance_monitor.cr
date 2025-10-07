@@ -1,5 +1,6 @@
 require "json"
 require "http/server"
+require "http/web_socket"
 require "socket"
 require "./performance_profiler"
 
@@ -82,7 +83,7 @@ module CogUtil
     @monitoring_active : Bool
     @sample_buffer_size : Int32
     @http_server : HTTP::Server?
-    @websocket_clients : Array(HTTP::WebSocket)
+    # @websocket_clients : Array(HTTP::WebSocket)
     @monitoring_fiber : Fiber?
     
     def initialize(@sample_buffer_size : Int32 = 10000)
@@ -90,7 +91,7 @@ module CogUtil
       @alert_rules = Array(AlertRule).new
       @active_alerts = Array(ActiveAlert).new
       @monitoring_active = false
-      @websocket_clients = Array(HTTP::WebSocket).new
+      # @websocket_clients = Array(HTTP::WebSocket).new
       
       setup_default_alert_rules
     end
@@ -110,7 +111,6 @@ module CogUtil
     # Stop monitoring
     def stop_monitoring
       @monitoring_active = false
-      @monitoring_fiber.try(&.enqueue(Exception.new("Stop monitoring")))
       @monitoring_fiber = nil
       
       puts "Performance monitoring stopped"
@@ -304,11 +304,11 @@ module CogUtil
           summary.each do |name, data|
             next if name == "_meta"
             
-            current = data["current"].as_f64
-            avg = data["recent_avg"].as_f64
-            min_val = data["recent_min"].as_f64
-            max_val = data["recent_max"].as_f64
-            trend = data["trend"].as_f64
+            current = data["current"].as_f
+            avg = data["recent_avg"].as_f
+            min_val = data["recent_min"].as_f
+            max_val = data["recent_max"].as_f
+            trend = data["trend"].as_f
             
             trend_icon = trend > 0.1 ? "📈" : trend < -0.1 ? "📉" : "➡️"
             
@@ -421,7 +421,7 @@ module CogUtil
       gc_stats = GC.stats
       
       record_metric("memory_usage", gc_stats.total_bytes.to_f64)
-      record_metric("gc_collections", gc_stats.collections.to_f64)
+      # record_metric("gc_collections", gc_stats.collections.to_f64)  # Not available in Crystal's GC::Stats
       
       # Record timestamp for heartbeat
       record_metric("system_heartbeat", Time.utc.to_unix_f)
@@ -429,7 +429,7 @@ module CogUtil
     
     private def update_profiler_metrics
       # If there's an active profiler session, extract current metrics
-      if session = PerformanceProfiler.class_variable_get(:@@current_session)
+      if session = PerformanceProfiler.current_session
         session.all_metrics.each do |name, metrics|
           record_metric("function_time_#{name}", metrics.wall_time)
           record_metric("function_calls_#{name}", metrics.call_count.to_f64)
@@ -529,12 +529,10 @@ module CogUtil
     end
     
     private def handle_websocket(context : HTTP::Server::Context)
-      websocket = context.upgrade_to_websocket
-      @websocket_clients << websocket
-      
-      websocket.on_close do
-        @websocket_clients.delete(websocket)
-      end
+      # TODO: Implement proper WebSocket handling
+      # For now, return a 501 Not Implemented
+      context.response.status_code = 501
+      context.response.print "WebSocket support not yet implemented"
     end
     
     private def broadcast_metric_update(sample : MetricSample)
@@ -567,14 +565,15 @@ module CogUtil
     end
     
     private def broadcast_to_websockets(message : String)
-      @websocket_clients.each do |client|
-        begin
-          client.send(message)
-        rescue
-          # Remove disconnected clients
-          @websocket_clients.delete(client)
-        end
-      end
+      # TODO: Implement WebSocket broadcasting
+      # @websocket_clients.each do |client|
+      #   begin
+      #     client.send(message)
+      #   rescue
+      #     # Remove disconnected clients
+      #     @websocket_clients.delete(client)
+      #   end
+      # end
     end
     
     private def calculate_trend(values : Array(Float64)) : Float64

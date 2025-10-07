@@ -345,7 +345,8 @@ module CrystalCog
       ["big", "small", "antonym"],
     ]
 
-    semantic_pairs.each do |word1, word2, relation|
+    semantic_pairs.each do |pair|
+      word1, word2, relation = pair
       NLP::LinguisticAtoms.create_semantic_relation(atomspace, word1, word2, relation, 0.8)
     end
 
