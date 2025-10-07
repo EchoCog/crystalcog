@@ -66,6 +66,15 @@ describe Attention do
   end
 
   describe "AttentionBank" do
+    before_each do
+      @atomspace = AtomSpace::AtomSpace.new
+    end
+    
+    # Helper method to access atomspace instance
+    def atomspace
+      @atomspace
+    end
+    
     it "initializes with correct funds" do
       bank = Attention::AttentionBank.new(atomspace)
 

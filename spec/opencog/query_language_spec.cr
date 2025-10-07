@@ -4,7 +4,13 @@ require "../../src/opencog/opencog"
 describe OpenCog::QueryLanguage do
   before_each do
     OpenCog.initialize
-    @query_interface = OpenCog::QueryLanguage.create_interface(atomspace)
+    @atomspace = AtomSpace::AtomSpace.new
+    @query_interface = OpenCog::QueryLanguage.create_interface(@atomspace)
+  end
+  
+  # Helper method to access atomspace instance
+  def atomspace
+    @atomspace
   end
 
   describe "module initialization" do
