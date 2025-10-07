@@ -4,8 +4,14 @@ require "../../src/ai_integration/ai_bridge"
 describe "AI Integration - Milestone 5" do
   before_each do
     # Initialize fresh systems for each test
-    @integration = AIIntegration::CognitiveAIIntegration.new(atomspace)
+    @atomspace = AtomSpace::AtomSpace.new
+    @integration = AIIntegration::CognitiveAIIntegration.new(@atomspace)
     @integration.setup_cognitive_engines
+  end
+  
+  # Helper method to access atomspace instance
+  def atomspace
+    @atomspace
   end
 
   describe "AI Manager Core Functionality" do
