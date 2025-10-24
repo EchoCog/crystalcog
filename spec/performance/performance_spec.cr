@@ -9,6 +9,12 @@ require "../../src/opencog/opencog"
 describe "CrystalCog Performance Tests" do
   describe "AtomSpace performance" do
     before_each do
+      @atomspace = AtomSpace::AtomSpace.new
+    end
+    
+    # Helper method to access atomspace instance
+    def atomspace
+      @atomspace
     end
 
     it "benchmarks atom creation" do

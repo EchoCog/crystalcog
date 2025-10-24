@@ -9,6 +9,12 @@ require "../../src/opencog/opencog"
 describe "CrystalCog Memory Usage Comparison Tests" do
   describe "AtomSpace memory efficiency compared to C++" do
     before_each do
+      @atomspace = AtomSpace::AtomSpace.new
+    end
+    
+    # Helper method to access atomspace instance
+    def atomspace
+      @atomspace
     end
 
     it "benchmarks basic atom creation memory efficiency" do
@@ -194,7 +200,13 @@ describe "CrystalCog Memory Usage Comparison Tests" do
 
   describe "reasoning memory efficiency" do
     before_each do
-      @pln_engine = PLN::PLNEngine.new(atomspace)
+      @atomspace = AtomSpace::AtomSpace.new
+      @pln_engine = PLN::PLNEngine.new(@atomspace)
+    end
+    
+    # Helper method to access atomspace instance
+    def atomspace
+      @atomspace
     end
 
     it "benchmarks PLN reasoning memory efficiency" do

@@ -1,7 +1,10 @@
 # Simple Crystal binding for RocksDB
 # This provides basic functionality for AtomSpace persistence
+# RocksDB can be disabled by setting DISABLE_ROCKSDB=1 environment variable
 
-@[Link("rocksdb")]
+{% unless env("DISABLE_ROCKSDB") == "1" %}
+  @[Link("rocksdb")]
+{% end %}
 lib LibRocksDB
   type DB = Void*
   type Options = Void*
@@ -42,6 +45,7 @@ lib LibRocksDB
   fun rocksdb_free = rocksdb_free(ptr : Void*)
 end
 
+{% unless env("DISABLE_ROCKSDB") == "1" %}
 module RocksDB
   class Database
     @db : LibRocksDB::DB
@@ -170,3 +174,33 @@ module RocksDB
     end
   end
 end
+{% else %}
+# RocksDB is disabled - provide stub implementation
+module RocksDB
+  class Database
+    def initialize(@path : String)
+      raise "RocksDB support is disabled. Install librocksdb-dev and rebuild without DISABLE_ROCKSDB=1"
+    end
+    
+    def close
+      # No-op
+    end
+    
+    def put(key : String, value : String)
+      raise "RocksDB support is disabled"
+    end
+    
+    def get(key : String) : String?
+      raise "RocksDB support is disabled"
+    end
+    
+    def delete(key : String)
+      raise "RocksDB support is disabled"
+    end
+    
+    def each(&block : String, String ->)
+      raise "RocksDB support is disabled"
+    end
+  end
+end
+{% end %}

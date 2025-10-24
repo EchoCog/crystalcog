@@ -210,13 +210,21 @@ build_targets() {
     
     # Main executable
     print_status "Building main executable..."
-    crystal build --error-trace src/crystalcog.cr
+    # Try building with RocksDB first, fallback to disabled version
+    if ! crystal build --error-trace src/crystalcog.cr 2>/dev/null; then
+        print_warning "Build failed, trying without RocksDB..."
+        DISABLE_ROCKSDB=1 crystal build --error-trace src/crystalcog.cr || print_error "Main build failed"
+    fi
     
-    # Component libraries
+    # Component libraries - use new target names to avoid directory conflicts
     for target in cogutil atomspace opencog; do
         if [ -f "src/${target}/${target}.cr" ]; then
-            print_status "Building ${target}..."
-            crystal build --error-trace "src/${target}/${target}.cr" -o "${target}_lib" || print_warning "${target} build failed"
+            print_status "Building ${target}_bin..."
+            # Try building with RocksDB first, fallback to disabled version
+            if ! crystal build --error-trace "src/${target}/${target}.cr" -o "${target}_bin" 2>/dev/null; then
+                print_warning "Build failed, trying without RocksDB..."
+                DISABLE_ROCKSDB=1 crystal build --error-trace "src/${target}/${target}.cr" -o "${target}_bin" || print_warning "${target} build failed"
+            fi
         fi
     done
     

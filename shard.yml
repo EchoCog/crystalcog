@@ -27,13 +27,13 @@ targets:
     main: src/crystalcog.cr
 
   # Core library components
-  cogutil:
+  cogutil_bin:
     main: src/cogutil/cogutil.cr
     
-  atomspace:
+  atomspace_bin:
     main: src/atomspace/atomspace.cr
     
-  opencog:
+  opencog_bin:
     main: src/opencog/opencog.cr
   
   # Pattern processing components  
