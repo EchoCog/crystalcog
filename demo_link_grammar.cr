@@ -132,8 +132,10 @@ puts "  #{keywords.join(", ")}"
 lg_linkages = NLP::LinkGrammar.parse(test_text)
 puts "\n🌳 Link Grammar Parse:"
 puts "  Found #{lg_linkages.size} linkage(s)"
-puts "  Words: #{lg_linkages.first.words.size}"
-puts "  Links: #{lg_linkages.first.links.size}"
+if lg_linkages.size > 0
+  puts "  Words: #{lg_linkages.first.words.size}"
+  puts "  Links: #{lg_linkages.first.links.size}"
+end
 
 # Text statistics
 stats = NLP::TextProcessor.get_text_stats(test_text)
