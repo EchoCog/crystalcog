@@ -8,16 +8,9 @@ require "../../src/opencog/opencog"
 # Enhanced memory comparison tests for CrystalCog vs C++ OpenCog
 describe "CrystalCog Memory Usage Comparison Tests" do
   describe "AtomSpace memory efficiency compared to C++" do
-    before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-    end
-    
-    # Helper method to access atomspace instance
-    def atomspace
-      @atomspace
-    end
-
     it "benchmarks basic atom creation memory efficiency" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Test based on C++ AtomSpaceBenchmark parameters
       # C++ benchmark typically creates 256K atoms (1 << 18)
       num_atoms = 1000 # Reduced for testing, but same ratio
@@ -44,6 +37,8 @@ describe "CrystalCog Memory Usage Comparison Tests" do
     end
 
     it "benchmarks link creation memory vs C++ implementation" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Pre-create nodes like C++ benchmark
       concepts = 100.times.map { |i|
         atomspace.add_concept_node("concept_#{i}")
@@ -73,6 +68,8 @@ describe "CrystalCog Memory Usage Comparison Tests" do
     end
 
     it "tests memory scaling vs C++ AtomSpace scaling" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Test memory scaling with different AtomSpace sizes
       # Based on C++ benchmark parameters
       scale_factors = [100, 500, 1000]
@@ -101,6 +98,8 @@ describe "CrystalCog Memory Usage Comparison Tests" do
     end
 
     it "compares truth value memory overhead with C++" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Test memory overhead of truth values (like C++ benchmark)
       base_atoms = 1000
 
@@ -138,6 +137,8 @@ describe "CrystalCog Memory Usage Comparison Tests" do
     end
 
     it "tests memory leak detection" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Test for memory leaks during repeated operations
       puts "Memory Leak Detection Test:"
 
@@ -154,6 +155,8 @@ describe "CrystalCog Memory Usage Comparison Tests" do
     end
 
     it "generates comprehensive memory comparison report" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Run multiple benchmarks and generate a report
       results = [] of CogUtil::MemoryProfiler::MemoryBenchmarkResult
 
@@ -199,17 +202,10 @@ describe "CrystalCog Memory Usage Comparison Tests" do
   end
 
   describe "reasoning memory efficiency" do
-    before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-      @pln_engine = PLN::PLNEngine.new(@atomspace)
-    end
-    
-    # Helper method to access atomspace instance
-    def atomspace
-      @atomspace
-    end
-
     it "benchmarks PLN reasoning memory efficiency" do
+      atomspace = AtomSpace::AtomSpace.new
+      pln_engine = PLN::PLNEngine.new(atomspace)
+      
       # Create knowledge base
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
 
@@ -226,7 +222,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
       initial_atoms = atomspace.size
 
       result = CogUtil::MemoryProfiler.benchmark_memory("pln_reasoning") do
-        new_atoms = @pln_engine.reason(5)
+        new_atoms = pln_engine.reason(5)
         new_atoms.size
       end
 
@@ -244,7 +240,8 @@ describe "CrystalCog Memory Usage Comparison Tests" do
     end
 
     it "tests URE memory efficiency vs C++ implementation" do
-      @ure_engine = URE::UREEngine.new(atomspace)
+      atomspace = AtomSpace::AtomSpace.new
+      ure_engine = URE::UREEngine.new(atomspace)
 
       # Create knowledge base
       predicates = 3.times.map { |i|
@@ -265,7 +262,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
       end
 
       result = CogUtil::MemoryProfiler.benchmark_memory("ure_forward_chaining") do
-        new_atoms = @ure_engine.forward_chain(3)
+        new_atoms = ure_engine.forward_chain(3)
         new_atoms.size
       end
 
@@ -284,6 +281,7 @@ describe "CrystalCog Memory Usage Comparison Tests" do
 
   describe "comprehensive system memory comparison" do
     it "performs full system memory benchmark comparable to C++" do
+      atomspace = AtomSpace::AtomSpace.new
       OpenCog.initialize
 
       # This test simulates the C++ AtomSpaceBenchmark comprehensive test
