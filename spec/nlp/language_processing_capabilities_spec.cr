@@ -84,6 +84,8 @@ describe "Language Processing Capabilities" do
     end
 
     it "understands and reasons about spatial relationships" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Process sentences about spatial relationships
       spatial_sentences = [
         "The cat is on the mat.",
@@ -156,6 +158,8 @@ describe "Language Processing Capabilities" do
     end
 
     it "processes comparative language and reasons about properties" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Process comparative sentences
       comparative_sentences = [
         "Lions are bigger than cats.",
@@ -236,6 +240,8 @@ describe "Language Processing Capabilities" do
     end
 
     it "processes temporal language and reasons about time sequences" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Process temporal sentences
       temporal_sentences = [
         "John woke up in the morning.",
@@ -314,6 +320,8 @@ describe "Language Processing Capabilities" do
     end
 
     it "integrates keyword extraction with semantic reasoning" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Process a complex text and extract keywords
       complex_text = "The research shows that artificial intelligence systems can learn to recognize patterns in natural language. Machine learning algorithms analyze linguistic data to identify semantic relationships between words and concepts."
 
@@ -370,6 +378,8 @@ describe "Language Processing Capabilities" do
 
   describe "Advanced Language Processing Integration" do
     it "demonstrates complete language understanding pipeline" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Complete pipeline: Text -> Tokenization -> Semantic Analysis -> Reasoning -> Conclusions
 
       story_text = "Alice is a student. Students study hard. Hard workers succeed. Alice studies mathematics."
@@ -460,6 +470,8 @@ describe "Language Processing Capabilities" do
     end
 
     it "demonstrates linguistic complexity analysis with reasoning" do
+      atomspace = AtomSpace::AtomSpace.new
+      
       # Analyze linguistic complexity and reason about it
 
       simple_text = "The cat sits."
