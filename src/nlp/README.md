@@ -1,6 +1,6 @@
 # Natural Language Processing (NLP) Module
 
-This module provides basic natural language processing functionality for the CrystalCog OpenCog implementation. It includes text tokenization, processing, and integration with the AtomSpace for storing linguistic knowledge.
+This module provides comprehensive natural language processing functionality for the CrystalCog OpenCog implementation. It includes text tokenization, processing, Link Grammar parsing, and integration with the AtomSpace for storing linguistic knowledge.
 
 ## Features
 
@@ -8,6 +8,7 @@ This module provides basic natural language processing functionality for the Cry
 
 - **Text Tokenization**: Split text into words, sentences, and tokens with classification
 - **Text Processing**: Normalization, stop word removal, stemming, and keyword extraction  
+- **Link Grammar Parsing**: Advanced syntactic parsing with dependency structures
 - **AtomSpace Integration**: Store linguistic knowledge as atoms and relationships
 - **Semantic Relations**: Create and manage semantic relationships between words
 - **Statistical Analysis**: Calculate text and linguistic complexity metrics
@@ -35,6 +36,14 @@ This module provides basic natural language processing functionality for the Cry
 - Semantic relationship creation (synonyms, antonyms, hypernyms)
 - Parse tree structures
 - Linguistic complexity metrics
+
+#### `NLP::LinkGrammar` ⭐ NEW
+- Syntactic parsing with Link Grammar
+- Dependency structure extraction
+- Parse result representation in AtomSpace
+- Linkage analysis (links, disjuncts, connectors)
+- Multiple language support (English by default)
+- Dictionary lookup capabilities
 
 ## Usage Examples
 
@@ -118,6 +127,36 @@ complexity = NLP::LinguisticAtoms.get_linguistic_complexity(atomspace)
 puts "Linguistic complexity: #{complexity}"
 ```
 
+### Link Grammar Parsing
+
+```crystal
+# Create a parser
+parser = NLP::LinkGrammar::Parser.new
+
+# Parse a sentence
+linkages = parser.parse("The cat sits on the mat")
+linkage = linkages.first
+
+puts "Words: #{linkage.words}"
+puts "Links: #{linkage.links.size}"
+puts "Disjuncts: #{linkage.disjuncts.size}"
+
+# Parse and store in AtomSpace
+atoms = parser.parse_to_atomspace("The dog runs", atomspace)
+
+# Query parse results
+word_nodes = atomspace.get_atoms_by_type(AtomSpace::AtomType::WORD_NODE)
+parse_nodes = atomspace.get_atoms_by_type(AtomSpace::AtomType::PARSE_NODE)
+link_instances = atomspace.get_atoms_by_type(AtomSpace::AtomType::LG_LINK_INSTANCE_LINK)
+
+# Use module-level convenience methods
+linkages = NLP::LinkGrammar.parse("Hello world")
+atoms = NLP::LinkGrammar.parse_to_atomspace("The cat runs", atomspace)
+
+# Dictionary lookup
+disjuncts = parser.dictionary_lookup("cat")
+```
+
 ## Command Line Interface
 
 The NLP module includes a command-line interface for testing and demonstration:
@@ -157,6 +196,7 @@ crystal spec spec/nlp/
 crystal spec spec/nlp/tokenizer_spec.cr
 crystal spec spec/nlp/text_processor_spec.cr
 crystal spec spec/nlp/linguistic_atoms_spec.cr
+crystal spec spec/nlp/link_grammar_spec.cr
 
 # Validate NLP module structure and dependencies
 ./test_nlp_structure.sh
@@ -213,6 +253,9 @@ The NLP module follows the established CrystalCog patterns:
 - ✅ Sequential word ordering
 - ✅ Parse tree structures
 - ✅ Linguistic complexity metrics
+- ✅ Link Grammar parses with dependency links
+- ✅ Word instance nodes and linkages
+- ✅ Connector and disjunct representation
 
 ### Integration Features
 - ✅ AtomSpace native integration
@@ -225,12 +268,13 @@ The NLP module follows the established CrystalCog patterns:
 
 Potential extensions for the NLP module:
 
+- **Full Link Grammar Integration**: Complete FFI bindings to Link Grammar C library
+- **Advanced Parsing**: Multiple parse rankings, cost-based selection
 - **Parser Integration**: Interface with external parsers (RelEx, spaCy)
 - **Advanced Stemming**: Porter stemmer or lemmatization
 - **Named Entity Recognition**: Identify and classify named entities
-- **Dependency Parsing**: Syntactic dependency relationships
 - **Semantic Role Labeling**: Predicate-argument structures
-- **Multi-language Support**: Beyond English tokenization and processing
+- **Multi-language Support**: Russian, Thai, Arabic parsing
 - **Machine Learning Integration**: Neural language models
 - **Discourse Processing**: Anaphora resolution and discourse structure
 

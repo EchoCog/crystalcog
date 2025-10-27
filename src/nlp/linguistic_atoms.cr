@@ -146,8 +146,12 @@ module NLP
 
     # Extract all word atoms from an atomspace
     def self.get_word_atoms(atomspace : AtomSpace::AtomSpace) : Array(AtomSpace::Atom)
-      atomspace.get_atoms_by_type(AtomSpace::AtomType::CONCEPT_NODE)
+      # Get both legacy word: concept nodes and new WORD_NODE atoms
+      concept_words = atomspace.get_atoms_by_type(AtomSpace::AtomType::CONCEPT_NODE)
         .select { |atom| atom.name.starts_with?("word:") }
+      word_nodes = atomspace.get_atoms_by_type(AtomSpace::AtomType::WORD_NODE)
+      
+      concept_words + word_nodes
     end
 
     # Extract all sentence structures from an atomspace
