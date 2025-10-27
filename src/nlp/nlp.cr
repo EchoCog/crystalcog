@@ -113,3 +113,4 @@ end
 require "./tokenizer"
 require "./text_processor"
 require "./linguistic_atoms"
+require "./link_grammar"
