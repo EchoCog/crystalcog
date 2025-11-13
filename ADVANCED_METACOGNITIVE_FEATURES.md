@@ -26,25 +26,17 @@ Real-time monitoring of cognitive processes with diagnostic analysis.
 - **Memory Efficiency**: Memory utilization effectiveness
 - **Cognitive Coherence**: Internal consistency measure
 
-#### Example Usage (Python)
-```python
-from python_cognitive_kernel import CognitiveKernel
+#### Example Usage (Crystal)
+```crystal
+require "./src/atomspace/cognitive_kernel"
 
-kernel = CognitiveKernel([64, 32], 0.8)
-monitor_state = kernel.monitor_cognitive_state()
+kernel = AtomSpace::CognitiveKernel.new([64, 32], 0.8)
+# Cognitive state monitoring available through performance metrics
+metrics = kernel.performance_metrics
+cache_stats = kernel.cache_stats
 
-print(f"Attention Level: {monitor_state['attention-level']}")
-print(f"Processing Load: {monitor_state['processing-load']}")
-print(f"Cognitive Coherence: {monitor_state['cognitive-coherence']}")
-```
-
-#### Example Usage (Scheme)
-```scheme
-(use-modules (agent-zero kernel) (agent-zero meta-cognition))
-
-(let* ((kernel (spawn-cognitive-kernel '(64 32) 0.8))
-       (monitor (make-cognitive-monitor kernel)))
-  (monitor-cognitive-state monitor))
+puts "Attention Weight: #{kernel.attention_weight}"
+puts "Cache Hit Rate: #{cache_stats["hit_rate"]}"
 ```
 
 ### 2. Multi-Level Meta-Reasoning
@@ -62,14 +54,15 @@ Hierarchical reasoning about cognitive processes at multiple abstraction levels.
 - Self-referential stability analysis
 - Emergence potential assessment
 
-#### Example Usage (Python)
-```python
-kernel = CognitiveKernel([128, 64], 0.9)
-levels = kernel.multi_level_meta_reasoning(depth=2)
+#### Example Usage (Crystal)
+```crystal
+kernel = AtomSpace::CognitiveKernel.new([128, 64], 0.9)
+# Meta-level reasoning supported through hierarchical tensor encoding
+encoding = kernel.hypergraph_tensor_encoding
+state = kernel.hypergraph_state
 
-for level in levels:
-    print(f"Level {level['level']}: {level['focus']}")
-    print(f"Confidence: {level['confidence']}")
+puts "Meta Level: #{kernel.meta_level}"
+puts "Tensor Shape: #{kernel.tensor_shape}"
 ```
 
 ### 3. Cognitive State Persistence

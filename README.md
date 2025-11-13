@@ -262,13 +262,7 @@ docker-compose -f docker-compose.production.yml config
 - **Manual Installation**: Traditional system installation
 
 ## Set up (Legacy Python/Rust Environment)
-
-This repository also maintains compatibility with the original Python/Rust/Prolog environment:
-
-```bash
-pip3 install -r requirements.txt && cargo install hyperon
-python3 app.py
-```
+CrystalCog is a complete Crystal language implementation with all functionality.
 
 ## Documentation
 
