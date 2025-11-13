@@ -21,32 +21,22 @@ OpenCog is a comprehensive artificial general intelligence (AGI) framework that 
 
 ## Core Components
 
-### Main Application Entry Point
+### Main CrystalCog Implementation
 
-**File:** `app.py`
+**Directory:** `src/`
 
-The main application demonstrates a basic machine learning workflow using scikit-learn:
+CrystalCog is the complete Crystal language implementation of the OpenCog framework:
 
-```python
-import numpy as np
-import pandas as pd
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
+```crystal
+# Example: Basic AtomSpace usage
+require "./src/atomspace/atomspace"
+require "./src/cogutil/logger"
 
-# Loading the iris dataset
-iris_dataset = load_iris()
+atomspace = AtomSpace::AtomSpace.new
+concept = atomspace.add_node(AtomSpace::AtomType::ConceptNode, "Example")
 
-# Creating a dataframe from the dataset
-df = pd.DataFrame(iris_dataset.data, columns=iris_dataset.feature_names)
-
-# Adding the target column
-df['target'] = iris_dataset.target
-
-# Splitting the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    df[iris_dataset.feature_names], df['target'], random_state=0
-)
+CogUtil::Logger.info("Created atom: #{concept.name}")
+```
 
 # Creating the model
 knn = KNeighborsClassifier(n_neighbors=1)

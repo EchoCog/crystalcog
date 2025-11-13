@@ -6,25 +6,16 @@ The basic cognitive kernel module is a complete implementation of the core cogni
 
 ## Architecture
 
-The implementation consists of three complementary layers:
+The implementation is a comprehensive Crystal language implementation:
 
-### 1. C Library Layer (`/src/agent-zero/`)
-- **Purpose**: High-performance tensor operations and hypergraph encoding
+### Crystal Implementation Layer (`/src/atomspace/`)
+- **Purpose**: High-performance cognitive operations with memory safety
 - **Components**:
-  - `cognitive.h` - Core API definitions
-  - `cognitive-tensors.c` - Tensor operations with GGML-compatible interface
-  - `opencog-ggml-bridge.c` - OpenCog AtomSpace integration
-  - `test-cognitive.c` - Comprehensive C test suite
-
-### 2. Guile Scheme Layer (`/modules/agent-zero/`)
-- **Purpose**: High-level cognitive orchestration and symbolic reasoning
-- **Components**:
-  - `kernel.scm` - Core cognitive kernel implementation
-  - `meta-cognition.scm` - Meta-cognitive functions and ECAN simulation
-
-### 3. Python Wrapper Layer (`python_cognitive_kernel.py`)
-- **Purpose**: Easy integration with Python applications
-- **Features**: Complete Python API with fallback implementations
+  - `cognitive_kernel.cr` - Core cognitive kernel with tensor operations
+  - `atomspace.cr` - AtomSpace hypergraph implementation
+  - `atom.cr` - Atom and node definitions
+  - `storage.cr` - Persistence and storage backends
+  - `distributed_cluster.cr` - Distributed cognitive processing
 
 ## Core Features
 
@@ -105,23 +96,23 @@ struct ggml_tensor* hypergraph_encoding(
 (meta-cognitive-reflection kernel)
 ```
 
-### Python API
+### Crystal API
 
-```python
-from python_cognitive_kernel import CognitiveKernel, CognitiveKernelManager
+```crystal
+require "./src/atomspace/cognitive_kernel"
 
 # Create kernel
-kernel = CognitiveKernel([64, 32], 0.8)
+kernel = AtomSpace::CognitiveKernel.new([64, 32], 0.8)
 
 # Generate encoding
-encoding = kernel.tensor_field_encoding('prime', include_attention=True)
+encoding = kernel.tensor_field_encoding("prime", include_attention: true)
 
 # Get hypergraph state
-state = kernel.hypergraph_state()
+state = kernel.hypergraph_state
 
-# Multi-kernel management
-manager = CognitiveKernelManager()
-allocations = manager.adaptive_attention_allocation(['reasoning', 'learning'])
+# Store and retrieve state
+storage = AtomSpace::HypergraphStateStorageNode.new
+kernel.store_hypergraph_state(storage)
 ```
 
 ## Testing and Validation
@@ -167,26 +158,15 @@ allocations = manager.adaptive_attention_allocation(['reasoning', 'learning'])
 from python_cognitive_kernel import CognitiveKernel
 
 # Create and configure kernel
-kernel = CognitiveKernel([128, 64], 0.9)
+kernel = AtomSpace::CognitiveKernel.new([128, 64], 0.9)
 
 # Multiple encoding types
-prime_encoding = kernel.tensor_field_encoding('prime')
-fib_encoding = kernel.tensor_field_encoding('fibonacci', normalization='unit')
+prime_encoding = kernel.tensor_field_encoding("prime")
+fib_encoding = kernel.tensor_field_encoding("fibonacci", normalization: "unit")
 
-# Meta-cognitive reflection
-self_description = kernel.recursive_self_description()
+# Hypergraph tensor encoding
+hypergraph_encoding = kernel.hypergraph_tensor_encoding
 ```
-
-```c
-// C example
-#include "cognitive.h"
-
-// Create kernel
-int shape[] = {32, 32};
-cognitive_kernel_t* kernel = create_cognitive_kernel(NULL, shape, 2, 0.7f);
-
-// Update attention
-update_kernel_attention(kernel, 0.9f);
 
 // Cleanup
 destroy_cognitive_kernel(kernel);
@@ -281,21 +261,20 @@ guile -c "(use-modules (agent-zero kernel)) (display 'OK) (newline)"
 # Test Python wrapper
 python3 -c "from python_cognitive_kernel import CognitiveKernel; print('OK')"
 
-# Test C library
-cd src/agent-zero && ./test-cognitive
+# Test Crystal implementation
+cd /home/runner/work/crystalcog/crystalcog && crystal spec
 ```
 
 ## Contributing
 
 ### Code Organization
-- **C Code**: Follow GNU coding standards
-- **Guile Code**: Follow SRFI conventions
-- **Python Code**: PEP 8 compliance
-- **Documentation**: Comprehensive inline comments
+- **Crystal Code**: Follow Crystal style guide
+- **Documentation**: Comprehensive inline comments and module documentation
+- **Testing**: Crystal spec framework
 
 ### Testing Requirements
-- All new features must include tests
-- Maintain 100% test coverage for core functions
+- All new features must include specs
+- Maintain high test coverage for core functions
 - Integration tests for cross-component features
 - Performance benchmarks for critical paths
 

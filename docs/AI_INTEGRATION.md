@@ -110,7 +110,6 @@ response = integration.interactive_reasoning_session("Explain neural networks")
 - `test_ai_integration.cr` - Comprehensive Crystal integration tests
 - `demo_ai_integration.cr` - Interactive demonstration
 - `spec/ai_integration/ai_integration_spec.cr` - Crystal spec tests
-- `test_ai_cpp_simple.cpp` - C++ component validation
 
 ### Running Tests
 ```bash
@@ -122,10 +121,6 @@ crystal run demo_ai_integration.cr
 
 # Run spec tests (when Crystal is available)
 crystal spec spec/ai_integration/
-
-# Test C++ components
-g++ -std=c++17 -o test_ai_cpp_simple test_ai_cpp_simple.cpp
-./test_ai_cpp_simple
 ```
 
 ## Performance Characteristics
