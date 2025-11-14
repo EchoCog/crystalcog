@@ -61,9 +61,11 @@ module NLP
       def to_s : String
         parts = [] of String
         
-        parts << subject if subject
-        parts << conjugate_verb(verb, tense) if verb
-        parts << object if object
+        parts << subject.not_nil! if subject
+        if v = conjugate_verb(verb, tense)
+          parts << v
+        end
+        parts << object.not_nil! if object
         parts.concat(modifiers)
         
         result = parts.join(" ")
