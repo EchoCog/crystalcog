@@ -45,6 +45,11 @@ jobs:
       with:
         crystal: ${{ env.CRYSTAL_VERSION }}
 
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsqlite3-dev libevent-dev libssl-dev librocksdb-dev
+
     - name: Install dependencies
       id: install_deps
       run: |
@@ -327,22 +332,25 @@ jobs:
       run: |
         echo "Building additional Crystal targets..."
         
+        # Create bin directory for build outputs
+        mkdir -p bin
+        
         # Build cogutil library
         if [ -f "src/cogutil/cogutil.cr" ]; then
           echo "Building cogutil..."
-          crystal build src/cogutil/cogutil.cr -o cogutil || echo "cogutil build failed"
+          crystal build src/cogutil/cogutil.cr -o bin/cogutil || echo "cogutil build failed"
         fi
         
         # Build atomspace library
         if [ -f "src/atomspace/atomspace.cr" ]; then
           echo "Building atomspace..."
-          crystal build src/atomspace/atomspace.cr -o atomspace || echo "atomspace build failed"
+          crystal build src/atomspace/atomspace.cr -o bin/atomspace || echo "atomspace build failed"
         fi
         
         # Build opencog library
         if [ -f "src/opencog/opencog.cr" ]; then
           echo "Building opencog..."
-          crystal build src/opencog/opencog.cr -o opencog || echo "opencog build failed"
+          crystal build src/opencog/opencog.cr -o bin/opencog || echo "opencog build failed"
         fi
 
     - name: Run basic functionality tests
@@ -367,9 +375,7 @@ jobs:
         name: crystal-build-artifacts
         path: |
           crystalcog
-          cogutil
-          atomspace
-          opencog
+          bin/
           *.log
         retention-days: 7
         if-no-files-found: ignore

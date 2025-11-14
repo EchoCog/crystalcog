@@ -7,17 +7,14 @@ require "../../src/opencog/opencog"
 
 # Performance and benchmarking tests for CrystalCog
 describe "CrystalCog Performance Tests" do
-  describe "AtomSpace performance" do
-    before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-    end
-    
-    # Helper method to access atomspace instance
-    def atomspace
-      @atomspace
-    end
+  # Shared helper to create atomspace for tests that need it
+  def create_atomspace
+    AtomSpace::AtomSpace.new
+  end
 
+  describe "AtomSpace performance" do
     it "benchmarks atom creation" do
+      atomspace = create_atomspace
       num_atoms = 1000
 
       start_time = Time.monotonic
@@ -43,6 +40,7 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "benchmarks atom retrieval" do
+      atomspace = create_atomspace
       # Pre-populate atomspace
       num_atoms = 500
       atoms = num_atoms.times.map { |i|
@@ -73,6 +71,7 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "benchmarks link creation" do
+      atomspace = create_atomspace
       # Create nodes first
       nodes = 100.times.map { |i|
         atomspace.add_concept_node("node_#{i}")
@@ -101,6 +100,7 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "benchmarks atomspace search operations" do
+      atomspace = create_atomspace
       # Populate with mixed atom types
       concepts = 100.times.map { |i| atomspace.add_concept_node("concept_#{i}") }.to_a
       predicates = 50.times.map { |i| atomspace.add_predicate_node("pred_#{i}") }.to_a
@@ -137,6 +137,7 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "benchmarks memory usage" do
+      atomspace = create_atomspace
       # Create a large number of atoms and measure memory characteristics
       initial_memory = CogUtil::MemoryProfiler.get_system_memory_info
 
@@ -171,11 +172,9 @@ describe "CrystalCog Performance Tests" do
   end
 
   describe "PLN reasoning performance" do
-    before_each do
-      @pln_engine = PLN::PLNEngine.new(atomspace)
-    end
-
     it "benchmarks simple reasoning chains" do
+      atomspace = create_atomspace
+      pln_engine = PLN::PLNEngine.new(atomspace)
       # Create reasoning chain: A->B, B->C, should infer A->C
       tv = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
 
@@ -197,7 +196,7 @@ describe "CrystalCog Performance Tests" do
 
       start_time = Time.monotonic
 
-      new_atoms = @pln_engine.reason(5)
+      new_atoms = pln_engine.reason(5)
 
       end_time = Time.monotonic
       duration = end_time - start_time
@@ -213,6 +212,8 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "benchmarks complex reasoning scenarios" do
+      atomspace = create_atomspace
+      pln_engine = PLN::PLNEngine.new(atomspace)
       # Create hierarchical taxonomy
       tv_high = AtomSpace::SimpleTruthValue.new(0.9, 0.95)
       tv_med = AtomSpace::SimpleTruthValue.new(0.8, 0.9)
@@ -247,7 +248,7 @@ describe "CrystalCog Performance Tests" do
       start_time = Time.monotonic
 
       # Run extended reasoning
-      new_atoms = @pln_engine.reason(10)
+      new_atoms = pln_engine.reason(10)
 
       end_time = Time.monotonic
       duration = end_time - start_time
@@ -263,6 +264,8 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "measures reasoning accuracy" do
+      atomspace = create_atomspace
+      pln_engine = PLN::PLNEngine.new(atomspace)
       # Create ground truth scenario and measure how well PLN performs
       tv_perfect = AtomSpace::SimpleTruthValue.new(1.0, 1.0)
 
@@ -278,7 +281,7 @@ describe "CrystalCog Performance Tests" do
       atomspace.add_inheritance_link(human, mortal, tv_perfect)
 
       # Run reasoning
-      new_atoms = @pln_engine.reason(5)
+      new_atoms = pln_engine.reason(5)
 
       # Should derive that Socrates is mortal
       socrates_mortal = atomspace.get_atoms_by_type(AtomSpace::AtomType::INHERITANCE_LINK)
@@ -303,11 +306,9 @@ describe "CrystalCog Performance Tests" do
   end
 
   describe "URE reasoning performance" do
-    before_each do
-      @ure_engine = URE::UREEngine.new(atomspace)
-    end
-
     it "benchmarks forward chaining performance" do
+      atomspace = create_atomspace
+      ure_engine = URE::UREEngine.new(atomspace)
       # Create facts for URE to work with
       predicates = ["likes", "knows", "lives_in"].map { |name|
         atomspace.add_predicate_node(name)
@@ -341,7 +342,7 @@ describe "CrystalCog Performance Tests" do
 
       start_time = Time.monotonic
 
-      new_atoms = @ure_engine.forward_chain(5)
+      new_atoms = ure_engine.forward_chain(5)
 
       end_time = Time.monotonic
       duration = end_time - start_time
@@ -354,6 +355,8 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "benchmarks backward chaining performance" do
+      atomspace = create_atomspace
+      ure_engine = URE::UREEngine.new(atomspace)
       # Set up scenario for backward chaining
       pred = atomspace.add_predicate_node("can_derive")
       concepts = 20.times.map { |i|
@@ -378,7 +381,7 @@ describe "CrystalCog Performance Tests" do
       start_time = Time.monotonic
 
       results = goals.map { |goal|
-        @ure_engine.backward_chain(goal)
+        ure_engine.backward_chain(goal)
       }
 
       end_time = Time.monotonic
@@ -394,8 +397,10 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "measures URE rule application efficiency" do
+      atomspace = create_atomspace
+      ure_engine = URE::UREEngine.new(atomspace)
       # Test how efficiently URE applies rules
-      @ure_engine.forward_chainer.add_default_rules
+      ure_engine.forward_chainer.add_default_rules
 
       # Create optimal scenario for conjunction rule
       pred = atomspace.add_predicate_node("test_pred")
@@ -419,7 +424,7 @@ describe "CrystalCog Performance Tests" do
       start_time = Time.monotonic
 
       # Run limited forward chaining
-      new_atoms = @ure_engine.forward_chain(3)
+      new_atoms = ure_engine.forward_chain(3)
 
       end_time = Time.monotonic
       duration = end_time - start_time
@@ -437,13 +442,11 @@ describe "CrystalCog Performance Tests" do
   end
 
   describe "integrated system performance" do
-    before_each do
-      OpenCog.initialize
-      @pln_engine = PLN.create_engine(atomspace)
-      @ure_engine = URE.create_engine(atomspace)
-    end
-
     it "benchmarks full reasoning pipeline" do
+      atomspace = create_atomspace
+      OpenCog.initialize
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
       # Create comprehensive knowledge base
       tv_high = AtomSpace::SimpleTruthValue.new(0.9, 0.9)
       tv_med = AtomSpace::SimpleTruthValue.new(0.7, 0.8)
@@ -484,8 +487,8 @@ describe "CrystalCog Performance Tests" do
       start_time = Time.monotonic
 
       # Run both reasoning engines
-      pln_atoms = @pln_engine.reason(5)
-      ure_atoms = @ure_engine.forward_chain(3)
+      pln_atoms = pln_engine.reason(5)
+      ure_atoms = ure_engine.forward_chain(3)
 
       end_time = Time.monotonic
       duration = end_time - start_time
@@ -509,6 +512,10 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "measures system scalability" do
+      atomspace = create_atomspace
+      OpenCog.initialize
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
       # Test how system performs with increasing load
       base_concepts = 5
       scale_factors = [1, 2, 4]
@@ -543,8 +550,8 @@ describe "CrystalCog Performance Tests" do
         start_time = Time.monotonic
 
         # Run limited reasoning to avoid exponential explosion
-        pln_atoms = @pln_engine.reason(2)
-        ure_atoms = @ure_engine.forward_chain(2)
+        pln_atoms = pln_engine.reason(2)
+        ure_atoms = ure_engine.forward_chain(2)
 
         end_time = Time.monotonic
         duration = end_time - start_time
@@ -576,6 +583,11 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "measures memory efficiency under load" do
+      atomspace = create_atomspace
+      OpenCog.initialize
+      pln_engine = PLN.create_engine(atomspace)
+      ure_engine = URE.create_engine(atomspace)
+      
       initial_memory = GC.stats.heap_size
 
       # Create substantial knowledge base
@@ -606,8 +618,8 @@ describe "CrystalCog Performance Tests" do
       atoms_before = atomspace.size
 
       # Run reasoning
-      pln_atoms = @pln_engine.reason(3)
-      ure_atoms = @ure_engine.forward_chain(2)
+      pln_atoms = pln_engine.reason(3)
+      ure_atoms = ure_engine.forward_chain(2)
 
       GC.collect # Force cleanup
 
@@ -636,6 +648,7 @@ describe "CrystalCog Performance Tests" do
 
   describe "comparative performance" do
     it "compares PLN vs URE reasoning speed" do
+      atomspace = create_atomspace
       pln_engine = PLN::PLNEngine.new(atomspace)
       ure_engine = URE::UREEngine.new(atomspace)
 
@@ -686,6 +699,7 @@ describe "CrystalCog Performance Tests" do
     end
 
     it "measures reasoning quality vs speed tradeoff" do
+      atomspace = create_atomspace
       pln_engine = PLN::PLNEngine.new(atomspace)
 
       # Create known inference scenario
