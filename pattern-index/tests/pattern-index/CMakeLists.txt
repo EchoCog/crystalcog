@@ -1,6 +1,0 @@
-ADD_CXXTEST(PatternIndexAPIUTest)
-TARGET_LINK_LIBRARIES(PatternIndexAPIUTest
-	patternindex
-	${COGUTIL_LIBRARY}
-	${ATOMSPACE_LIBRARIES}
-)

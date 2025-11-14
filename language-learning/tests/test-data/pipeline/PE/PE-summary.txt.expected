@@ -1,4 +1,0 @@
-PARSES	RECALL	PRECISION	F1
-/var/tmp/PE/single	1.0000	1.0000	1.0000
-/var/tmp/PE/multi	1.0000	1.0000	1.0000
-
