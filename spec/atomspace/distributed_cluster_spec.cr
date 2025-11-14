@@ -606,7 +606,7 @@ describe AtomSpace::ClusterNodeInfo do
     
     # Manually set old heartbeat
     old_time = Time.utc - Time::Span.new(seconds: 120)
-    node.@last_heartbeat = old_time
+    node.last_heartbeat = old_time
     
     node.is_stale?(60).should be_true
   end
