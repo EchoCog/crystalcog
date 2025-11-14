@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - cryscog
     paths:
       - 'src/**'
       - 'spec/**'
@@ -14,6 +15,7 @@ on:
     branches:
       - main
       - develop
+      - cryscog
     paths:
       - 'src/**'
       - 'spec/**'
@@ -47,14 +49,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-20.04, macos-latest]
+        os: [ubuntu-latest]
+#        os: [ubuntu-latest, ubuntu-20.04, macos-latest]
         crystal-version: ['1.10.1', '1.9.2', 'nightly']
-        exclude:
+#        exclude:
           # Exclude some combinations for efficiency
-          - os: macos-latest
-            crystal-version: '1.9.2'
-          - os: ubuntu-20.04
-            crystal-version: 'nightly'
+#          - os: macos-latest
+#            crystal-version: '1.9.2'
+#          - os: ubuntu-20.04
+#            crystal-version: 'nightly'
 
     permissions:
       contents: read
@@ -87,11 +90,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libsqlite3-dev libevent-dev libssl-dev librocksdb-dev
         
-    - name: Install system dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install sqlite3 libevent openssl rocksdb
-        echo "PKG_CONFIG_PATH=/opt/homebrew/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+#    - name: Install system dependencies (macOS)
+#      if: runner.os == 'macOS'
+#      run: |
+#        brew install sqlite3 libevent openssl rocksdb
+#        echo "PKG_CONFIG_PATH=/opt/homebrew/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
     - name: Install dependencies
       run: shards install --production
