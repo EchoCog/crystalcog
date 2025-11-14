@@ -157,3 +157,7 @@ build/agent-zero/
 dist/
 *.tar.gz
 *.zip
+
+# Node.js
+node_modules/
+package-lock.json
