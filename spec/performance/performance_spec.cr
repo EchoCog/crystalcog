@@ -5,12 +5,13 @@ require "../../src/pln/pln"
 require "../../src/ure/ure"
 require "../../src/opencog/opencog"
 
+# Shared helper to create atomspace for tests that need it
+def create_atomspace
+  AtomSpace::AtomSpace.new
+end
+
 # Performance and benchmarking tests for CrystalCog
 describe "CrystalCog Performance Tests" do
-  # Shared helper to create atomspace for tests that need it
-  def create_atomspace
-    AtomSpace::AtomSpace.new
-  end
 
   describe "AtomSpace performance" do
     it "benchmarks atom creation" do

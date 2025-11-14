@@ -111,7 +111,7 @@ jobs:
       run: |
         echo "Running static analysis..."
         # Check for unused variables and other issues
-        crystal build --no-codegen --warnings-as-errors src/crystalcog.cr || true
+        crystal build --no-codegen src/crystalcog.cr || true
 
     - name: Build main executable
       run: |
