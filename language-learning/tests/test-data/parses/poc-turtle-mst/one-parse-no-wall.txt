@@ -1,4 +1,0 @@
-tuna isa fish . 
-0 tuna 1 isa
-1 isa 2 fish
-2 fish 3 .
