@@ -85,12 +85,12 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsqlite3-dev libevent-dev libssl-dev
+        sudo apt-get install -y libsqlite3-dev libevent-dev libssl-dev librocksdb-dev
         
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install sqlite3 libevent openssl
+        brew install sqlite3 libevent openssl rocksdb
         echo "PKG_CONFIG_PATH=/opt/homebrew/opt/openssl/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
     - name: Install dependencies
@@ -122,22 +122,25 @@ jobs:
       run: |
         echo "Building all Crystal targets..."
         
+        # Create bin directory for build outputs
+        mkdir -p bin
+        
         # Build cogutil library
         if [ -f "src/cogutil/cogutil.cr" ]; then
           echo "Building cogutil..."
-          crystal build --error-trace src/cogutil/cogutil.cr -o cogutil
+          crystal build --error-trace src/cogutil/cogutil.cr -o bin/cogutil
         fi
         
         # Build atomspace library
         if [ -f "src/atomspace/atomspace.cr" ]; then
           echo "Building atomspace..."
-          crystal build --error-trace src/atomspace/atomspace.cr -o atomspace || echo "atomspace build skipped"
+          crystal build --error-trace src/atomspace/atomspace.cr -o bin/atomspace || echo "atomspace build skipped"
         fi
         
         # Build opencog library
         if [ -f "src/opencog/opencog.cr" ]; then
           echo "Building opencog..."
-          crystal build --error-trace src/opencog/opencog.cr -o opencog || echo "opencog build skipped"
+          crystal build --error-trace src/opencog/opencog.cr -o bin/opencog || echo "opencog build skipped"
         fi
 
     - name: Run unit tests
