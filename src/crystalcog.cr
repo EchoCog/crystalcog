@@ -11,6 +11,8 @@ require "./pattern_matching/pattern_matching_main"
 require "./attention/attention_main"
 require "./nlp/nlp"
 require "./moses/moses_main"
+require "./ml/ml_main"
+require "./learning/learning_main"
 
 # Conditionally require server components
 {% if flag?(:with_cogserver) %}
@@ -34,6 +36,8 @@ module CrystalCog
     Attention.initialize
     NLP.initialize
     Moses.initialize
+    ML.initialize
+    Learning.initialize
   end
 
   # Main entry point for command-line usage
