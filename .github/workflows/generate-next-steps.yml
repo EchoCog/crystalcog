@@ -36,45 +36,35 @@ jobs:
       with:
         script: |
           const fs = require('fs');
+          const path = require('path');
           
-          // Read the roadmap file
-          const roadmapContent = fs.readFileSync(process.env.ROADMAP_FILE, 'utf8');
+          // Load the unified roadmap parser module
+          const parser = require('./.github/scripts/roadmap-parser.js');
           
-          // Parse the "Next Development Steps" section
-          const nextStepsMatch = roadmapContent.match(/## Next Development Steps\n\n([\s\S]*?)(?=\n## |$)/);
-          if (!nextStepsMatch) {
+          // Parse the roadmap file using the unified parser
+          const parsed = parser.parseRoadmapFile(process.env.ROADMAP_FILE);
+          
+          if (!parsed.success) {
+            console.log(`Error parsing roadmap: ${parsed.error}`);
+            return;
+          }
+          
+          if (!parsed.metadata.hasNextSteps) {
             console.log('No "Next Development Steps" section found');
             return;
           }
           
-          const nextStepsContent = nextStepsMatch[1];
+          console.log(`Roadmap format: ${parsed.metadata.format}`);
+          console.log(`Total sections: ${parsed.stats.totalSections}`);
+          console.log(`Total tasks: ${parsed.stats.totalTasks}`);
+          console.log(`Incomplete tasks: ${parsed.stats.incompleteTasks}`);
           
-          // Parse each timeline section
-          const timelineRegex = /(\d+)\.\s\*\*([^*]+)\*\*:\s*\n((?:\s*-\s\[[^\]]*\][^\n]*\n?)*)/g;
-          const timelines = [];
-          let match;
-          
-          while ((match = timelineRegex.exec(nextStepsContent)) !== null) {
-            const [, number, title, tasksText] = match;
-            const tasks = [];
-            
-            // Parse individual tasks
-            const taskRegex = /\s*-\s\[([^\]]*)\]\s(.+)/g;
-            let taskMatch;
-            while ((taskMatch = taskRegex.exec(tasksText)) !== null) {
-              const [, status, description] = taskMatch;
-              tasks.push({
-                completed: status.trim() === 'x',
-                description: description.trim()
-              });
-            }
-            
-            timelines.push({
-              number: parseInt(number),
-              title: title.trim(),
-              tasks: tasks
-            });
-          }
+          // Convert parsed sections to timeline format for compatibility
+          const timelines = parsed.sections.map(section => ({
+            number: section.number || 0,
+            title: section.title,
+            tasks: section.tasks || []
+          }));
           
           console.log(`Found ${timelines.length} timeline sections`);
           
@@ -107,13 +97,19 @@ jobs:
           
           // Create issues for incomplete tasks
           let createdCount = 0;
+          let skippedCount = 0;
           
           for (const timeline of timelines) {
-            const timelineLabel = timeline.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            // Use parser module for consistent label generation
+            const timelineLabel = parser.generateLabelFromTitle(timeline.title);
+            const priority = parser.getPriorityFromSection(timeline.title);
             
             for (const task of timeline.tasks) {
               if (!task.completed) {
-                const issueTitle = `[${timeline.title}] ${task.description}`;
+                // Use parser module for consistent title generation
+                const issueTitle = parser.generateIssueTitle(timeline.title, task.description);
+                const contentHash = parser.generateContentHash(timeline.title, task.description);
+                const componentTags = parser.getComponentTags(task.description);
                 
                 if (!existingTitles.has(issueTitle)) {
                   const issueBody = [
@@ -126,6 +122,9 @@ jobs:
                     '',
                     '### Context',
                     `This is a ${timeline.title.toLowerCase()} priority task from the [Agent-Zero Genesis roadmap](${context.payload.repository.html_url}/blob/main/${process.env.ROADMAP_FILE}#next-development-steps).`,
+                    `- **Priority**: ${priority}`,
+                    `- **Task Format**: ${task.format}`,
+                    componentTags.length > 0 ? `- **Components**: ${componentTags.join(', ')}` : '',
                     '',
                     '### Acceptance Criteria',
                     '- [ ] Task implementation completed',
@@ -134,34 +133,48 @@ jobs:
                     '- [ ] Update roadmap checkbox when complete',
                     '',
                     '---',
-                    '*This issue was automatically generated from the project roadmap.*'
-                  ].join('\n');
+                    `*This issue was automatically generated from the project roadmap.*`,
+                    `*Content Hash: ${contentHash}*`
+                  ].filter(line => line !== '').join('\n');
 
                   try {
+                    // Build label set with deduplication
+                    const labels = [
+                      'next-steps', 
+                      timelineLabel, 
+                      'roadmap',
+                      `priority-${priority}`,
+                      ...componentTags
+                    ].filter((label, index, arr) => arr.indexOf(label) === index);
+                    
                     const issue = await github.rest.issues.create({
                       owner: context.repo.owner,
                       repo: context.repo.repo,
                       title: issueTitle,
                       body: issueBody,
-                      labels: ['next-steps', timelineLabel, 'roadmap']
+                      labels: labels
                     });
                     
-                    console.log(`Created issue: ${issueTitle}`);
+                    console.log(`✅ Created issue: ${issueTitle}`);
                     createdCount++;
                   } catch (error) {
-                    console.error(`Failed to create issue "${issueTitle}": ${error.message}`);
+                    console.error(`❌ Failed to create issue "${issueTitle}": ${error.message}`);
                   }
                 } else {
-                  console.log(`Issue already exists: ${issueTitle}`);
+                  console.log(`⏭️ Issue already exists: ${issueTitle}`);
+                  skippedCount++;
                 }
               }
             }
           }
           
-          console.log(`\nSummary:`);
+          console.log(`\n📊 Summary:`);
           console.log(`- Found ${timelines.length} timeline sections`);
+          console.log(`- Total tasks: ${parsed.stats.totalTasks}`);
+          console.log(`- Completed: ${parsed.stats.completedTasks}`);
+          console.log(`- Incomplete: ${parsed.stats.incompleteTasks}`);
           console.log(`- Created ${createdCount} new issues`);
-          console.log(`- Skipped ${existingTitles.size} existing issues`);
+          console.log(`- Skipped ${skippedCount} existing issues`);
           
           // Create a summary comment if running manually
           if (context.eventName === 'workflow_dispatch') {
@@ -170,11 +183,17 @@ jobs:
               '',
               '**Roadmap Processing:**',
               `- Found ${timelines.length} timeline sections in \`${process.env.ROADMAP_FILE}\``,
-              `- Processed ${timelines.reduce((sum, t) => sum + t.tasks.length, 0)} total tasks`,
+              `- Processed ${parsed.stats.totalTasks} total tasks`,
+              `- Format detected: ${parsed.metadata.format}`,
+              '',
+              '**Task Statistics:**',
+              `- ✅ Completed tasks: ${parsed.stats.completedTasks}`,
+              `- 📋 Incomplete tasks: ${parsed.stats.incompleteTasks}`,
+              `- 📝 Format breakdown: checkbox=${parsed.stats.formatBreakdown.checkbox}, checkmark=${parsed.stats.formatBreakdown.checkmark}, plain=${parsed.stats.formatBreakdown.plain}`,
               '',
               '**Issues Created:**',
               `- ✅ Created ${createdCount} new issues`,
-              `- ⏭️ Skipped ${existingTitles.size} existing issues`,
+              `- ⏭️ Skipped ${skippedCount} existing issues`,
               `- 🔄 Force recreate: ${forceRecreate ? 'Yes' : 'No'}`,
               '',
               '**Timeline Breakdown:**',
@@ -183,7 +202,9 @@ jobs:
               'All new issues have been labeled with:',
               '- `next-steps` (for easy filtering)',
               '- `roadmap` (indicates automatic generation)',
-              '- Timeline-specific labels (e.g., `immediate`, `short-term`)',
+              '- `priority-{high,medium,low}` (based on timeline)',
+              '- Timeline-specific labels (e.g., `immediate-week-1-2`, `short-term-month-1`)',
+              '- Component-specific labels when applicable',
               '',
               '---',
               `*View all next-steps issues: [Issues with next-steps label](${context.payload.repository.html_url}/issues?q=is%3Aissue+label%3Anext-steps)*`
