@@ -141,10 +141,22 @@ function parseAndValidateItems(content) {
   if (parser) {
     const parsed = parser.parseRoadmap(content);
     
+    // Calculate total items by counting items in each section
+    let totalItems = 0;
+    for (const section of parsed.sections) {
+      if (parsed.metadata.format === 'numbered-timeline') {
+        // Timeline format: each section counts as 1 item
+        totalItems += 1;
+      } else if (section.items) {
+        // Subsection format: count actual items array
+        totalItems += section.items.length;
+      }
+    }
+    
     // Convert parser result to expected format for generateReport
     const parseResults = {
       totalSections: parsed.stats.totalSections,
-      totalItems: parsed.stats.totalSections, // Approximate
+      totalItems: totalItems,
       totalTasks: parsed.stats.totalTasks,
       completedTasks: parsed.stats.completedTasks,
       incompleteTasks: parsed.stats.incompleteTasks,

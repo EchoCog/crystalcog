@@ -442,7 +442,7 @@ if (require.main === module) {
   const filePath = args[0] || process.env.ROADMAP_FILE || 'DEVELOPMENT-ROADMAP.md';
   
   console.log(`Parsing roadmap: ${filePath}`);
-  console.log('=' .repeat(50));
+  console.log('='.repeat(50));
   
   const result = parseRoadmapFile(filePath);
   
