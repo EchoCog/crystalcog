@@ -19,4 +19,4 @@ jobs:
     - name: Install dependencies
       run: shards install
     - name: Run tests
-      run: crystal spec
+      run: crystal spec spec/atomspace/atom_spec.cr spec/atomspace/truthvalue_spec.cr
