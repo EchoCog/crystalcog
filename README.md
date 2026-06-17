@@ -52,9 +52,24 @@ crystalcog/
 │   ├── ure/               # Unified Rule Engine
 │   └── opencog/           # Main OpenCog interface
 ├── spec/                  # Test specifications
+│   └── standalone/        # Standalone test scripts
+├── examples/              # Demo and example code
+│   └── crystal/           # Crystal demos
 ├── scripts/               # Build and development scripts
-├── crystal-lang/          # Crystal installation resources
-└── docs/                  # Documentation
+│   ├── testing/           # Test runner scripts
+│   ├── validation/        # Validation scripts
+│   └── production/        # Production deployment scripts
+├── tools/                 # Utility and debug tools
+│   └── debug/             # Debug utilities
+├── docs/                  # Documentation
+│   ├── api/               # API documentation
+│   ├── features/          # Feature documentation
+│   ├── guides/            # How-to guides
+│   ├── reports/           # Validation reports
+│   └── roadmap/           # Development roadmap
+├── benchmarks/            # Performance benchmarks
+├── config/                # Configuration files
+└── deployments/           # Kubernetes & deployment configs
 ```
 
 ## Development
@@ -103,10 +118,10 @@ The CogServer includes a comprehensive integration test that validates all netwo
 crystal build src/cogserver/cogserver_main.cr -o cogserver_bin
 
 # Start CogServer for testing
-crystal run start_test_cogserver.cr &
+crystal run tools/start_test_cogserver.cr &
 
 # Run integration test script
-./test_cogserver_integration.sh
+./scripts/testing/test_cogserver_integration.sh
 ```
 
 The integration test validates:
@@ -269,12 +284,12 @@ CrystalCog is a complete Crystal language implementation with all functionality.
 For complete documentation:
 
 - [Crystal Installation Guide](docs/CRYSTAL_INSTALLATION.md)
-- [Development Roadmap](DEVELOPMENT-ROADMAP.md)
-- [Persistence API Documentation](PERSISTENCE_API_DOCUMENTATION.md)
-- [Hypergraph State Persistence Documentation](HYPERGRAPH_STATE_PERSISTENCE_DOCUMENTATION.md)
+- [Development Roadmap](docs/roadmap/DEVELOPMENT-ROADMAP.md)
+- [Persistence API Documentation](docs/api/PERSISTENCE_API_DOCUMENTATION.md)
+- [Hypergraph State Persistence Documentation](docs/features/HYPERGRAPH_STATE_PERSISTENCE_DOCUMENTATION.md)
 - [Advanced Pattern Matching Documentation](docs/ADVANCED_PATTERN_MATCHING.md)
-- [Complete API Documentation](README_COMPLETE.md)
-- [Agent-Zero Implementation](AGENT-ZERO-GENESIS.md)
+- [Complete API Documentation](docs/README_COMPLETE.md)
+- [Agent-Zero Implementation](docs/agent-zero/AGENT-ZERO-GENESIS.md)
 - [CI/CD Pipeline](docs/CI-CD-PIPELINE.md)
 
 ## Contributing
