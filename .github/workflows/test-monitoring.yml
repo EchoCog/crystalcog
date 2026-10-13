@@ -40,7 +40,7 @@ jobs:
     - name: Set up reporting environment
       run: |
         sudo apt-get update
-        sudo apt-get install -y jq curl
+        sudo apt-get install -y jq curl bc
         
     - name: Fetch recent workflow runs
       id: fetch-runs
@@ -80,7 +80,7 @@ jobs:
             successful,
             failed,
             cancelled,
-            success_rate: (successful / recent.length * 100).toFixed(1),
+            success_rate: (recent.length ? successful / recent.length * 100 : 0).toFixed(1),
             recent_runs: recent.slice(0, 5).map(run => ({
               id: run.id,
               conclusion: run.conclusion,
@@ -184,34 +184,34 @@ jobs:
             // Create issue for test instability
             const issueTitle = '[Test Monitoring] Multiple Test Failures Detected';
             const issueBody = `
-        ## Test Stability Issue Detected
-        
-        The automated test monitoring has detected multiple test failures in recent runs.
-        
-        ### Statistics
-        - **Success Rate**: ${stats.success_rate}% (last 10 runs)
-        - **Recent Failures**: ${recentFailures.length}
-        - **Failed Runs**: ${recentFailures.map(r => `#${r.id} (${r.head_branch})`).join(', ')}
-        
-        ### Recent Failed Runs
-        ${recentFailures.map(run => `- Run #${run.id}: Branch \`${run.head_branch}\`, Commit \`${run.head_sha}\`, Date: ${run.created_at}`).join('\n')}
-        
-        ### Recommended Actions
-        1. Investigate common failure patterns in the above runs
-        2. Check for environmental issues (dependencies, system changes)
-        3. Review recent code changes that might have introduced instability
-        4. Consider adding retry mechanisms for flaky tests
-        5. Improve test isolation and cleanup procedures
-        
-        ### Next Steps
-        - [ ] Review failed run logs for error patterns
-        - [ ] Identify root cause of test instability
-        - [ ] Implement fixes for identified issues
-        - [ ] Monitor success rate improvement
-        
-        ---
-        *This issue was automatically created by the Test Monitoring workflow.*
-        *Success rate threshold: 80% | Current: ${stats.success_rate}%*
+          ## Test Stability Issue Detected
+
+          The automated test monitoring has detected multiple test failures in recent runs.
+
+          ### Statistics
+          - **Success Rate**: ${stats.success_rate}% (last 10 runs)
+          - **Recent Failures**: ${recentFailures.length}
+          - **Failed Runs**: ${recentFailures.map(r => `#${r.id} (${r.head_branch})`).join(', ')}
+
+          ### Recent Failed Runs
+          ${recentFailures.map(run => `- Run #${run.id}: Branch \`${run.head_branch}\`, Commit \`${run.head_sha}\`, Date: ${run.created_at}`).join('\n')}
+
+          ### Recommended Actions
+          1. Investigate common failure patterns in the above runs
+          2. Check for environmental issues (dependencies, system changes)
+          3. Review recent code changes that might have introduced instability
+          4. Consider adding retry mechanisms for flaky tests
+          5. Improve test isolation and cleanup procedures
+
+          ### Next Steps
+          - [ ] Review failed run logs for error patterns
+          - [ ] Identify root cause of test instability
+          - [ ] Implement fixes for identified issues
+          - [ ] Monitor success rate improvement
+
+          ---
+          *This issue was automatically created by the Test Monitoring workflow.*
+          *Success rate threshold: 80% | Current: ${stats.success_rate}%*
             `.trim();
         
             await github.rest.issues.create({

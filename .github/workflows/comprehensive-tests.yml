@@ -347,7 +347,7 @@ jobs:
         echo "Building all defined binaries..."
 
         declare -A TARGETS=(
-          ["crystalcog"]="src/crystalcog.cr"
+          ["crystalcog"]="src/bin/crystalcog.cr"
           ["cogutil"]="src/cogutil/cogutil.cr"
           ["atomspace"]="src/atomspace/atomspace.cr"
           ["atomspace_main"]="src/atomspace/atomspace_main.cr"
@@ -364,7 +364,7 @@ jobs:
           ["pattern_matching"]="src/pattern_matching/pattern_matching_main.cr"
           ["pattern_mining"]="src/pattern_mining/pattern_mining_main.cr"
           ["nlp"]="src/nlp/nlp_main.cr"
-          ["cogserver"]="src/cogserver/cogserver_main.cr"
+          ["cogserver"]="src/bin/cogserver.cr"
           ["distributed_network_demo"]="src/agent-zero/distributed_network_demo.cr"
           ["agent_zero"]="src/agent-zero/agent_zero_main.cr"
           ["spatial"]="src/spatial/spatial.cr"

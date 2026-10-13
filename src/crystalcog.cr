@@ -13,6 +13,7 @@ require "./nlp/nlp"
 require "./moses/moses_main"
 require "./ml/ml_main"
 require "./learning/learning_main"
+require "./tools/cogshell"
 
 # Conditionally require server components
 {% if flag?(:with_cogserver) %}
@@ -50,7 +51,7 @@ module CrystalCog
       puts "Starting CogServer..."
       CogServer.main(args[1..])
     when "shell"
-      puts "CogShell functionality not yet implemented"
+      Shell.new.run
     when "test"
       puts "Running test AtomSpace operations..."
       test_basic_operations
@@ -389,17 +390,5 @@ module CrystalCog
     puts "- Demonstrates complete language processing capabilities! 🎉"
 
     puts "\n=== Language Processing Capabilities Demo Complete ==="
-  end
-end
-
-# Run if this file is executed directly
-if PROGRAM_NAME == __FILE__
-  begin
-    puts "Starting CrystalCog..."
-    CrystalCog.main(ARGV)
-    puts "Finished CrystalCog."
-  rescue ex
-    puts "Error: #{ex}"
-    puts ex.backtrace.join("\n")
   end
 end

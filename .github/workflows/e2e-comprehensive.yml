@@ -77,10 +77,10 @@ jobs:
         mkdir -p bin
 
         echo "Building main application..."
-        crystal build --error-trace src/crystalcog.cr -o bin/crystalcog
+        crystal build --error-trace src/bin/crystalcog.cr -o bin/crystalcog
 
         echo "Building CogServer..."
-        crystal build --error-trace src/cogserver/cogserver_main.cr -o bin/cogserver
+        crystal build --error-trace src/bin/cogserver.cr -o bin/cogserver
 
         echo "Building Agent-Zero demo..."
         crystal build --error-trace src/agent-zero/distributed_network_demo.cr -o bin/distributed_demo || true
