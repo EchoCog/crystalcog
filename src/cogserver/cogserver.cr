@@ -322,8 +322,8 @@ module CogServer
             {
               "handle"      => atom.handle,
               "type"        => atom.type.to_s,
-              "name"        => atom.responds_to?(:name) ? atom.name : nil,
-              "outgoing"    => atom.responds_to?(:outgoing) ? atom.outgoing.map(&.to_s) : nil,
+              "name"        => atom.node? ? atom.name : nil,
+              "outgoing"    => atom.link? ? atom.outgoing.map(&.handle) : nil,
               "truth_value" => {
                 "strength"   => atom.truth_value.strength,
                 "confidence" => atom.truth_value.confidence,
