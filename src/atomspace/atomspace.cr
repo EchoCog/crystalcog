@@ -288,8 +288,26 @@ module AtomSpace
     end
 
     def add_link(type : AtomType, outgoing : Array(Atom), tv : TruthValue = TruthValue::DEFAULT_TV) : Atom
-      link = Link.new(type, outgoing, tv)
-      add_atom(link)
+      # Reasoning often proposes an existing relationship. Reuse it before
+      # allocating a Link/handle, but preserve add_atom's exact merge semantics.
+      existing = @mutex.synchronize do
+        outgoing_set = @atoms_by_outgoing[outgoing.map(&.handle)]?
+        canonical = outgoing_set.try(&.find { |atom| atom.type == type })
+        if canonical && canonical.truth_value != tv
+          canonical.truth_value = canonical.truth_value.merge(tv)
+          enqueue_event(AtomSpaceEvent::TRUTH_VALUE_CHANGED, canonical)
+        end
+        canonical
+      end
+
+      if existing
+        dispatch_events
+        existing
+      else
+        # A concurrent insertion after the lookup is still deduplicated by
+        # add_atom under its mutation lock.
+        add_atom(Link.new(type, outgoing, tv))
+      end
     end
 
     # Specific atom creation methods

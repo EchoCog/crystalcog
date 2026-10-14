@@ -319,6 +319,13 @@ module AtomSpace
       @value = value.to_f64
       super(AtomType::NUMBER_NODE, value.to_s, truth_value)
     end
+
+    # Persistence must preserve the exact label: NumberNode(42) is named "42",
+    # while NumberNode(42.0) is named "42.0", despite equal numeric values.
+    def initialize(name : String, truth_value : TruthValue = TruthValue::DEFAULT_TV)
+      @value = name.to_f64
+      super(AtomType::NUMBER_NODE, name, truth_value)
+    end
   end
 
   # Specific link types
