@@ -121,7 +121,7 @@ describe NLP::TextProcessor do
       text = "the cat and the dog and the bird"
       stats = NLP::TextProcessor.get_text_stats(text)
 
-      stats["word_count"].should eq(7)  # Total words
+      stats["word_count"].should eq(8)  # the(3), and(2), cat, dog, bird
       stats["unique_words"].should eq(5)  # cat, dog, bird, and, the
     end
   end

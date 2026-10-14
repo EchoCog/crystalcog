@@ -619,9 +619,11 @@ module Robotics
       @namespace.empty? ? @name : "#{@namespace}/#{@name}"
     end
 
-    def create_topic(T, name : String, queue_size : Int32 = 10) : Topic(T)
+    # Passing the message class makes the generic type inferable at the call site,
+    # e.g. create_topic(MessageTypes::Twist, "cmd_vel").
+    def create_topic(message_type : T.class, name : String, queue_size : Int32 = 10) : Topic(T) forall T
       topic_name = resolve_name(name)
-      topic = Topic(T).new(topic_name, T.name, queue_size)
+      topic = Topic(T).new(topic_name, message_type.name, queue_size)
       CogUtil::Logger.debug("Created topic: #{topic_name}")
       topic
     end

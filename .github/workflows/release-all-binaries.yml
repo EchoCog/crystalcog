@@ -80,7 +80,7 @@ jobs:
         # Define all targets
         declare -A TARGETS=(
           # Main application
-          ["crystalcog"]="src/crystalcog.cr"
+          ["crystalcog"]="src/bin/crystalcog.cr"
 
           # Core libraries
           ["cogutil"]="src/cogutil/cogutil.cr"
@@ -109,7 +109,7 @@ jobs:
           ["nlp"]="src/nlp/nlp_main.cr"
 
           # Server applications
-          ["cogserver"]="src/cogserver/cogserver_main.cr"
+          ["cogserver"]="src/bin/cogserver.cr"
 
           # Agent-Zero
           ["distributed_network_demo"]="src/agent-zero/distributed_network_demo.cr"
@@ -199,10 +199,10 @@ jobs:
             for target in crystalcog cogserver nlp pattern_matching moses; do
               case $target in
                 crystalcog)
-                  src="src/crystalcog.cr"
+                  src="src/bin/crystalcog.cr"
                   ;;
                 cogserver)
-                  src="src/cogserver/cogserver_main.cr"
+                  src="src/bin/cogserver.cr"
                   ;;
                 nlp)
                   src="src/nlp/nlp_main.cr"
@@ -242,7 +242,7 @@ jobs:
   # Build for macOS x86_64
   build-macos-x64:
     name: Build macOS x86_64 Binaries
-    runs-on: macos-13  # Intel Mac
+    runs-on: macos-15-intel  # Intel Mac
     timeout-minutes: 60
 
     steps:
@@ -268,7 +268,7 @@ jobs:
         BUILD_FLAGS="--release --no-debug"
 
         declare -A TARGETS=(
-          ["crystalcog"]="src/crystalcog.cr"
+          ["crystalcog"]="src/bin/crystalcog.cr"
           ["cogutil"]="src/cogutil/cogutil.cr"
           ["atomspace"]="src/atomspace/atomspace.cr"
           ["atomspace_main"]="src/atomspace/atomspace_main.cr"
@@ -285,7 +285,7 @@ jobs:
           ["pattern_matching"]="src/pattern_matching/pattern_matching_main.cr"
           ["pattern_mining"]="src/pattern_mining/pattern_mining_main.cr"
           ["nlp"]="src/nlp/nlp_main.cr"
-          ["cogserver"]="src/cogserver/cogserver_main.cr"
+          ["cogserver"]="src/bin/cogserver.cr"
           ["distributed_network_demo"]="src/agent-zero/distributed_network_demo.cr"
           ["agent_zero"]="src/agent-zero/agent_zero_main.cr"
           ["spatial"]="src/spatial/spatial.cr"
@@ -347,7 +347,7 @@ jobs:
         BUILD_FLAGS="--release --no-debug"
 
         declare -A TARGETS=(
-          ["crystalcog"]="src/crystalcog.cr"
+          ["crystalcog"]="src/bin/crystalcog.cr"
           ["cogutil"]="src/cogutil/cogutil.cr"
           ["atomspace"]="src/atomspace/atomspace.cr"
           ["atomspace_main"]="src/atomspace/atomspace_main.cr"
@@ -364,7 +364,7 @@ jobs:
           ["pattern_matching"]="src/pattern_matching/pattern_matching_main.cr"
           ["pattern_mining"]="src/pattern_mining/pattern_mining_main.cr"
           ["nlp"]="src/nlp/nlp_main.cr"
-          ["cogserver"]="src/cogserver/cogserver_main.cr"
+          ["cogserver"]="src/bin/cogserver.cr"
           ["distributed_network_demo"]="src/agent-zero/distributed_network_demo.cr"
           ["agent_zero"]="src/agent-zero/agent_zero_main.cr"
           ["spatial"]="src/spatial/spatial.cr"
@@ -660,7 +660,7 @@ jobs:
         ls -lh release-files/
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.get_version.outputs.version }}
         name: CrystalCog ${{ steps.get_version.outputs.version }}
