@@ -135,15 +135,11 @@ module CrystalCog
     puts "  Query: #{input_query}"
     puts ""
 
-    begin
-      result = manager.execute_cognitive_pipeline(input_query)
+    result = manager.execute_cognitive_pipeline(input_query)
 
-      puts "Pipeline Results:"
-      result.each do |key, value|
-        puts "  - #{key}: #{value}"
-      end
-    rescue ex : IO::Error | Socket::Error
-      puts "  Pipeline skipped: external services unavailable (#{ex.message})"
+    puts "Pipeline Results:"
+    result.each do |key, value|
+      puts "  - #{key}: #{value}"
     end
     puts ""
 

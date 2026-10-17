@@ -606,6 +606,10 @@ module CrystalCog
         current
       end
 
+      # Bounds re-interpretation of rule rewrites so cyclic rules terminate
+      MAX_INTERPRET_DEPTH = 64
+      @interpret_depth = 0
+
       # Interpret/evaluate expression in this space
       def interpret(atom : MeTTaAtom) : Array(MeTTaAtom)
         case atom
@@ -665,8 +669,19 @@ module CrystalCog
             when "not"
               interpret_logical(atom, :not)
             else
-              # Try to apply rules
-              [reduce(atom)]
+              # Try to apply rules, then evaluate what they rewrote to
+              # (e.g. `(double 21)` -> `(* 2 21)` -> `42`)
+              reduced = reduce(atom)
+              if reduced.to_metta == atom.to_metta || @interpret_depth >= MAX_INTERPRET_DEPTH
+                [reduced] of MeTTaAtom
+              else
+                @interpret_depth += 1
+                begin
+                  interpret(reduced)
+                ensure
+                  @interpret_depth -= 1
+                end
+              end
             end
           else
             # Non-symbol head - evaluate all children

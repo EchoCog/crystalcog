@@ -326,12 +326,19 @@ module CrystalCogIntegration
         accelerator.execute_accelerated("cognitive_pipeline") do
           # Process through Pygmalion for conversational understanding
           if agent = @pygmalion_agent
-            pygmalion_response = agent.chat(input)
-            result["pygmalion_response"] = pygmalion_response
+            begin
+              pygmalion_response = agent.chat(input)
+              result["pygmalion_response"] = pygmalion_response
 
-            # Feed response back through agency
-            if agency = @cognitive_agency
-              agency.process(pygmalion_response, "pygmalion")
+              # Feed response back through agency
+              if agency = @cognitive_agency
+                agency.process(pygmalion_response, "pygmalion")
+              end
+            rescue ex : IO::Error | Socket::Error
+              # The Pygmalion backend is an external service; the rest of the
+              # pipeline still runs without it.
+              CogUtil::Logger.warn("Pygmalion backend unavailable: #{ex.message}")
+              result["pygmalion_status"] = "unavailable"
             end
           end
 

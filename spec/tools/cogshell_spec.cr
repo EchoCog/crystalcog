@@ -39,7 +39,7 @@ describe CrystalCog::Shell do
     shell.execute("query cat").should be_true
     shell.atomspace.get_nodes_by_name("animal").size.should eq(1)
     shell.atomspace.link_count.should eq(1)
-    output.to_s.should contain("InheritanceLink")
+    output.to_s.should contain("INHERITANCELINK")
   end
 end
 
