@@ -19,6 +19,11 @@ on:
 env:
   ROADMAP_FILE: ${{ inputs.roadmap_file || 'docs/agent-zero/AGENT-ZERO-GENESIS.md' }}
 
+# Trace every command so CI logs show exactly what ran and what it printed.
+defaults:
+  run:
+    shell: bash -ex {0}
+
 jobs:
   generate-issues:
     runs-on: ubuntu-latest
