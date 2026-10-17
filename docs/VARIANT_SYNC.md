@@ -49,3 +49,8 @@ and the reason are recorded here.
   for this repository.
 - rzonedevops' root-level demos, tests and reports: the same files live in
   EchoCog's organized directories.
+- C/C++/Rust scaffolding still present in EchoCog and rzonedevops
+  (`CMakeLists.txt`, `Cargo.toml` files, `src/agent-zero/*.c`, C++ OpenCog
+  and Rust CI workflows, `docker/archive/`, `rest-api-documentation/`): cogpy
+  removed these in its "Clean up repository for pure Crystal implementation"
+  change, and this tree follows that cleanup.
