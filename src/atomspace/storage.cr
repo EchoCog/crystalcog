@@ -2,14 +2,30 @@
 # Based on atomspace/opencog/persist/api/StorageNode.h
 #
 # This provides the base interface for persistent storage of AtomSpace contents.
+#
+# Database dependencies can be disabled at compile time using environment variables:
+#   DISABLE_SQLITE3=1  - Disable SQLite3 support
+#   DISABLE_POSTGRES=1 - Disable PostgreSQL support
+#   DISABLE_ROCKSDB=1  - Disable RocksDB support (see rocksdb.cr)
+#
+# When all database backends are disabled, use MemoryStorageNode or FileStorageNode.
 
 require "./atom"
 require "./truthvalue"
 require "./scheme_storage_parser"
 require "../cogutil/cogutil"
 require "../rocksdb"
-require "sqlite3"
-require "pg"
+
+# Conditionally require database libraries based on environment variables
+{% unless env("DISABLE_SQLITE3") == "1" %}
+  require "sqlite3"
+{% end %}
+
+{% unless env("DISABLE_POSTGRES") == "1" %}
+  require "pg"
+{% end %}
+
+# Always require db and json for common functionality
 require "db"
 require "json"
 require "http/client"
@@ -534,7 +550,122 @@ module AtomSpace
     end
   end
 
+  # In-memory storage implementation
+  # This is a fallback storage backend that doesn't require any external libraries.
+  # Useful for testing and platforms without database libraries.
+  class MemoryStorageNode < StorageNode
+    @atoms : Hash(Handle, Atom) = Hash(Handle, Atom).new
+    @connected : Bool = false
+    @mutex : Mutex = Mutex.new
+
+    def initialize(name : String = "memory")
+      super(name)
+      log_info("MemoryStorageNode created")
+    end
+
+    def open : Bool
+      @connected = true
+      log_info("Opened in-memory storage")
+      true
+    end
+
+    def close : Bool
+      @connected = false
+      @atoms.clear
+      log_info("Closed in-memory storage")
+      true
+    end
+
+    def connected? : Bool
+      @connected
+    end
+
+    def store_atom(atom : Atom) : Bool
+      return false unless @connected
+
+      @mutex.synchronize do
+        @atoms[atom.handle] = atom
+      end
+
+      log_debug("Stored atom in memory: #{atom}")
+      true
+    end
+
+    def fetch_atom(handle : Handle) : Atom?
+      return nil unless @connected
+
+      @mutex.synchronize do
+        @atoms[handle]?
+      end
+    end
+
+    def remove_atom(atom : Atom) : Bool
+      return false unless @connected
+
+      @mutex.synchronize do
+        @atoms.delete(atom.handle)
+      end
+
+      log_debug("Removed atom from memory: #{atom}")
+      true
+    end
+
+    def store_atomspace(atomspace : AtomSpace) : Bool
+      return false unless @connected
+
+      @mutex.synchronize do
+        @atoms.clear
+        atomspace.get_all_atoms.each do |atom|
+          @atoms[atom.handle] = atom
+        end
+      end
+
+      log_info("Stored AtomSpace (#{atomspace.size} atoms) to memory")
+      true
+    end
+
+    def load_atomspace(atomspace : AtomSpace) : Bool
+      return false unless @connected
+
+      count = 0
+      @mutex.synchronize do
+        @atoms.each_value do |atom|
+          atomspace.add_atom(atom)
+          count += 1
+        end
+      end
+
+      log_info("Loaded #{count} atoms from memory")
+      true
+    end
+
+    def get_stats : Hash(String, String | Int32 | Int64)
+      stats = Hash(String, String | Int32 | Int64).new
+      stats["type"] = "MemoryStorage"
+      stats["connected"] = @connected ? "true" : "false"
+      stats["atom_count"] = @atoms.size.to_i64
+      stats
+    end
+
+    # Get all stored atoms (for debugging/testing)
+    def all_atoms : Array(Atom)
+      @mutex.synchronize do
+        @atoms.values
+      end
+    end
+
+    # Clear all stored atoms
+    def clear
+      @mutex.synchronize do
+        @atoms.clear
+      end
+      log_debug("Cleared in-memory storage")
+    end
+  end
+
   # SQLite-based storage implementation with connection pooling
+  # Only available when DISABLE_SQLITE3 is not set
+  {% unless env("DISABLE_SQLITE3") == "1" %}
   class SQLiteStorageNode < StorageNode
     @db_path : String
     @db : DB::Database?
@@ -873,6 +1004,54 @@ module AtomSpace
       log_debug("Created SQLite tables and indexes")
     end
   end
+  {% else %}
+  # SQLite3 is disabled - provide stub implementation
+  class SQLiteStorageNode < StorageNode
+    @db_path : String
+    @connected : Bool = false
+
+    def initialize(name : String, @db_path : String, use_pool : Bool = true, pool_size : Int32 = 10)
+      super(name)
+      CogUtil::Logger.warn("SQLiteStorageNode: SQLite3 support is disabled. Set DISABLE_SQLITE3=0 and rebuild.")
+    end
+
+    def open : Bool
+      raise "SQLite3 support is disabled. Install libsqlite3-dev and rebuild without DISABLE_SQLITE3=1"
+    end
+
+    def close : Bool
+      true
+    end
+
+    def connected? : Bool
+      false
+    end
+
+    def store_atom(atom : Atom) : Bool
+      raise "SQLite3 support is disabled"
+    end
+
+    def fetch_atom(handle : Handle) : Atom?
+      raise "SQLite3 support is disabled"
+    end
+
+    def remove_atom(atom : Atom) : Bool
+      raise "SQLite3 support is disabled"
+    end
+
+    def store_atomspace(atomspace : AtomSpace) : Bool
+      raise "SQLite3 support is disabled"
+    end
+
+    def load_atomspace(atomspace : AtomSpace) : Bool
+      raise "SQLite3 support is disabled"
+    end
+
+    def get_stats : Hash(String, String | Int32 | Int64)
+      Hash(String, String | Int32 | Int64){"type" => "SQLiteStorage", "status" => "disabled"}
+    end
+  end
+  {% end %}
 
   # Network storage implementation (for CogServer communication)
   class CogStorageNode < StorageNode
@@ -1033,6 +1212,8 @@ module AtomSpace
   end
 
   # PostgreSQL-based storage implementation with connection pooling
+  # Only available when DISABLE_POSTGRES is not set
+  {% unless env("DISABLE_POSTGRES") == "1" %}
   class PostgresStorageNode < StorageNode
     @connection_string : String
     @db : DB::Database?
@@ -1376,6 +1557,54 @@ module AtomSpace
       log_debug("Created PostgreSQL tables and indexes")
     end
   end
+  {% else %}
+  # PostgreSQL is disabled - provide stub implementation
+  class PostgresStorageNode < StorageNode
+    @connection_string : String
+    @connected : Bool = false
+
+    def initialize(name : String, @connection_string : String, use_pool : Bool = true, pool_size : Int32 = 10)
+      super(name)
+      CogUtil::Logger.warn("PostgresStorageNode: PostgreSQL support is disabled. Set DISABLE_POSTGRES=0 and rebuild.")
+    end
+
+    def open : Bool
+      raise "PostgreSQL support is disabled. Install libpq-dev and rebuild without DISABLE_POSTGRES=1"
+    end
+
+    def close : Bool
+      true
+    end
+
+    def connected? : Bool
+      false
+    end
+
+    def store_atom(atom : Atom) : Bool
+      raise "PostgreSQL support is disabled"
+    end
+
+    def fetch_atom(handle : Handle) : Atom?
+      raise "PostgreSQL support is disabled"
+    end
+
+    def remove_atom(atom : Atom) : Bool
+      raise "PostgreSQL support is disabled"
+    end
+
+    def store_atomspace(atomspace : AtomSpace) : Bool
+      raise "PostgreSQL support is disabled"
+    end
+
+    def load_atomspace(atomspace : AtomSpace) : Bool
+      raise "PostgreSQL support is disabled"
+    end
+
+    def get_stats : Hash(String, String | Int32 | Int64)
+      Hash(String, String | Int32 | Int64){"type" => "PostgreSQLStorage", "status" => "disabled"}
+    end
+  end
+  {% end %}
 
   # RocksDB-based storage implementation
   class RocksDBStorageNode < StorageNode
@@ -1783,14 +2012,21 @@ module AtomSpace
         metadata = load_hypergraph_metadata
         return nil unless metadata
 
-        # Reconstruct hypergraph state
+        # Reconstruct hypergraph state from JSON metadata
+        op_json = metadata["cognitive_operation"]?
+        cognitive_operation = if op_json && !op_json.raw.nil?
+                                op_json.as_s
+                              else
+                                nil
+                              end
+
         state = HypergraphState.new(
           atomspace: target_atomspace,
-          tensor_shape: metadata["tensor_shape"].as(Array(Int32)),
-          attention: metadata["attention"].as(Float64),
-          meta_level: metadata["meta_level"].as(Int32),
-          cognitive_operation: metadata["cognitive_operation"]?.as(String?),
-          timestamp: Time.unix(metadata["timestamp"].as(Int64))
+          tensor_shape: metadata["tensor_shape"].as_a.map(&.as_i),
+          attention: metadata["attention"].as_f,
+          meta_level: metadata["meta_level"].as_i,
+          cognitive_operation: cognitive_operation,
+          timestamp: Time.unix(metadata["timestamp"].as_i64)
         )
 
         log_info("Loaded hypergraph state: tensor_shape=#{state.tensor_shape}, attention=#{state.attention}")
@@ -1850,10 +2086,14 @@ module AtomSpace
 
     private def serialize_hypergraph_state(state : HypergraphState) : Hash(String, JSON::Any)
       data = Hash(String, JSON::Any).new
-      data["tensor_shape"] = JSON::Any.new(state.tensor_shape.map(&.as(JSON::Any)))
+      data["tensor_shape"] = JSON::Any.new(state.tensor_shape.map { |n| JSON::Any.new(n.to_i64) })
       data["attention"] = JSON::Any.new(state.attention)
-      data["meta_level"] = JSON::Any.new(state.meta_level)
-      data["cognitive_operation"] = JSON::Any.new(state.cognitive_operation)
+      data["meta_level"] = JSON::Any.new(state.meta_level.to_i64)
+      data["cognitive_operation"] = if op = state.cognitive_operation
+                                     JSON::Any.new(op)
+                                   else
+                                     JSON::Any.new(nil)
+                                   end
       data["timestamp"] = JSON::Any.new(state.timestamp.to_unix)
       data["atomspace_size"] = JSON::Any.new(state.atomspace.size.to_i64)
       data

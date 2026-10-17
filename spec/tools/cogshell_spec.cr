@@ -31,4 +31,23 @@ describe CrystalCog::Shell do
     output.to_s.should contain("Derived 0 inferences")
     shell.execute("exit").should be_false
   end
+
+  it "delegates extended commands to the full CogShell command set" do
+    output = IO::Memory.new
+    shell = CrystalCog::Shell.new(output: output)
+    shell.execute("inherit cat animal").should be_true
+    shell.execute("query cat").should be_true
+    shell.atomspace.get_nodes_by_name("animal").size.should eq(1)
+    shell.atomspace.link_count.should eq(1)
+    output.to_s.should contain("InheritanceLink")
+  end
+end
+
+describe CogShell::Shell do
+  it "evaluates single lines for scripting" do
+    shell = CogShell::Shell.new
+    shell.eval_line("concept dog").should contain("dog")
+    shell.eval_line("size").should contain("size=1")
+    shell.eval_line("bogus").should contain("Unknown command: bogus")
+  end
 end

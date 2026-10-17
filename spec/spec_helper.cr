@@ -33,13 +33,13 @@ require "./nlp/tokenizer_spec"
 require "./nlp/text_processor_spec"
 require "./nlp/linguistic_atoms_spec"
 require "./nlp/language_processing_capabilities_spec"
+require "./nlp/dependency_parser_spec"
 
 # Require performance tests
 require "./performance/performance_spec"
 
 # Require error handling and edge case tests
-# TODO: Fix error_handling_spec - instance variable scope issues
-# require "./error_handling/error_handling_spec"
+require "./error_handling/error_handling_spec"
 
 # Require integration scenario tests
 require "./integration/integration_spec"
@@ -87,8 +87,8 @@ describe "CrystalCog Integration Tests" do
     # Run reasoning
     new_atoms = pln_engine.reason(3)
 
-    # Should generate some new knowledge
-    new_atoms.size.should be >= 0
+    # Should generate some new knowledge from inheritance chain
+    new_atoms.size.should be > 0
   end
 
   it "supports URE reasoning integration" do
@@ -107,8 +107,8 @@ describe "CrystalCog Integration Tests" do
     # Run forward chaining
     new_atoms = ure_engine.forward_chain(3)
 
-    # Should handle URE operations
-    new_atoms.size.should be >= 0
+    # URE should handle operations (may be empty without matching rules for evaluations)
+    new_atoms.should be_a(Array(AtomSpace::Atom))
   end
 
   it "handles cross-component interactions" do
@@ -138,8 +138,8 @@ describe "CrystalCog Integration Tests" do
     pln_atoms = pln_engine.reason(2)
     ure_atoms = ure_engine.forward_chain(2)
 
-    # Should work together without conflicts
-    (pln_atoms + ure_atoms).size.should be >= 0
+    # Should work together without conflicts and produce inferences
+    (pln_atoms + ure_atoms).size.should be > 0
     atomspace.size.should be >= initial_size
   end
 
@@ -205,13 +205,13 @@ describe "CrystalCog Integration Tests" do
     atomspace = AtomSpace::AtomSpace.new
 
     # Time atom creation
-    start_time = Time.monotonic
+    start_time = Time.instant
 
     100.times do |i|
       atomspace.add_concept_node("perf_test_#{i}")
     end
 
-    end_time = Time.monotonic
+    end_time = Time.instant
     duration = end_time - start_time
 
     # Should create atoms quickly (less than 1 second for 100 atoms)

@@ -271,6 +271,8 @@ This validates:
 - All 9 profiling tool files exist
 - Executable permissions are correct
 - Script execution and output format
+- Dependency compatibility via `scripts/validation/check_dependencies.sh`
+- Guix package/environment validation via `scripts/validation/validate-guix-packages.sh`
 - Documentation completeness
 - Test suite coverage
 - Optional Crystal syntax validation (when Crystal is installed)
@@ -314,6 +316,9 @@ Run all validation checks at once:
 # Run profiling tools validation
 ./scripts/validation/validate_profiling_tools.sh
 
+# Run demo profiling tools validation
+./scripts/validation/validate-demo-profiling-tools.sh
+
 # Run dependency compatibility check
 ./scripts/validation/check_dependencies.sh
 
@@ -323,6 +328,7 @@ Run all validation checks at once:
 
 For detailed validation reports, see:
 - [Profiling Tools Validation Report](scripts/validation/PROFILING_TOOLS_VALIDATION_REPORT.md)
+- [Demo Profiling Tools Validation Report](docs/DEMO_PROFILING_TOOLS_VALIDATION.md)
 
 ## Production Deployment
 
@@ -383,6 +389,29 @@ docker-compose -f docker-compose.production.yml config
 ## Troubleshooting
 
 ### Common Issues
+
+#### Database Dependencies Not Found
+
+If you encounter database linking errors during build or test, you can disable specific database backends using environment variables:
+
+```bash
+# Disable RocksDB (requires librocksdb-dev)
+export DISABLE_ROCKSDB=1
+
+# Disable SQLite3 (requires libsqlite3-dev)
+export DISABLE_SQLITE3=1
+
+# Disable PostgreSQL (requires libpq-dev)
+export DISABLE_POSTGRES=1
+
+# You can combine multiple flags:
+DISABLE_ROCKSDB=1 DISABLE_SQLITE3=1 DISABLE_POSTGRES=1 crystal spec
+
+# Or set them all in your shell profile for Windows builds:
+export DISABLE_ROCKSDB=1 DISABLE_SQLITE3=1 DISABLE_POSTGRES=1
+```
+
+When all database backends are disabled, use `MemoryStorageNode` or `FileStorageNode` for persistence.
 
 #### RocksDB Dependency Not Found
 
