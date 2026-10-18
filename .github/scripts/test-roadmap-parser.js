@@ -46,7 +46,7 @@ function test(name, condition, expected, actual) {
 
 // Test 1: Parse AGENT-ZERO-GENESIS.md
 log(colors.bold + colors.blue, '\n📋 Testing AGENT-ZERO-GENESIS.md parsing...');
-const agentZeroResult = parser.parseRoadmapFile('AGENT-ZERO-GENESIS.md');
+const agentZeroResult = parser.parseRoadmapFile('docs/agent-zero/AGENT-ZERO-GENESIS.md');
 
 test(
   'File exists and parses successfully',
@@ -92,7 +92,7 @@ test(
 
 // Test 2: Parse DEVELOPMENT-ROADMAP.md
 log(colors.bold + colors.blue, '\n📋 Testing DEVELOPMENT-ROADMAP.md parsing...');
-const devRoadmapResult = parser.parseRoadmapFile('DEVELOPMENT-ROADMAP.md');
+const devRoadmapResult = parser.parseRoadmapFile('docs/DEVELOPMENT-ROADMAP.md');
 
 test(
   'File exists and parses successfully',
@@ -199,12 +199,16 @@ test(
   incompleteTasks.length
 );
 
-const devIncompleteTasks = parser.getIncompleteTasks(devRoadmapResult);
+// The roadmap's open-task count changes as work lands, so check the parser
+// against a fixed document instead of the live file.
+const fixtureIncomplete = parser.getIncompleteTasks(
+  parser.parseRoadmap('## Next Development Steps\n\n### Phase 1\n\n1. **Core** (Week 1)\n   - [x] Done task\n   - [ ] Open task\n')
+);
 test(
-  'Found incomplete tasks in DEVELOPMENT-ROADMAP.md',
-  devIncompleteTasks.length > 0,
-  '> 0',
-  devIncompleteTasks.length
+  'Finds incomplete tasks in a roadmap with open items',
+  fixtureIncomplete.length === 1,
+  1,
+  fixtureIncomplete.length
 );
 
 // Test 5: Task parsing

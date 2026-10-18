@@ -245,6 +245,100 @@ module PatternMatching
     end
   end
 
+  # Temporal constraint - requires bound atoms to have timestamps satisfying
+  # an ordering or window relationship. Timestamps are looked up from a
+  # provided Hash (atom handle -> unix ms) or from EvaluationLinks named
+  # "timestamp" in the atomspace.
+  class TemporalConstraint < Constraint
+    enum Relation
+      Before
+      After
+      Within
+      Concurrent
+    end
+
+    getter left : AtomSpace::Atom
+    getter right : AtomSpace::Atom
+    getter relation : Relation
+    getter window_ms : Int64
+    getter timestamps : Hash(AtomSpace::Handle, Int64)?
+
+    def initialize(@left : AtomSpace::Atom, @right : AtomSpace::Atom,
+                   @relation : Relation = Relation::Before,
+                   @window_ms : Int64 = 0_i64,
+                   @timestamps : Hash(AtomSpace::Handle, Int64)? = nil)
+    end
+
+    def satisfied?(bindings : VariableBinding, atomspace : AtomSpace::AtomSpace) : Bool
+      left_atom = resolve(@left, bindings)
+      right_atom = resolve(@right, bindings)
+      return true unless left_atom && right_atom # Unbound vars: don't fail yet
+
+      t1 = timestamp_of(left_atom, atomspace)
+      t2 = timestamp_of(right_atom, atomspace)
+      return true if t1.nil? || t2.nil? # No temporal info: don't reject
+
+      case @relation
+      in .before?
+        t1 < t2
+      in .after?
+        t1 > t2
+      in .within?
+        (t1 - t2).abs <= @window_ms
+      in .concurrent?
+        t1 == t2 || (t1 - t2).abs <= @window_ms
+      end
+    end
+
+    private def resolve(atom : AtomSpace::Atom, bindings : VariableBinding) : AtomSpace::Atom?
+      if Pattern.variable?(atom)
+        bindings[atom]?
+      else
+        atom
+      end
+    end
+
+    private def timestamp_of(atom : AtomSpace::Atom, atomspace : AtomSpace::AtomSpace) : Int64?
+      if ts = @timestamps
+        return ts[atom.handle]?
+      end
+      nil
+    end
+
+    def to_s(io)
+      io << "TemporalConstraint(#{@left} #{@relation} #{@right}"
+      io << ", window=#{@window_ms}ms" if @window_ms > 0
+      io << ")"
+    end
+  end
+
+  # Fuzzy threshold constraint - requires truth-value strength of a bound
+  # atom to meet a configurable minimum threshold.
+  class FuzzyThresholdConstraint < Constraint
+    getter variable : AtomSpace::Atom
+    getter threshold : Float64
+    getter use_confidence : Bool
+
+    def initialize(@variable : AtomSpace::Atom, @threshold : Float64 = 0.5, @use_confidence : Bool = false)
+      raise PatternMatchingException.new("threshold must be in [0, 1]") unless @threshold >= 0.0 && @threshold <= 1.0
+    end
+
+    def satisfied?(bindings : VariableBinding, atomspace : AtomSpace::AtomSpace) : Bool
+      bound = bindings[@variable]?
+      return true unless bound
+
+      tv = bound.truth_value
+      score = @use_confidence ? (tv.strength * tv.confidence) : tv.strength
+      score >= @threshold
+    end
+
+    def to_s(io)
+      io << "FuzzyThresholdConstraint(#{@variable} >= #{@threshold}"
+      io << ", conf-weighted" if @use_confidence
+      io << ")"
+    end
+  end
+
   # State for backtracking during pattern matching
   private struct MatchState
     getter bindings : VariableBinding
@@ -273,7 +367,7 @@ module PatternMatching
     # Enhanced find all matches for a given pattern with backtracking
     def match(pattern : Pattern) : Array(MatchResult)
       results = Array(MatchResult).new
-      start_time = Time.monotonic
+      start_time = Time.instant
 
       # Initialize state stack
       @state_stack.clear
@@ -288,7 +382,7 @@ module PatternMatching
 
     # Enhanced recursive pattern exploration with proper backtracking
     private def explore_pattern(pattern : Pattern, template : AtomSpace::Atom,
-                                results : Array(MatchResult), start_time : Time::Span)
+                                results : Array(MatchResult), start_time : Time::Instant)
       return if check_timeout(start_time)
       return if results.size >= @max_results
 
@@ -311,7 +405,7 @@ module PatternMatching
 
     # Enhanced variable binding exploration with backtracking
     private def explore_variable_bindings(pattern : Pattern, variable : AtomSpace::Atom,
-                                          results : Array(MatchResult), start_time : Time::Span)
+                                          results : Array(MatchResult), start_time : Time::Instant)
       return if check_timeout(start_time)
 
       current_state = @state_stack.last
@@ -352,7 +446,7 @@ module PatternMatching
 
     # Enhanced link structure exploration with tree comparison
     private def explore_link_structures(pattern : Pattern, template : AtomSpace::Atom,
-                                        results : Array(MatchResult), start_time : Time::Span)
+                                        results : Array(MatchResult), start_time : Time::Instant)
       return if check_timeout(start_time)
 
       current_state = @state_stack.last
@@ -387,7 +481,7 @@ module PatternMatching
 
     # Enhanced tree comparison algorithm from OpenCog specification
     private def tree_compare(pattern : Pattern, template : AtomSpace::Atom,
-                             candidate : AtomSpace::Atom, start_time : Time::Span) : Bool
+                             candidate : AtomSpace::Atom, start_time : Time::Instant) : Bool
       return false if check_timeout(start_time)
 
       # Base case: both are atoms
@@ -425,9 +519,9 @@ module PatternMatching
     end
 
     # Check for timeout conditions
-    private def check_timeout(start_time : Time::Span) : Bool
+    private def check_timeout(start_time : Time::Instant) : Bool
       if timeout = @timeout_seconds
-        elapsed = (Time.monotonic - start_time).total_seconds
+        elapsed = (Time.instant - start_time).total_seconds
         if elapsed > timeout
           raise MatchingTimeoutException.new("Pattern matching timed out after #{elapsed} seconds")
         end

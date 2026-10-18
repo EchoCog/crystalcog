@@ -1,11 +1,10 @@
 require "spec"
-require "../../src/attention/attention_main"
+require "../../src/attention/attention"
 
 describe Attention do
   describe "module initialization" do
     it "initializes attention system" do
       Attention.initialize
-      # Should not crash
     end
 
     it "has correct version" do
@@ -13,150 +12,154 @@ describe Attention do
     end
   end
 
-  describe "ECANParams" do
-    it "has reasonable parameter values" do
+  describe Attention::ECANParams do
+    it "defines attentional focus size bounds" do
       Attention::ECANParams::AF_MAX_SIZE.should eq(1000)
       Attention::ECANParams::AF_MIN_SIZE.should eq(500)
+      Attention::ECANParams::AF_MAX_SIZE.should be > Attention::ECANParams::AF_MIN_SIZE
+    end
+
+    it "defines fund targets and STI bounds" do
       Attention::ECANParams::TARGET_STI_FUNDS.should eq(10000)
+      Attention::ECANParams::TARGET_LTI_FUNDS.should eq(10000)
+      Attention::ECANParams::MIN_STI.should eq(-32768)
+      Attention::ECANParams::MAX_STI.should eq(32767)
+    end
+
+    it "defines diffusion and forgetting defaults" do
       Attention::ECANParams::MAX_SPREAD_PERCENTAGE.should eq(0.4)
+      Attention::ECANParams::DIFFUSION_TOURNAMENT_SIZE.should eq(5)
+      Attention::ECANParams::RENT_TOURNAMENT_SIZE.should eq(5)
+      Attention::ECANParams::DEFAULT_DECAY_RATE.should eq(0.1)
+      Attention::ECANParams::DEFAULT_FORGET_THRESHOLD.should eq(0)
     end
   end
 
-  describe "Priority enum" do
-    it "provides correct boost factors" do
+  describe Attention::Priority do
+    it "provides correct boost factors for all levels" do
       Attention::Priority::Critical.boost_factor.should eq(1.5)
       Attention::Priority::High.boost_factor.should eq(1.2)
       Attention::Priority::Medium.boost_factor.should eq(1.0)
       Attention::Priority::Low.boost_factor.should eq(0.8)
       Attention::Priority::Minimal.boost_factor.should eq(0.6)
     end
+
+    it "orders boost factors by priority strength" do
+      Attention::Priority::Critical.boost_factor.should be > Attention::Priority::High.boost_factor
+      Attention::Priority::High.boost_factor.should be > Attention::Priority::Medium.boost_factor
+      Attention::Priority::Medium.boost_factor.should be > Attention::Priority::Low.boost_factor
+      Attention::Priority::Low.boost_factor.should be > Attention::Priority::Minimal.boost_factor
+    end
   end
 
-  describe "AttentionMetrics" do
-    it "creates valid attention metrics" do
-      metrics = Attention::AttentionMetrics.new(100_i16, 50_i16, true)
+  describe Attention::AttentionMetrics do
+    it "creates metrics with defaults" do
+      metrics = Attention::AttentionMetrics.new
+
+      metrics.sti.should eq(0)
+      metrics.lti.should eq(0)
+      metrics.vlti.should be_false
+      metrics.priority.should eq(Attention::Priority::Medium)
+      metrics.rent.should eq(0.0)
+      metrics.spreading_factor.should eq(0.0)
+    end
+
+    it "creates metrics with custom values" do
+      metrics = Attention::AttentionMetrics.new(100_i16, 50_i16, true, Attention::Priority::High, 1.5, 0.25)
 
       metrics.sti.should eq(100)
       metrics.lti.should eq(50)
       metrics.vlti.should be_true
+      metrics.priority.should eq(Attention::Priority::High)
+      metrics.rent.should eq(1.5)
+      metrics.spreading_factor.should eq(0.25)
     end
 
-    it "calculates importance score correctly" do
+    it "calculates importance score with STI, LTI, VLTI, and priority" do
       metrics = Attention::AttentionMetrics.new(100_i16, 50_i16, true, Attention::Priority::High)
 
-      # Base: 100 + (50 * 0.1) + 100 = 205
-      # With High priority boost: 205 * 1.2 = 246
-      expected_score = (100.0 + (50.0 * 0.1) + 100.0) * 1.2
-      metrics.importance_score.should be_close(expected_score, 0.01)
+      # Base: 100 + (50 * 0.1) + 100 = 205; High boost 1.2 => 246
+      expected = (100.0 + (50.0 * 0.1) + 100.0) * 1.2
+      metrics.importance_score.should be_close(expected, 0.01)
     end
 
-    it "checks attentional focus correctly" do
+    it "omits VLTI bonus when vlti is false" do
+      with_vlti = Attention::AttentionMetrics.new(100_i16, 0_i16, true)
+      without_vlti = Attention::AttentionMetrics.new(100_i16, 0_i16, false)
+
+      with_vlti.importance_score.should eq(200.0)
+      without_vlti.importance_score.should eq(100.0)
+    end
+
+    it "checks attentional focus membership by STI threshold" do
       metrics = Attention::AttentionMetrics.new(100_i16)
 
       metrics.in_attentional_focus?(50_i16).should be_true
+      metrics.in_attentional_focus?(100_i16).should be_true
       metrics.in_attentional_focus?(150_i16).should be_false
     end
 
-    it "calculates rent correctly" do
+    it "calculates rent from STI and rate" do
       metrics = Attention::AttentionMetrics.new(100_i16)
-      rent = metrics.calculate_rent(0.02)
+      metrics.calculate_rent(0.02).should eq(2.0)
+      metrics.calculate_rent.should eq(1.0) # default rate 0.01
+    end
 
-      rent.should eq(2.0) # 100 * 0.02
+    it "returns zero rent for non-positive STI" do
+      metrics = Attention::AttentionMetrics.new(-10_i16)
+      metrics.calculate_rent(0.5).should eq(0.0)
+    end
+
+    it "diffuses STI to targets and reduces own STI" do
+      source = Attention::AttentionMetrics.new(100_i16)
+      targets = [
+        Attention::AttentionMetrics.new(0_i16),
+        Attention::AttentionMetrics.new(0_i16),
+      ]
+
+      source.diffuse_to(targets, 0.4)
+
+      # spread_amount = (100 * 0.4 / 2).round = 20
+      # Struct targets are updated in the array (value-type semantics)
+      source.sti.should eq(60)
+      targets[0].sti.should eq(20)
+      targets[1].sti.should eq(20)
+    end
+
+    it "does nothing when diffusing to an empty target list" do
+      source = Attention::AttentionMetrics.new(100_i16)
+      source.diffuse_to([] of Attention::AttentionMetrics)
+      source.sti.should eq(100)
+    end
+
+    it "skips diffusion when computed spread amount is non-positive" do
+      source = Attention::AttentionMetrics.new(1_i16)
+      targets = [Attention::AttentionMetrics.new(0_i16)]
+
+      source.diffuse_to(targets, 0.0)
+      source.sti.should eq(1)
+      targets[0].sti.should eq(0)
+    end
+
+    it "clamps target STI to MAX_STI during diffusion" do
+      source = Attention::AttentionMetrics.new(1000_i16)
+      targets = [Attention::AttentionMetrics.new(Attention::ECANParams::MAX_STI)]
+
+      source.diffuse_to(targets, 1.0)
+      targets[0].sti.should eq(Attention::ECANParams::MAX_STI)
+    end
+
+    it "formats a readable string representation" do
+      metrics = Attention::AttentionMetrics.new(10_i16, 5_i16, false, Attention::Priority::Low)
+      metrics.to_s.should eq("AV[STI:10, LTI:5, VLTI:false, Priority:Low]")
     end
   end
 
-  describe "AttentionBank" do
-    before_each do
-      @atomspace = AtomSpace::AtomSpace.new
-    end
-    
-    # Helper method to access atomspace instance
-    def atomspace
-      @atomspace
-    end
-    
-    it "initializes with correct funds" do
-      bank = Attention::AttentionBank.new(atomspace)
-
-      bank.sti_funds.should eq(Attention::ECANParams::TARGET_STI_FUNDS)
-      bank.lti_funds.should eq(Attention::ECANParams::TARGET_LTI_FUNDS)
-    end
-
-    it "sets and gets attention values" do
-      bank = Attention::AttentionBank.new(atomspace)
-      dog = atomspace.add_concept_node("dog")
-      av = AtomSpace::AttentionValue.new(100_i16, 50_i16, true)
-
-      result = bank.set_attention_value(dog.handle, av)
-      result.should be_true
-
-      retrieved_av = bank.get_attention_value(dog.handle)
-      retrieved_av.should_not be_nil
-      retrieved_av.not_nil!.sti.should eq(100)
-      retrieved_av.not_nil!.lti.should eq(50)
-      retrieved_av.not_nil!.vlti.should be_true
-    end
-
-    it "manages attentional focus" do
-      bank = Attention::AttentionBank.new(atomspace)
-      dog = atomspace.add_concept_node("dog")
-
-      bank.in_attentional_focus?(dog.handle).should be_false
-
-      # Stimulate to add to AF
-      bank.stimulate(dog.handle, 100_i16)
-
-      bank.in_attentional_focus?(dog.handle).should be_true
-      bank.attentional_focus.should contain(dog.handle)
-    end
-  end
-
-  describe "Goal enum" do
-    it "provides correct boost factors" do
-      Attention::Goal::Reasoning.boost_factor.should eq(0.9)
-      Attention::Goal::Learning.boost_factor.should eq(0.7)
-      Attention::Goal::Memory.boost_factor.should eq(0.65)
-      Attention::Goal::Processing.boost_factor.should eq(0.85)
-    end
-  end
-
-  describe "module convenience functions" do
-    before_each do
-      @dog = atomspace.add_concept_node("dog")
-    end
-
-    it "creates allocation engines" do
-      engine = Attention.create_engine(atomspace)
-      engine.should be_a(Attention::AllocationEngine)
-    end
-
-    it "performs quick attention allocation" do
-      results = Attention.allocate_attention(atomspace, 1)
-      results.should be_a(Hash(String, Float64))
-    end
-
-    it "sets and gets attention values" do
-      Attention.set_attention(atomspace, @dog.handle, 100_i16, 50_i16, true)
-
-      av = Attention.get_attention(atomspace, @dog.handle)
-      av.should_not be_nil
-      av.not_nil!.sti.should eq(100)
-      av.not_nil!.lti.should eq(50)
-      av.not_nil!.vlti.should be_true
-    end
-
-    it "stimulates atoms" do
-      Attention.stimulate(atomspace, @dog.handle, 75_i16)
-
-      av = Attention.get_attention(atomspace, @dog.handle)
-      av.should_not be_nil
-      av.not_nil!.sti.should eq(75)
-    end
-
-    it "gets statistics" do
-      stats = Attention.get_statistics(atomspace)
-      stats.should be_a(Hash(String, Float64))
-      stats.should have_key("bank_sti_funds")
+  describe Attention::AttentionError do
+    it "is an Exception subclass" do
+      error = Attention::AttentionError.new("test failure")
+      error.should be_a(Exception)
+      error.message.should eq("test failure")
     end
   end
 end

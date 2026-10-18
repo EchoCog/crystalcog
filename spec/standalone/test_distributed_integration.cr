@@ -3,7 +3,7 @@
 # Integration test for distributed AtomSpace clustering
 # Tests basic cluster operations without requiring Crystal to be fully installed
 
-require "../src/atomspace/atomspace_module"
+require "../../src/atomspace/atomspace_module"
 
 def test_basic_cluster_functionality
   puts "Testing basic distributed cluster functionality..."

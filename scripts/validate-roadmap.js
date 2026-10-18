@@ -7,29 +7,13 @@
  * to ensure it can be properly parsed by the GitHub workflow that generates
  * issues from roadmap items.
  * 
- * Usage: node scripts/validate-roadmap.js [ROADMAP_FILE]
- * 
- * Enhanced to use the unified roadmap parser module for consistency.
+ * Usage: node scripts/validate-roadmap.js
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Try to load the unified parser module
-let parser;
-try {
-  parser = require('../.github/scripts/roadmap-parser.js');
-} catch (e) {
-  // Fallback to relative path for different working directories
-  try {
-    parser = require('./.github/scripts/roadmap-parser.js');
-  } catch (e2) {
-    console.log('Note: Unified parser module not found, using built-in parsing');
-    parser = null;
-  }
-}
-
-const ROADMAP_FILE = process.argv[2] || process.env.ROADMAP_FILE || 'DEVELOPMENT-ROADMAP.md';
+const ROADMAP_FILE = process.env.ROADMAP_FILE || 'DEVELOPMENT-ROADMAP.md';
 
 // Colors for console output
 const colors = {
@@ -137,58 +121,6 @@ function parseTasksFromText(tasksText, itemData, parseResults) {
 }
 
 function parseAndValidateItems(content) {
-  // Use unified parser if available
-  if (parser) {
-    const parsed = parser.parseRoadmap(content);
-    
-    // Calculate total items by counting items in each section
-    let totalItems = 0;
-    for (const section of parsed.sections) {
-      if (parsed.metadata.format === 'numbered-timeline') {
-        // Timeline format: each section counts as 1 item
-        totalItems += 1;
-      } else if (section.items) {
-        // Subsection format: count actual items array
-        totalItems += section.items.length;
-      }
-    }
-    
-    // Convert parser result to expected format for generateReport
-    const parseResults = {
-      totalSections: parsed.stats.totalSections,
-      totalItems: totalItems,
-      totalTasks: parsed.stats.totalTasks,
-      completedTasks: parsed.stats.completedTasks,
-      incompleteTasks: parsed.stats.incompleteTasks,
-      formatBreakdown: parsed.stats.formatBreakdown,
-      sections: []
-    };
-    
-    // Convert sections to expected format
-    for (const section of parsed.sections) {
-      if (parsed.metadata.format === 'numbered-timeline') {
-        // Timeline format has tasks directly on section
-        parseResults.sections.push({
-          title: section.title,
-          items: [{
-            number: section.number,
-            title: section.title,
-            tasks: section.tasks
-          }]
-        });
-      } else {
-        // Subsection format has items array
-        parseResults.sections.push({
-          title: section.title,
-          items: section.items || []
-        });
-      }
-    }
-    
-    return parseResults;
-  }
-  
-  // Fallback to built-in parsing if parser module is not available
   const parseResults = {
     totalSections: 0,
     totalItems: 0,

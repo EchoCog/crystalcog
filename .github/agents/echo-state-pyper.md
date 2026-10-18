@@ -1,3 +1,8 @@
+---
+name: echo-state-pyper
+description: Echo State Pyper character card with Deep Tree Echo architecture
+---
+
 
 {
 	"data": {

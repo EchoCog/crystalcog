@@ -1,3 +1,8 @@
+---
+name: nanecho
+description: Echo Self model training and deployment using NanoCog framework
+---
+
 # NanEcho - Echo Self Model Training & Deployment
 
 ## 🌟 Overview

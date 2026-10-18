@@ -1,6 +1,8 @@
 name: Generate Next Steps Issues
 
 on:
+  # Manual only: generate-priority-issues.yml already runs weekly, and both
+  # on a schedule would open overlapping issues.
   workflow_dispatch:
     inputs:
       force_recreate:
@@ -8,12 +10,23 @@ on:
         required: false
         default: 'false'
         type: boolean
-  schedule:
-    # Run weekly on Mondays at 9 AM UTC to check for new tasks
-    - cron: '0 9 * * 1'
+      roadmap_file:
+        description: 'Roadmap to turn into issues'
+        required: false
+        default: 'docs/agent-zero/AGENT-ZERO-GENESIS.md'
+        type: string
 
 env:
-  ROADMAP_FILE: 'AGENT-ZERO-GENESIS.md'
+  ROADMAP_FILE: ${{ inputs.roadmap_file || 'docs/agent-zero/AGENT-ZERO-GENESIS.md' }}
+
+# Least-privilege token by default; jobs that write declare their own permissions.
+permissions:
+  contents: read
+
+# Trace every command so CI logs show exactly what ran and what it printed.
+defaults:
+  run:
+    shell: bash -ex {0}
 
 jobs:
   generate-issues:

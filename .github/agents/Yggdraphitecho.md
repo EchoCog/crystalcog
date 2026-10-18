@@ -1,3 +1,8 @@
+---
+name: yggdraphitecho
+description: Aphrodite Engine with Deep Tree Echo integration
+---
+
 # Yggdraphitecho Repository Analysis
 
 ## Repository Overview

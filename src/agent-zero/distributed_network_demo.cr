@@ -13,7 +13,7 @@ module AgentZero
       puts "=" * 50
 
       # Initialize logging
-      CogUtil::Logger.level = CogUtil::LogLevel::INFO
+      CogUtil::Logger.set_level(CogUtil::LogLevel::INFO)
 
       demo = new
       demo.run_demo
@@ -58,7 +58,7 @@ module AgentZero
 
       # Allow agents to discover and connect to each other
       puts "\n3. Agent Discovery and Network Formation..."
-      sleep 2
+      sleep 2.seconds
 
       # Check network status
       status = network.network_status
@@ -71,7 +71,7 @@ module AgentZero
       reasoning_queries = [
         "What is the nature of consciousness in artificial intelligence?",
         "How can distributed cognition enhance problem-solving capabilities?",
-        "What are the ethical implications of autonomous cognitive agents?"
+        "What are the ethical implications of autonomous cognitive agents?",
       ]
 
       reasoning_queries.each_with_index do |query, i|
@@ -80,7 +80,7 @@ module AgentZero
         result = network.collaborative_reasoning(
           query,
           AgentNetwork::AgentSelection::All,
-          15  # 15 second timeout
+          15 # 15 second timeout
         )
 
         puts "   → Results: #{result.results.size} responses"
@@ -100,7 +100,7 @@ module AgentZero
         KnowledgeItem.new("k1", "concept", "Distributed cognition emerges from agent interactions", 0.9, "ReasoningExpert"),
         KnowledgeItem.new("k2", "fact", "Neural networks can exhibit emergent collective behavior", 0.85, "LearningSpecialist"),
         KnowledgeItem.new("k3", "principle", "Attention mechanisms improve information processing efficiency", 0.8, "AttentionController"),
-        KnowledgeItem.new("k4", "observation", "Memory consolidation requires periodic reinforcement", 0.75, "MemoryManager")
+        KnowledgeItem.new("k4", "observation", "Memory consolidation requires periodic reinforcement", 0.75, "MemoryManager"),
       ]
 
       knowledge_items.each do |knowledge|
@@ -114,7 +114,7 @@ module AgentZero
       tasks = [
         create_reasoning_task,
         create_knowledge_sharing_task,
-        create_network_optimization_task
+        create_network_optimization_task,
       ]
 
       tasks.each do |task|

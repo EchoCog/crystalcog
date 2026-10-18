@@ -4,6 +4,11 @@
 
 set -e
 
+# Ensure we're running from the repository root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "${REPO_ROOT}"
+
 echo "🔄 Package Script Validation: test_cogserver_integration.sh"
 echo "=========================================================="
 
@@ -19,12 +24,12 @@ echo "   • crystal: $(crystal --version | head -n1)"
 # Check script exists and is executable
 echo ""
 echo "✅ Validating script functionality..."
-if [ ! -f "test_cogserver_integration.sh" ]; then
+if [ ! -f "scripts/validation/test_cogserver_integration.sh" ]; then
     echo "❌ Integration script not found"
     exit 1
 fi
 
-if [ ! -x "test_cogserver_integration.sh" ]; then
+if [ ! -x "scripts/validation/test_cogserver_integration.sh" ]; then
     echo "❌ Integration script not executable"
     exit 1
 fi
@@ -36,7 +41,7 @@ echo ""
 echo "✅ Checking CogServer build compatibility..."
 if [ ! -f "cogserver_bin" ]; then
     echo "   • Building CogServer..."
-    crystal build src/cogserver/cogserver_main.cr -o cogserver_bin
+    DISABLE_ROCKSDB=1 crystal build src/bin/cogserver.cr -o cogserver_bin
     echo "   • CogServer built successfully"
 else
     echo "   • CogServer binary exists"
@@ -49,31 +54,31 @@ echo "✅ Analyzing script test coverage..."
 tests_found=0
 
 # Check for HTTP endpoint tests
-if grep -q "Testing HTTP Endpoints" test_cogserver_integration.sh; then
+if grep -q "Testing HTTP Endpoints" scripts/validation/test_cogserver_integration.sh; then
     echo "   • HTTP REST API tests: ✓"
     tests_found=$((tests_found + 1))
 fi
 
 # Check for telnet interface tests
-if grep -q "Testing Telnet Interface" test_cogserver_integration.sh; then
+if grep -q "Testing Telnet Interface" scripts/validation/test_cogserver_integration.sh; then
     echo "   • Telnet command interface tests: ✓"
     tests_found=$((tests_found + 1))
 fi
 
 # Check for WebSocket tests
-if grep -q "Testing WebSocket Protocol" test_cogserver_integration.sh; then
+if grep -q "Testing WebSocket Protocol" scripts/validation/test_cogserver_integration.sh; then
     echo "   • WebSocket protocol tests: ✓"
     tests_found=$((tests_found + 1))
 fi
 
 # Check for atom operation tests
-if grep -q "Testing Atom Operations" test_cogserver_integration.sh; then
+if grep -q "Testing Atom Operations" scripts/validation/test_cogserver_integration.sh; then
     echo "   • Atom CRUD operation tests: ✓"
     tests_found=$((tests_found + 1))
 fi
 
 # Check for error handling tests
-if grep -q "404 handling" test_cogserver_integration.sh; then
+if grep -q "404 handling" scripts/validation/test_cogserver_integration.sh; then
     echo "   • Error handling validation: ✓"
     tests_found=$((tests_found + 1))
 fi
@@ -90,7 +95,7 @@ echo ""
 echo "✅ Running functional validation..."
 
 echo "   • Starting CogServer for testing..."
-crystal run start_test_cogserver.cr &
+DISABLE_ROCKSDB=1 crystal run examples/tests/start_test_cogserver.cr &
 COGSERVER_PID=$!
 
 # Give server time to start and verify it's responding
@@ -110,7 +115,7 @@ done
 
 # Run the integration test
 echo "   • Executing integration test script..."
-if ./test_cogserver_integration.sh > /tmp/test_output.log 2>&1; then
+if bash scripts/validation/test_cogserver_integration.sh > /tmp/test_output.log 2>&1; then
     echo "   • Integration test PASSED ✓"
     
     # Check for success indicators in output

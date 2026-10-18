@@ -1,3 +1,8 @@
+---
+name: koboldai-erebus
+description: KoboldAI OPT-350M-Erebus model configuration and setup
+---
+
 KoboldAI-OPT-350M-Erebus
 
 ═══════════════════════════════════════════════════════════════════════════

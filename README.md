@@ -46,35 +46,35 @@ For detailed installation instructions, see: [docs/CRYSTAL_INSTALLATION.md](docs
 ```
 crystalcog/
 ├── src/                    # Crystal source code
-│   ├── cogutil/           # Core utilities
-│   ├── atomspace/         # AtomSpace implementation
+│   ├── cogutil/           # Core utilities (logging, config, random)
+│   ├── atomspace/         # AtomSpace hypergraph knowledge representation
 │   ├── pln/               # Probabilistic Logic Networks
 │   ├── ure/               # Unified Rule Engine
-│   └── opencog/           # Main OpenCog interface
-├── spec/                  # Test specifications
-│   └── standalone/        # Standalone test scripts
-├── examples/              # Demo and example code
-│   └── crystal/           # Crystal demos
-├── scripts/               # Build and development scripts
-│   ├── testing/           # Test runner scripts
-│   ├── validation/        # Validation scripts
-│   └── production/        # Production deployment scripts
-├── tools/                 # Utility and debug tools
-│   └── debug/             # Debug utilities
-├── docs/                  # Documentation
-│   ├── api/               # API documentation
-│   ├── features/          # Feature documentation
-│   ├── guides/            # How-to guides
-│   ├── reports/           # Validation reports
-│   └── roadmap/           # Development roadmap
-├── benchmarks/            # Performance benchmarks
-├── config/                # Configuration files
-└── deployments/           # Kubernetes & deployment configs
+│   ├── opencog/           # Main OpenCog reasoning interface
+│   ├── cogserver/         # Network server with REST API
+│   ├── pattern_matching/  # Advanced pattern matching engine
+│   ├── nlp/               # Natural language processing
+│   ├── moses/             # Evolutionary optimization
+│   ├── agent-zero/        # Distributed agent networks
+│   └── ...                # Additional components
+├── spec/                  # Formal test specifications (Crystal spec framework)
+├── examples/              # Example programs and demos
+│   ├── demos/            # Interactive demonstrations
+│   └── tests/            # Test programs and debugging utilities
+├── benchmarks/           # Performance benchmarking programs
+├── scripts/              # Build, deployment, and development scripts
+│   ├── validation/       # Validation and integration test scripts
+│   └── production/       # Production deployment scripts
+├── docs/                 # Comprehensive documentation
+│   └── INDEX.md         # Documentation index
+└── crystal-lang/         # Crystal installation resources
 ```
 
 ## Development
 
 ### Running Tests
+
+The test runner script provides comprehensive testing capabilities with automatic Crystal installation:
 
 ```bash
 # Run all tests
@@ -88,13 +88,18 @@ crystalcog/
 
 # Run benchmarks
 ./scripts/test-runner.sh --benchmarks
+
+# Show all available options
+./scripts/test-runner.sh --help
 ```
+
+**Note**: The test runner has been validated and approved for production use. See [Test Runner Validation Report](docs/TEST_RUNNER_VALIDATION_REPORT.md) for detailed validation results.
 
 ### Building
 
 ```bash
 # Build main executable
-crystal build src/crystalcog.cr
+crystal build src/bin/crystalcog.cr
 
 # Build specific components
 crystal build src/cogutil/cogutil.cr
@@ -109,19 +114,45 @@ shards install
 
 ### Testing
 
+#### Running the Test Suite
+
+```bash
+# Run all formal specifications
+crystal spec
+
+# Run specific component specs
+crystal spec spec/atomspace/
+crystal spec spec/pln/
+crystal spec spec/cogutil/
+```
+
+#### Example Programs
+
+```bash
+# Run basic examples
+crystal run examples/tests/test_basic.cr
+crystal run examples/tests/test_pln.cr
+
+# Run demonstrations
+crystal run examples/demos/demo.cr
+crystal run examples/demos/demo_advanced_reasoning.cr
+
+# See examples/README.md for complete catalog
+```
+
 #### CogServer Integration Test
 
 The CogServer includes a comprehensive integration test that validates all network API functionality:
 
 ```bash
 # Build the CogServer
-crystal build src/cogserver/cogserver_main.cr -o cogserver_bin
+crystal build src/bin/cogserver.cr -o cogserver_bin
 
 # Start CogServer for testing
-crystal run tools/start_test_cogserver.cr &
+crystal run examples/tests/start_test_cogserver.cr &
 
 # Run integration test script
-./scripts/testing/test_cogserver_integration.sh
+./scripts/validation/test_cogserver_integration.sh
 ```
 
 The integration test validates:
@@ -134,12 +165,15 @@ The integration test validates:
 #### Full Test Suite
 
 ```bash
-# Run all Crystal tests
+# Run all Crystal specs
 crystal spec
 
-# Run individual component tests
-crystal run test_cogserver_api.cr
-crystal run test_enhanced_api.cr
+# Run example test programs
+crystal run examples/tests/test_cogserver_api.cr
+crystal run examples/tests/test_enhanced_api.cr
+crystal run examples/tests/test_persistence.cr
+
+# See examples/README.md for all available test programs
 ```
 
 ## Components
@@ -220,6 +254,82 @@ hypergraph_encoding = kernel.hypergraph_tensor_encoding
 curl -X POST http://localhost:18080/storage/save
 ```
 
+## Validation & Dependency Checking
+
+CrystalCog includes comprehensive validation scripts to ensure your environment is correctly configured:
+
+### Profiling Tools Validation
+
+Validate that all performance profiling tools are correctly installed and functional:
+
+```bash
+# Run the profiling tools validation
+./scripts/validation/validate_profiling_tools.sh
+```
+
+This validates:
+- All 9 profiling tool files exist
+- Executable permissions are correct
+- Script execution and output format
+- Dependency compatibility via `scripts/validation/check_dependencies.sh`
+- Guix package/environment validation via `scripts/validation/validate-guix-packages.sh`
+- Documentation completeness
+- Test suite coverage
+- Optional Crystal syntax validation (when Crystal is installed)
+
+### Dependency Compatibility Check
+
+Check that all required dependencies are installed and compatible:
+
+```bash
+# Run the dependency compatibility check
+./scripts/validation/check_dependencies.sh
+```
+
+This checks:
+- Crystal compiler and version compatibility
+- Database dependencies (SQLite3, PostgreSQL)
+- Shard dependencies from shard.yml
+- Profiling tool component files
+- Guix environment (if available)
+
+### Guix Package Validation
+
+For Guix users, validate the Guix package definitions:
+
+```bash
+# Run Guix package validation
+./scripts/validation/validate-guix-packages.sh
+```
+
+This validates:
+- Package definition files exist (gnu/packages/opencog.scm)
+- Guix manifest exists (guix.scm)
+- Channel definition exists (.guix-channel)
+- Optional Scheme syntax validation (when Guile is installed)
+
+### Complete Validation Suite
+
+Run all validation checks at once:
+
+```bash
+# Run profiling tools validation
+./scripts/validation/validate_profiling_tools.sh
+
+# Run demo profiling tools validation
+./scripts/validation/validate-demo-profiling-tools.sh
+
+# Run dependency compatibility check
+./scripts/validation/check_dependencies.sh
+
+# Run Guix package validation
+./scripts/validation/validate-guix-packages.sh
+```
+
+For detailed validation reports, see:
+- [Profiling Tools Validation Report](scripts/validation/PROFILING_TOOLS_VALIDATION_REPORT.md)
+- [Demo Profiling Tools Validation Report](docs/DEMO_PROFILING_TOOLS_VALIDATION.md)
+
 ## Production Deployment
 
 CrystalCog includes comprehensive production deployment scripts for enterprise-ready environments:
@@ -276,21 +386,106 @@ docker-compose -f docker-compose.production.yml config
 - **Guix System**: `guix environment -m guix.scm`
 - **Manual Installation**: Traditional system installation
 
+## Troubleshooting
+
+### Common Issues
+
+#### Database Dependencies Not Found
+
+If you encounter database linking errors during build or test, you can disable specific database backends using environment variables:
+
+```bash
+# Disable RocksDB (requires librocksdb-dev)
+export DISABLE_ROCKSDB=1
+
+# Disable SQLite3 (requires libsqlite3-dev)
+export DISABLE_SQLITE3=1
+
+# Disable PostgreSQL (requires libpq-dev)
+export DISABLE_POSTGRES=1
+
+# You can combine multiple flags:
+DISABLE_ROCKSDB=1 DISABLE_SQLITE3=1 DISABLE_POSTGRES=1 crystal spec
+
+# Or set them all in your shell profile for Windows builds:
+export DISABLE_ROCKSDB=1 DISABLE_SQLITE3=1 DISABLE_POSTGRES=1
+```
+
+When all database backends are disabled, use `MemoryStorageNode` or `FileStorageNode` for persistence.
+
+#### RocksDB Dependency Not Found
+
+If you encounter RocksDB linking errors during build or test:
+
+```bash
+# Error: cannot find -lrocksdb
+# Solution: Use the DISABLE_ROCKSDB environment variable
+
+export DISABLE_ROCKSDB=1
+./scripts/test-runner.sh --all
+
+# Or for individual commands:
+DISABLE_ROCKSDB=1 crystal spec spec/atomspace/
+DISABLE_ROCKSDB=1 crystal build src/bin/crystalcog.cr
+```
+
+RocksDB is an optional high-performance storage backend. The system will use SQLite and PostgreSQL backends when RocksDB is disabled.
+
+#### Crystal Installation Issues
+
+The test runner automatically installs Crystal if it's not found. If automatic installation fails:
+
+```bash
+# Manual installation
+./scripts/install-crystal.sh --help
+./scripts/install-crystal.sh
+
+# Or use system package manager
+# Ubuntu/Debian:
+curl -fsSL https://crystal-lang.org/install.sh | sudo bash
+
+# macOS:
+brew install crystal
+```
+
+#### Test Failures
+
+If tests fail unexpectedly:
+
+```bash
+# 1. Ensure dependencies are installed
+shards install
+
+# 2. Try with verbose output
+./scripts/test-runner.sh --component atomspace --verbose
+
+# 3. Run specific test file
+crystal spec spec/atomspace/atomspace_spec.cr --verbose
+
+# 4. Check formatting issues
+crystal tool format --check src/ spec/
+```
+
+For more troubleshooting information, see the [Test Runner Validation Report](docs/TEST_RUNNER_VALIDATION_REPORT.md).
+
 ## Set up (Legacy Python/Rust Environment)
 CrystalCog is a complete Crystal language implementation with all functionality.
 
 ## Documentation
 
-For complete documentation:
+For complete documentation, see the [Documentation Index](docs/INDEX.md).
 
-- [Crystal Installation Guide](docs/CRYSTAL_INSTALLATION.md)
-- [Development Roadmap](docs/roadmap/DEVELOPMENT-ROADMAP.md)
-- [Persistence API Documentation](docs/api/PERSISTENCE_API_DOCUMENTATION.md)
-- [Hypergraph State Persistence Documentation](docs/features/HYPERGRAPH_STATE_PERSISTENCE_DOCUMENTATION.md)
-- [Advanced Pattern Matching Documentation](docs/ADVANCED_PATTERN_MATCHING.md)
-- [Complete API Documentation](docs/README_COMPLETE.md)
-- [Agent-Zero Implementation](docs/agent-zero/AGENT-ZERO-GENESIS.md)
-- [CI/CD Pipeline](docs/CI-CD-PIPELINE.md)
+**Key Documents:**
+- [Development Roadmap](docs/DEVELOPMENT-ROADMAP.md) - Project roadmap and implementation plan
+- [Crystal Installation Guide](docs/CRYSTAL_INSTALLATION.md) - Installation instructions
+- [API Documentation](docs/API_DOCUMENTATION.md) - Complete API reference
+- [Examples Guide](examples/README.md) - Example programs and usage
+- [Persistence API](docs/PERSISTENCE_API_DOCUMENTATION.md) - Storage backend documentation
+- [Advanced Pattern Matching](docs/ADVANCED_PATTERN_MATCHING.md) - Pattern matching guide
+- [PLN Reasoning](docs/PLN-REASONING-MODULE.md) - Probabilistic Logic Networks
+- [Production Deployment](docs/PRODUCTION_DEPLOYMENT.md) - Deployment guide
+- [Integration Test Validation](docs/INTEGRATION_TEST_VALIDATION.md) - Integration test validation
+- [Security Policy](docs/SECURITY.md) - Security and vulnerability reporting
 
 ## Contributing
 

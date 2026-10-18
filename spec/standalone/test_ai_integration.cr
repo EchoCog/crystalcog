@@ -132,10 +132,10 @@ begin
   reasoning_results = integration.cognitive_ai_reasoning("What is machine learning?", 3)
   if reasoning_results["status"]? && !reasoning_results["error"]?
     puts "   ✓ Cognitive reasoning cycle completed successfully"
-    puts "     AI Analysis: #{reasoning_results["ai_analysis"]?[0...60]}..." if reasoning_results["ai_analysis"]?
+    puts "     AI Analysis: #{reasoning_results["ai_analysis"]?.try &.[0...60]}..." if reasoning_results["ai_analysis"]?
     puts "     PLN Results: #{reasoning_results["pln_results"]?}" if reasoning_results["pln_results"]?
     puts "     URE Results: #{reasoning_results["ure_results"]?}" if reasoning_results["ure_results"]?
-    puts "     Synthesis: #{reasoning_results["synthesis"]?[0...60]}..." if reasoning_results["synthesis"]?
+    puts "     Synthesis: #{reasoning_results["synthesis"]?.try(&.[0...60])}..." if reasoning_results["synthesis"]?
   else
     puts "   ✗ Cognitive reasoning cycle failed: #{reasoning_results["error"]?}"
     exit(1)

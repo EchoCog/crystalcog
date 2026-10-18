@@ -439,7 +439,7 @@ module.exports = {
 // CLI support for direct execution
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const filePath = args[0] || process.env.ROADMAP_FILE || 'DEVELOPMENT-ROADMAP.md';
+  const filePath = args[0] || process.env.ROADMAP_FILE || 'docs/DEVELOPMENT-ROADMAP.md';
   
   console.log(`Parsing roadmap: ${filePath}`);
   console.log('='.repeat(50));

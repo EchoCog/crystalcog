@@ -101,6 +101,7 @@ describe OpenCog do
 
     it "integrates with AtomSpace" do
       # Test that OpenCog can use AtomSpace
+      atomspace = AtomSpace::AtomSpace.new
       concept = atomspace.add_concept_node("test_concept")
 
       concept.should be_a(AtomSpace::Atom)
@@ -127,6 +128,7 @@ describe "OpenCog Full Integration" do
 
   describe "with PLN integration" do
     it "can use PLN reasoning engine" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       pln_engine = PLN.create_engine(atomspace)
 
@@ -139,21 +141,22 @@ describe "OpenCog Full Integration" do
       tv = AtomSpace::SimpleTruthValue.new(0.9, 0.8)
       atomspace.add_inheritance_link(dog, mammal, tv)
 
-      # Run PLN reasoning
+      # Run PLN reasoning — inversion should produce mammal->dog
       new_atoms = pln_engine.reason(3)
 
-      # Should generate inferred knowledge
-      new_atoms.size.should be >= 0
+      # Should generate inferred knowledge (at least inversion)
+      new_atoms.size.should be > 0
     end
 
     it "handles PLN exceptions properly" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       pln_engine = PLN.create_engine(atomspace)
 
       begin
-        # This should complete without raising exceptions
+        # Empty atomspace: no inferences, no exceptions
         new_atoms = pln_engine.reason(1)
-        new_atoms.size.should be >= 0
+        new_atoms.should be_empty
       rescue ex : OpenCog::ReasoningException
         # If reasoning exception occurs, it should be proper type
         ex.should be_a(OpenCog::ReasoningException)
@@ -161,6 +164,7 @@ describe "OpenCog Full Integration" do
     end
 
     it "combines PLN with AtomSpace operations" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       pln_engine = PLN.create_engine(atomspace)
 
@@ -196,6 +200,7 @@ describe "OpenCog Full Integration" do
 
   describe "with URE integration" do
     it "can use URE reasoning engine" do
+      atomspace = AtomSpace::AtomSpace.new
       URE.initialize
       ure_engine = URE.create_engine(atomspace)
 
@@ -210,21 +215,22 @@ describe "OpenCog Full Integration" do
       eval1 = atomspace.add_evaluation_link(likes, atomspace.add_list_link([john, mary]), tv)
       eval2 = atomspace.add_evaluation_link(likes, atomspace.add_list_link([mary, john]), tv)
 
-      # Run URE forward chaining
+      # Run URE forward chaining — ConjunctionRule should AND the two evaluations
       new_atoms = ure_engine.forward_chain(3)
 
       # Should generate conjunctions or other derived knowledge
-      new_atoms.size.should be >= 0
+      new_atoms.size.should be > 0
     end
 
     it "handles URE exceptions properly" do
+      atomspace = AtomSpace::AtomSpace.new
       URE.initialize
       ure_engine = URE.create_engine(atomspace)
 
       begin
-        # This should complete without raising exceptions
+        # Empty atomspace: no inferences, no exceptions
         new_atoms = ure_engine.forward_chain(1)
-        new_atoms.size.should be >= 0
+        new_atoms.should be_empty
       rescue ex : OpenCog::ReasoningException
         # If reasoning exception occurs, it should be proper type
         ex.should be_a(OpenCog::ReasoningException)
@@ -232,6 +238,7 @@ describe "OpenCog Full Integration" do
     end
 
     it "uses URE for complex reasoning scenarios" do
+      atomspace = AtomSpace::AtomSpace.new
       URE.initialize
       ure_engine = URE.create_engine(atomspace)
 
@@ -256,7 +263,11 @@ describe "OpenCog Full Integration" do
       )
 
       # If P then Q
-      implication = atomspace.add_implication_link(p_true, q_true, tv_med)
+      implication = atomspace.add_link(
+        AtomSpace::AtomType::IMPLICATION_LINK,
+        [p_true, q_true],
+        tv_med
+      )
 
       initial_size = atomspace.size
 
@@ -277,6 +288,7 @@ describe "OpenCog Full Integration" do
 
   describe "with combined PLN and URE" do
     it "can use both reasoning engines together" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       URE.initialize
 
@@ -313,6 +325,7 @@ describe "OpenCog Full Integration" do
     end
 
     it "handles interaction between reasoning engines" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       URE.initialize
 
@@ -341,6 +354,7 @@ describe "OpenCog Full Integration" do
     end
 
     it "provides unified exception handling for both engines" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       URE.initialize
 
@@ -366,6 +380,7 @@ describe "OpenCog Full Integration" do
 
   describe "performance and scalability" do
     it "handles moderate knowledge bases efficiently" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       URE.initialize
 
@@ -397,13 +412,13 @@ describe "OpenCog Full Integration" do
 
       initial_size = atomspace.size
 
-      start_time = Time.monotonic
+      start_time = Time.instant
 
       # Run both reasoning engines
       pln_atoms = pln_engine.reason(3)
       ure_atoms = ure_engine.forward_chain(2)
 
-      end_time = Time.monotonic
+      end_time = Time.instant
       duration = end_time - start_time
 
       # Should complete in reasonable time
@@ -415,6 +430,7 @@ describe "OpenCog Full Integration" do
     end
 
     it "maintains consistency across reasoning operations" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       URE.initialize
 
@@ -464,6 +480,7 @@ describe "OpenCog Full Integration" do
 
   describe "error recovery and robustness" do
     it "recovers from reasoning errors gracefully" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       URE.initialize
 
@@ -491,6 +508,7 @@ describe "OpenCog Full Integration" do
     end
 
     it "maintains atomspace integrity during reasoning" do
+      atomspace = AtomSpace::AtomSpace.new
       PLN.initialize
       URE.initialize
 
