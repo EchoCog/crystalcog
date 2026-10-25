@@ -324,8 +324,8 @@ function parseE2EReports(artifactDir) {
 
   for (const file of reportFiles) {
     const text = fs.readFileSync(file, 'utf8');
-    const failed = /\bfail(?:ed|ing|ure|ures)?\b|\berrors?\b|✗|❌/i.test(text) &&
-      !/\b0 (?:failures|errors)\b/i.test(text);
+    const failed = /\bfail(?:ed|ing|ure|ures)?\b|\berrors?\b|✗|❌/i.test(
+      text.replace(/\b0 (?:failures|errors)\b/gi, ''));
     if (failed) {
       const isE2E = /e2e/i.test(file);
       findings.push({
