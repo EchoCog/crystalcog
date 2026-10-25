@@ -324,8 +324,9 @@ function parseE2EReports(artifactDir) {
 
   for (const file of reportFiles) {
     const text = fs.readFileSync(file, 'utf8');
-    const failed = /fail|error|✗|❌/i.test(text) && !/0 failures/i.test(text);
-    if (failed || /failed|timed out/i.test(text)) {
+    const failed = /\bfail(?:ed|ing|ure|ures)?\b|\berrors?\b|✗|❌/i.test(
+      text.replace(/\b0 (?:failures|errors)\b/gi, ''));
+    if (failed) {
       const isE2E = /e2e/i.test(file);
       findings.push({
         type: isE2E ? 'e2e_test_failure' : 'integration_test_failure',
@@ -340,7 +341,7 @@ function parseE2EReports(artifactDir) {
     }
 
     // Parse explicit failure lines from e2e shell output patterns
-    const lineFails = text.match(/.*(?:failed|timed out|ERROR:).*/gi) || [];
+    const lineFails = text.match(/.*(?:\bfailed\b|\btimed out\b|\bERROR:).*/gi) || [];
     for (const lf of lineFails.slice(0, 20)) {
       const isE2E = /e2e/i.test(file) || /CogServer|API tests|persistence/i.test(lf);
       findings.push({
